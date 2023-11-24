@@ -1,0 +1,15 @@
+{
+  "name": "vote-aggregator-tests",
+  "type": "module",
+  "files": [],
+  "devDependencies": {
+    "@types/bn.js": "^5.1.0",
+    "anchor-bankrun": "^0.2.0",
+    "bun-types": "latest",
+    "solana-bankrun": "^0.2.0"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.29.0",
+    "@solana/web3.js": "^1.87.6"
+  }
+}

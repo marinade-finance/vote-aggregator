@@ -1,0 +1,28 @@
+{
+  "name": "vote-aggregator-cli",
+  "module": "src/index.ts",
+  "files": [
+    "src"
+  ],
+  "type": "module",
+  "devDependencies": {
+    "bun-types": "latest",
+    "@types/expand-tilde": "^2.0.2",
+    "@types/mz": "^2.7.8",
+    "anchor-bankrun": "^0.2.0",
+    "solana-bankrun": "^0.2.0"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.29.0",
+    "@solana/spl-governance": "^0.3.28",
+    "@solana/web3.js": "^1.87.6",
+    "commander": "^11.1.0",
+    "expand-tilde": "^2.0.2",
+    "mz": "^2.7.0",
+    "vote-aggregator-sdk": "workspace:*",
+    "yaml": "^2.3.4"
+  },
+  "scripts": {
+    "cli": "bun src/index.ts"
+  }
+}

@@ -1,0 +1,40 @@
+// Bun Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`dummy creates instruction: dummy 1`] = `
+TransactionInstruction {
+  "data": {
+    "data": [
+      175,
+      175,
+      109,
+      31,
+      13,
+      152,
+      155,
+      237,
+    ],
+    "type": "Buffer",
+  },
+  "keys": [],
+  "programId": PublicKey(DDN7fpM4tY3ZHdgSuf8B4UBMakh4kqPzuDZHxgVyyNg) PublicKey {
+    "_bn": BN {
+      "length": 10,
+      "negative": 0,
+      "red": null,
+      "words": [
+        24200809,
+        52762679,
+        39805554,
+        1157911,
+        29958298,
+        50898047,
+        45850277,
+        66191998,
+        52770119,
+        51260,
+        0,
+      ],
+    },
+  },
+}
+`;

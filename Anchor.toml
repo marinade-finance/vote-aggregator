@@ -1,0 +1,15 @@
+[toolchain]
+
+[features]
+seeds = false
+skip-lint = false
+
+[programs.localnet]
+vote_aggregator = "DDN7fpM4tY3ZHdgSuf8B4UBMakh4kqPzuDZHxgVyyNg"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "Localnet"
+wallet = "~/.config/solana/id.json"
