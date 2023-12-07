@@ -1,4 +1,4 @@
-import {Program, Provider} from '@coral-xyz/anchor';
+import {IdlAccounts, Program, Provider} from '@coral-xyz/anchor';
 import {VoteAggregator, IDL} from './vote_aggregator';
 import {
   AccountMeta,
@@ -19,6 +19,10 @@ import {
 class ReadonlyProvider implements Provider {
   constructor(public connection: Connection) {}
 }
+
+export type RootAccount = IdlAccounts<VoteAggregator>['root'];
+export type MaxVoterWeightAccount =
+  IdlAccounts<VoteAggregator>['maxVoterWeightRecord'];
 
 export class VoteAggregatorSdk {
   program: Program<VoteAggregator>;
@@ -42,6 +46,37 @@ export class VoteAggregatorSdk {
 
   get connection(): Connection {
     return this.program.provider.connection;
+  }
+
+  rootAddress(
+    realmId: PublicKey,
+    governingTokenMint: PublicKey
+  ): [PublicKey, number] {
+    return PublicKey.findProgramAddressSync(
+      [
+        Buffer.from('root', 'utf-8'),
+        realmId.toBuffer(),
+        governingTokenMint.toBuffer(),
+      ],
+      this.programId
+    );
+  }
+
+  maxVoterWieghtAddress(rootAddress: PublicKey): [PublicKey, number] {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from('max-voter-weight', 'utf-8'), rootAddress.toBuffer()],
+      this.programId
+    );
+  }
+
+  fetchRoot(rootAddress: PublicKey): Promise<RootAccount> {
+    return this.program.account.root.fetch(rootAddress);
+  }
+
+  fetchMaxVoterWeight(rootAddress: PublicKey): Promise<MaxVoterWeightAccount> {
+    return this.program.account.maxVoterWeightRecord.fetch(
+      this.maxVoterWieghtAddress(rootAddress)[0]
+    );
   }
 
   async createRootInstruction({
@@ -86,18 +121,8 @@ export class VoteAggregatorSdk {
       throw new Error(`Realm ${realmId} does not have a ${side} mint`);
     }
 
-    const [rootAddress] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from('root', 'utf-8'),
-        realmId.toBuffer(),
-        governingTokenMint.toBuffer(),
-      ],
-      this.program.programId
-    );
-    const [maxVoterWeightAddress] = PublicKey.findProgramAddressSync(
-      [Buffer.from('max-voter-weight', 'utf-8'), rootAddress.toBuffer()],
-      this.program.programId
-    );
+    const [rootAddress] = this.rootAddress(realmId, governingTokenMint);
+    const [maxVoterWeightAddress] = this.maxVoterWieghtAddress(rootAddress);
 
     const extraAccounts: AccountMeta[] = [
       {
