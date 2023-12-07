@@ -2,10 +2,11 @@ import {Keypair, PublicKey} from '@solana/web3.js';
 import expandTilde from 'expand-tilde';
 import fs from 'mz/fs';
 
-export async function parseKeypair(path: string) {
-  return Keypair.fromSecretKey(
-    new Uint8Array(JSON.parse(await fs.readFile(expandTilde(path), 'utf-8')))
-  );
+export async function parseKeypair(input: string) {
+  if (!input.startsWith('[')) {
+    input = await fs.readFile(expandTilde(input), 'utf-8');
+  }
+  return Keypair.fromSecretKey(new Uint8Array(JSON.parse(input)));
 }
 
 export async function parsePubkey(pubkeyOrPath: string): Promise<PublicKey> {

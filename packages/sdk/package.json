@@ -5,13 +5,15 @@
   "files": [
     "src"
   ],
+  "main": "src/index.ts",
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
+    "@solana/spl-governance": "^0.3.28",
     "@solana/web3.js": "^1.87.6"
   },
   "devDependencies": {
     "bun-types": "latest",
     "@types/bn.js": "^5.1.0",
-    "solana-bankrun": "^0.2.0"
+    "vote-aggregator-tests": "workspace:*"
   }
 }

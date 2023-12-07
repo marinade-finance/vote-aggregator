@@ -1,0 +1,21 @@
+{
+  "name": "@native-to-anchor/spl-governance-addin-api",
+  "description": "Solana Program Library Governance Addin Api",
+  "version": "0.1.3",
+  "author": "Solana Labs Maintainers <maintainers@solanalabs.com>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/solana-labs/solana-program-library.git"
+  },
+  "files": [
+    "src"
+  ],
+  "dependencies": {
+    "@coral-xyz/anchor": "=0.29.0",
+    "@native-to-anchor/buffer-layout": "=0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "=17.0.21"
+  }
+}

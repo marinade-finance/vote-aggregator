@@ -1,15 +1,25 @@
 {
   "name": "vote-aggregator-tests",
   "type": "module",
-  "files": [],
+  "files": [
+    "src",
+    "tsconfig.json"
+  ],
+  "main": "src/index.ts",
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
+    "@types/node": "^20.10.3",
     "anchor-bankrun": "^0.2.0",
     "bun-types": "latest",
-    "solana-bankrun": "^0.2.0"
+    "typescript": "^5.3.2"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
-    "@solana/web3.js": "^1.87.6"
+    "@coral-xyz/spl-governance": "workspace:*",
+    "@coral-xyz/spl-token": "^0.29.0",
+    "@solana/spl-governance": "^0.3.28",
+    "@solana/spl-token": "^0.3.9",
+    "@solana/web3.js": "^1.87.6",
+    "solana-bankrun": "^0.2.0"
   }
 }

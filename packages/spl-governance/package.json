@@ -1,0 +1,23 @@
+{
+  "name": "@coral-xyz/spl-governance",
+  "description": "Anchor client for Solana Program Library Governance Program",
+  "version": "3.1.1",
+  "author": "Solana Labs Maintainers <maintainers@solanalabs.com>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/solana-labs/solana-program-library.git"
+  },
+  "files": [
+    "src"
+  ],
+  "module": "./src/index.ts",
+  "main": "./src/index.ts",
+  "dependencies": {
+    "@coral-xyz/anchor": "=0.29.0",
+    "@native-to-anchor/buffer-layout": "=0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "=17.0.21"
+  }
+}

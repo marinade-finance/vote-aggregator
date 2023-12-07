@@ -1,6 +1,6 @@
 import {Command} from 'commander';
 import {setupContext} from './context';
-import {installDummyCLI} from './dummy';
+import {installRootCommands} from './rootCommands';
 
 export const cli = () => {
   const program = new Command();
@@ -17,7 +17,7 @@ export const cli = () => {
     .option('--print <multisig|legacy|0>', 'Print tx instead of running')
     .hook('preAction', (command: Command) => setupContext(command.opts()));
 
-  installDummyCLI(program);
+  installRootCommands(program);
 
   return program;
 };
