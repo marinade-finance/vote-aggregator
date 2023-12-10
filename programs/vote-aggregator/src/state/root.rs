@@ -10,12 +10,12 @@ pub struct RootBumps {
 pub struct Root {
     pub governance_program: Pubkey,          // 8
     pub realm: Pubkey,                       // 40
-    pub governing_token_mint: Pubkey,  // 72
+    pub governing_token_mint: Pubkey,        // 72
     pub voting_weight_plugin: Pubkey,        // 104
     pub max_proposal_lifetime: u64,
     pub bumps: RootBumps,
     pub clan_count: u64,
-    pub memeber_count: u64,
+    pub member_count: u64,
 }
 
 

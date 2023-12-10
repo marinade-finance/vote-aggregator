@@ -7,7 +7,7 @@ pub mod state;
 
 use processor::*;
 
-declare_id!("DDN7fpM4tY3ZHdgSuf8B4UBMakh4kqPzuDZHxgVyyNg");
+declare_id!("VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT");
 
 #[program]
 pub mod vote_aggregator {
@@ -15,5 +15,9 @@ pub mod vote_aggregator {
 
     pub fn create_root<'a, 'b, 'c, 'info>(ctx: Context<'a, 'b, 'c, 'info, CreateRoot<'info>>) -> Result<()> {
         ctx.accounts.process(ctx.remaining_accounts, ctx.bumps)
+    }
+
+    pub fn create_clan(ctx: Context<CreateClan>, owner: Pubkey) -> Result<()> {
+        ctx.accounts.process(owner, ctx.bumps)
     }
 }

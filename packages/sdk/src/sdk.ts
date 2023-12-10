@@ -20,9 +20,13 @@ class ReadonlyProvider implements Provider {
   constructor(public connection: Connection) {}
 }
 
+export type RealmSide = 'community' | 'council';
 export type RootAccount = IdlAccounts<VoteAggregator>['root'];
 export type MaxVoterWeightAccount =
   IdlAccounts<VoteAggregator>['maxVoterWeightRecord'];
+export type ClanAccount = IdlAccounts<VoteAggregator>['clan'];
+export type VoterWeightAccount =
+  IdlAccounts<VoteAggregator>['voterWeightRecord'];
 
 export class VoteAggregatorSdk {
   program: Program<VoteAggregator>;
@@ -30,7 +34,7 @@ export class VoteAggregatorSdk {
   constructor(
     connection: Connection = new Connection('http://localhost:8899'),
     programId: PublicKey = new PublicKey(
-      'DDN7fpM4tY3ZHdgSuf8B4UBMakh4kqPzuDZHxgVyyNg'
+      'VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT'
     )
   ) {
     this.program = new Program(
@@ -48,10 +52,13 @@ export class VoteAggregatorSdk {
     return this.program.provider.connection;
   }
 
-  rootAddress(
-    realmId: PublicKey,
-    governingTokenMint: PublicKey
-  ): [PublicKey, number] {
+  rootAddress({
+    realmId,
+    governingTokenMint,
+  }: {
+    realmId: PublicKey;
+    governingTokenMint: PublicKey;
+  }): [PublicKey, number] {
     return PublicKey.findProgramAddressSync(
       [
         Buffer.from('root', 'utf-8'),
@@ -62,9 +69,57 @@ export class VoteAggregatorSdk {
     );
   }
 
-  maxVoterWieghtAddress(rootAddress: PublicKey): [PublicKey, number] {
+  maxVoterWieghtAddress({
+    rootAddress,
+  }: {
+    rootAddress: PublicKey;
+  }): [PublicKey, number] {
     return PublicKey.findProgramAddressSync(
       [Buffer.from('max-voter-weight', 'utf-8'), rootAddress.toBuffer()],
+      this.programId
+    );
+  }
+
+  voterAuthority({clanAddress}: {clanAddress: PublicKey}): [PublicKey, number] {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from('voter-authority', 'utf-8'), clanAddress.toBuffer()],
+      this.programId
+    );
+  }
+
+  tokenOwnerRecordAddress({
+    realmAddress,
+    governingTokenMint,
+    clanAddress,
+    voterAuthority,
+    splGovernanceId,
+  }: {
+    realmAddress: PublicKey;
+    governingTokenMint: PublicKey;
+    clanAddress?: PublicKey;
+    voterAuthority?: PublicKey;
+    splGovernanceId: PublicKey;
+  }): [PublicKey, number] {
+    if (!voterAuthority) {
+      if (!clanAddress) {
+        throw new Error('clanAddress is required');
+      }
+      voterAuthority = this.voterAuthority({clanAddress})[0];
+    }
+    return PublicKey.findProgramAddressSync(
+      [
+        Buffer.from('governance', 'utf-8'),
+        realmAddress.toBuffer(),
+        governingTokenMint.toBuffer(),
+        voterAuthority.toBuffer(),
+      ],
+      splGovernanceId
+    );
+  }
+
+  voterWeightAddress(clanAddress: PublicKey): [PublicKey, number] {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from('voter-weight', 'utf-8'), clanAddress.toBuffer()],
       this.programId
     );
   }
@@ -73,10 +128,42 @@ export class VoteAggregatorSdk {
     return this.program.account.root.fetch(rootAddress);
   }
 
-  fetchMaxVoterWeight(rootAddress: PublicKey): Promise<MaxVoterWeightAccount> {
+  fetchMaxVoterWeight({
+    rootAddress,
+    maxVoterWeightAddress,
+  }: {
+    rootAddress?: PublicKey;
+    maxVoterWeightAddress?: PublicKey;
+  }): Promise<MaxVoterWeightAccount> {
+    if (!maxVoterWeightAddress) {
+      if (!rootAddress) {
+        throw new Error('rootAddress is required');
+      }
+      maxVoterWeightAddress = this.maxVoterWieghtAddress({rootAddress})[0];
+    }
     return this.program.account.maxVoterWeightRecord.fetch(
-      this.maxVoterWieghtAddress(rootAddress)[0]
+      maxVoterWeightAddress
     );
+  }
+
+  fetchClan(clanAddress: PublicKey): Promise<ClanAccount> {
+    return this.program.account.clan.fetch(clanAddress);
+  }
+
+  fetchVoterWeight({
+    clanAddress,
+    voterWeightAddress,
+  }: {
+    clanAddress?: PublicKey;
+    voterWeightAddress?: PublicKey;
+  }): Promise<VoterWeightAccount> {
+    if (!voterWeightAddress) {
+      if (!clanAddress) {
+        throw new Error('clanAddress is required');
+      }
+      voterWeightAddress = this.voterWeightAddress(clanAddress)[0];
+    }
+    return this.program.account.voterWeightRecord.fetch(voterWeightAddress);
   }
 
   async createRootInstruction({
@@ -91,7 +178,7 @@ export class VoteAggregatorSdk {
     realmId: PublicKey;
     realmData?: Realm;
     realmConfigData?: RealmConfigAccount;
-    side: 'community' | 'council';
+    side: RealmSide;
     payer: PublicKey;
   }): Promise<TransactionInstruction> {
     if (!realmData) {
@@ -121,8 +208,8 @@ export class VoteAggregatorSdk {
       throw new Error(`Realm ${realmId} does not have a ${side} mint`);
     }
 
-    const [rootAddress] = this.rootAddress(realmId, governingTokenMint);
-    const [maxVoterWeightAddress] = this.maxVoterWieghtAddress(rootAddress);
+    const [rootAddress] = this.rootAddress({realmId, governingTokenMint});
+    const [maxVoterWeightAddress] = this.maxVoterWieghtAddress({rootAddress});
 
     const extraAccounts: AccountMeta[] = [
       {
@@ -200,6 +287,44 @@ export class VoteAggregatorSdk {
         voteAggregatorProgram: this.program.programId,
       })
       .remainingAccounts(extraAccounts)
+      .instruction();
+  }
+
+  async createClanInstruction({
+    rootAddress,
+    root,
+    clanAddress,
+    owner,
+    payer,
+  }: {
+    rootAddress: PublicKey;
+    root: RootAccount;
+    clanAddress: PublicKey;
+    owner: PublicKey;
+    payer: PublicKey;
+  }) {
+    const [voterAuthority] = this.voterAuthority({clanAddress});
+    const [tokenOwnerRecord] = this.tokenOwnerRecordAddress({
+      realmAddress: root.realm,
+      governingTokenMint: root.governingTokenMint,
+      clanAddress,
+      splGovernanceId: root.governanceProgram,
+    });
+    const [voterWeightRecord] = this.voterWeightAddress(clanAddress);
+    return await this.program.methods
+      .createClan(owner)
+      .accountsStrict({
+        root: rootAddress,
+        clan: clanAddress,
+        realm: root.realm,
+        governingTokenMint: root.governingTokenMint,
+        payer,
+        governanceProgram: root.governanceProgram,
+        systemProgram: SystemProgram.programId,
+        voterAuthority,
+        tokenOwnerRecord,
+        voterWeightRecord,
+      })
       .instruction();
   }
 }

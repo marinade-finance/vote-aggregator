@@ -1,6 +1,7 @@
 import {Command} from 'commander';
 import {setupContext} from './context';
-import {installRootCommands} from './rootCommands';
+import {installRootCommands} from './root';
+import {installClanCommands} from './clan';
 
 export const cli = () => {
   const program = new Command();
@@ -18,6 +19,7 @@ export const cli = () => {
     .hook('preAction', (command: Command) => setupContext(command.opts()));
 
   installRootCommands(program);
+  installClanCommands(program);
 
   return program;
 };

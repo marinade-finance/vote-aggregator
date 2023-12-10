@@ -9,7 +9,6 @@ use spl_governance::{
         realm::{self, GoverningTokenConfigAccountArgs},
         realm_config::get_realm_config_data_for_realm,
     },
-    PROGRAM_AUTHORITY_SEED,
 };
 
 use crate::{
@@ -211,7 +210,7 @@ impl<'info> CreateRoot<'info> {
                 max_voter_weight: bumps.max_voter_weight,
             },
             clan_count: 0,
-            memeber_count: 0,
+            member_count: 0,
         });
 
         self.max_voter_weight.set_inner(MaxVoterWeightRecord::new(

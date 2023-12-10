@@ -2,6 +2,7 @@ import {Command} from 'commander';
 import {context} from '../context';
 import {execute} from '../execute';
 import {parseKeypair, parsePubkey} from '../keyParser';
+import {RealmSide} from 'vote-aggregator-sdk';
 
 export const installCreateRootCLI = (program: Command) => {
   program
@@ -18,7 +19,7 @@ const createRoot = async ({
   realmAuthority,
 }: {
   realm: string;
-  side: string;
+  side: RealmSide;
   realmAuthority?: string;
 }) => {
   const {sdk, provider} = context!;
@@ -30,7 +31,7 @@ const createRoot = async ({
     instructions: [
       await sdk.createRootInstruction({
         realmId: await parsePubkey(realm),
-        side: side as 'community' | 'council',
+        side,
         payer: provider.publicKey!,
       }),
     ],

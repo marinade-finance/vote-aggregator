@@ -14,6 +14,7 @@ import {
   RealmAccount,
   RealmConfigAccount,
   SplGovernanceIdl,
+  buildSplGovernanceProgram,
 } from './splGovernance';
 import {resizeBN} from './utils';
 import {
@@ -32,14 +33,22 @@ export type GoverningTokenConfigArgs = {
 };
 
 export class RealmTestData {
+  public splGovernanceId: PublicKey;
   public id: PublicKey;
   public realm: RealmAccount;
   public config: RealmConfigAccount;
-  public authority?: Keypair;
+  public authority?: Keypair | PublicKey;
   public communityMintAuthority?: PublicKey | Keypair;
   public councilMintAuthority?: PublicKey | Keypair;
 
+  get authorityAddress(): PublicKey | undefined {
+    return this.authority instanceof Keypair
+      ? this.authority.publicKey
+      : this.authority;
+  }
+
   constructor({
+    splGovernanceId,
     id,
     communityMint,
     councilMint = null,
@@ -52,18 +61,20 @@ export class RealmTestData {
     communityMintAuthority,
     councilMintAuthority,
   }: {
+    splGovernanceId: PublicKey;
     id: PublicKey;
     communityMint: PublicKey;
     councilMint?: PublicKey | null;
     communityMintMaxVoterWeightSource: {supplyFraction: BN} | {absolute: BN};
     minCommunityWeightToCreateGovernance: BN;
-    authority?: Keypair | undefined;
+    authority?: Keypair | PublicKey | undefined;
     name: string;
     communityTokenConfig?: GoverningTokenConfigArgs;
     councilTokenConfig?: GoverningTokenConfigArgs;
     communityMintAuthority?: PublicKey | Keypair;
     councilMintAuthority?: PublicKey | Keypair;
   }) {
+    this.splGovernanceId = splGovernanceId;
     this.id = id;
     if ('supplyFraction' in communityMintMaxVoterWeightSource) {
       communityMintMaxVoterWeightSource.supplyFraction = resizeBN(
@@ -74,6 +85,11 @@ export class RealmTestData {
         communityMintMaxVoterWeightSource.absolute
       );
     }
+
+    this.authority = authority;
+    this.communityMintAuthority = communityMintAuthority;
+    this.councilMintAuthority = councilMintAuthority;
+
     this.realm = {
       accountType: {realmV2: {}},
       communityMint,
@@ -93,7 +109,7 @@ export class RealmTestData {
         legacy1: 0,
         legacy2: 0,
       },
-      authority: authority?.publicKey || null,
+      authority: this.authorityAddress || null,
       name,
     };
     this.config = {
@@ -113,33 +129,33 @@ export class RealmTestData {
       },
       reserved: 0, // Dummy value for undefined schema type
     };
-    this.authority = authority;
-    this.communityMintAuthority = communityMintAuthority;
-    this.councilMintAuthority = councilMintAuthority;
   }
 
-  realmConfigId(splGovernanceId: PublicKey): Promise<PublicKey> {
-    return getRealmConfigAddress(splGovernanceId, this.id);
+  realmConfigId(): Promise<PublicKey> {
+    return getRealmConfigAddress(this.splGovernanceId, this.id);
   }
 
-  councilTokenHoldings(splGovernanceId: PublicKey): Promise<PublicKey | null> {
+  councilTokenHoldings(): Promise<PublicKey | null> {
     if (!this.realm.config.councilMint) return Promise.resolve(null);
     return getTokenHoldingAddress(
-      splGovernanceId,
+      this.splGovernanceId,
       this.id,
       this.realm.config.councilMint!
     );
   }
 
-  communityTokenHoldings(splGovernanceId: PublicKey): Promise<PublicKey> {
+  communityTokenHoldings(): Promise<PublicKey> {
     return getTokenHoldingAddress(
-      splGovernanceId,
+      this.splGovernanceId,
       this.id,
       this.realm.communityMint
     );
   }
 
-  async accounts(program: Program<SplGovernanceIdl>): Promise<AddedAccount[]> {
+  async accounts(): Promise<AddedAccount[]> {
+    const program = buildSplGovernanceProgram({
+      splGovernanceId: this.splGovernanceId,
+    });
     const realm = await program.coder.accounts.encode<RealmAccount>(
       'realmV2',
       this.realm
@@ -160,7 +176,7 @@ export class RealmTestData {
         },
       },
       {
-        address: await this.realmConfigId(program.programId),
+        address: await this.realmConfigId(),
         info: {
           executable: false,
           owner: program.programId,

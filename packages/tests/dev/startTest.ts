@@ -1,7 +1,7 @@
 import {Program} from '@coral-xyz/anchor';
 import {BankrunProvider} from 'anchor-bankrun';
 import {AddedAccount, startAnchor} from 'solana-bankrun';
-import {VoteAggregator, IDL} from './vote_aggregator';
+import {VoteAggregator, IDL} from '../src/vote_aggregator';
 import {PublicKey} from '@solana/web3.js';
 
 export const startTest = async ({
@@ -11,7 +11,7 @@ export const startTest = async ({
   splGovernanceId: PublicKey;
   accounts?: AddedAccount[];
 }) => {
-  const testContext = await startAnchor(
+  const context = await startAnchor(
     '../..',
     [
       {
@@ -21,14 +21,15 @@ export const startTest = async ({
     ],
     accounts
   );
-  const provider = new BankrunProvider(testContext);
+  const provider = new BankrunProvider(context);
   const program = new Program<VoteAggregator>(
     IDL,
-    new PublicKey('DDN7fpM4tY3ZHdgSuf8B4UBMakh4kqPzuDZHxgVyyNg'),
+    new PublicKey('VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT'),
     provider
   );
 
   return {
+    context,
     program,
   };
 };
