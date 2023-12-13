@@ -69,39 +69,40 @@ describe('create-clan command', () => {
         ])
       );
 
-      const [voterAuthority, voterAuthorityBump] = sdk.voterAuthority({
+      const [voterAuthority, voterAuthorityBump] = sdk.clan.voterAuthority({
         clanAddress: clan.address.publicKey,
       });
       const [tokenOwnerRecord, tokenOwnerRecordBump] =
-        sdk.tokenOwnerRecordAddress({
+        sdk.clan.tokenOwnerRecordAddress({
           realmAddress: root.realm.id,
           governingTokenMint: root.governingTokenMint,
           clanAddress: clan.address.publicKey,
           splGovernanceId: root.splGovernanceId,
         });
-      const [voterWeightRecord, voterWeightRecordBump] = sdk.voterWeightAddress(
-        clan.address.publicKey
-      );
+      const [voterWeightRecord, voterWeightRecordBump] =
+        sdk.clan.voterWeightAddress(clan.address.publicKey);
 
-      expect(sdk.fetchClan(clan.address.publicKey)).resolves.toStrictEqual({
-        root: root.rootAddress()[0],
-        owner: clan.owner,
-        delegate: PublicKey.default,
-        voterAuthority,
-        tokenOwnerRecord,
-        voterWeightRecord,
-        minVotingWeightToJoin: resizeBN(new BN(0)),
-        bumps: {
-          voterAuthority: voterAuthorityBump,
-          tokenOwnerRecord: tokenOwnerRecordBump,
-          voterWeightRecord: voterWeightRecordBump,
-        },
-        activeMembers: resizeBN(new BN(0)),
-        leavingMembers: resizeBN(new BN(0)),
-        potentialVotingWeight: resizeBN(new BN(0)),
-        name: '',
-        description: '',
-      });
+      expect(sdk.clan.fetchClan(clan.address.publicKey)).resolves.toStrictEqual(
+        {
+          root: root.rootAddress()[0],
+          owner: clan.owner,
+          delegate: PublicKey.default,
+          voterAuthority,
+          tokenOwnerRecord,
+          voterWeightRecord,
+          minVotingWeightToJoin: resizeBN(new BN(0)),
+          bumps: {
+            voterAuthority: voterAuthorityBump,
+            tokenOwnerRecord: tokenOwnerRecordBump,
+            voterWeightRecord: voterWeightRecordBump,
+          },
+          activeMembers: resizeBN(new BN(0)),
+          leavingMembers: resizeBN(new BN(0)),
+          potentialVotingWeight: resizeBN(new BN(0)),
+          name: '',
+          description: '',
+        }
+      );
 
       expect(
         getTokenOwnerRecord(provider.connection, tokenOwnerRecord).then(
@@ -122,7 +123,7 @@ describe('create-clan command', () => {
       });
 
       expect(
-        sdk.fetchVoterWeight({voterWeightAddress: voterWeightRecord})
+        sdk.clan.fetchVoterWeight({voterWeightAddress: voterWeightRecord})
       ).resolves.toStrictEqual({
         realm: root.realm.id,
         governingTokenMint: root.governingTokenMint,
@@ -134,7 +135,7 @@ describe('create-clan command', () => {
         reserved: [0, 0, 0, 0, 0, 0, 0, 0],
       });
 
-      expect(sdk.fetchRoot(root.rootAddress()[0])).resolves.toMatchObject({
+      expect(sdk.root.fetchRoot(root.rootAddress()[0])).resolves.toMatchObject({
         clanCount: resizeBN(new BN(1)),
         memberCount: resizeBN(new BN(0)),
       });

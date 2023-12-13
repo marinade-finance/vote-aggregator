@@ -1,5 +1,7 @@
-pub mod root;
 pub mod clan;
+pub mod member;
+pub mod root;
 
-pub use root::*;
 pub use clan::*;
+pub use member::*;
+pub use root::*;

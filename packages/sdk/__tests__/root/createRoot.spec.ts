@@ -12,9 +12,9 @@ describe('create_root instruction', () => {
     async (realmData: CreateRootTestData) => {
       const sdk = new VoteAggregatorSdk();
       expect(
-        sdk.createRootInstruction({
+        sdk.root.createRootInstruction({
           splGovernanceId: realmData.splGovernanceId,
-          realmId: realmData.id,
+          realmAddress: realmData.id,
           realmData: realmData.splRealmData(),
           realmConfigData: realmData.splRealmConfigData(),
           side: 'community',
@@ -29,9 +29,9 @@ describe('create_root instruction', () => {
   )('Works for council side', async (realmData: CreateRootTestData) => {
     const sdk = new VoteAggregatorSdk();
     expect(
-      sdk.createRootInstruction({
+      sdk.root.createRootInstruction({
         splGovernanceId: realmData.splGovernanceId,
-        realmId: realmData.id,
+        realmAddress: realmData.id,
         realmData: realmData.splRealmData(),
         realmConfigData: realmData.splRealmConfigData(),
         side: 'council',

@@ -16,21 +16,21 @@ pub struct CreateClan<'info> {
         has_one = governing_token_mint,
         has_one = governance_program,
     )]
-    pub root: Account<'info, Root>,
+    root: Account<'info, Root>,
 
     /// CHECK: dynamic owner
     #[account(
         owner = governance_program.key(),
     )]
-    pub realm: UncheckedAccount<'info>,
-    pub governing_token_mint: Account<'info, Mint>,
+    realm: UncheckedAccount<'info>,
+    governing_token_mint: Account<'info, Mint>,
 
     #[account(
         init,
         payer = payer,
         space = Clan::SPACE,
     )]
-    pub clan: Account<'info, Clan>,
+    clan: Account<'info, Clan>,
 
     /// CHECK: PDA
     #[account(
@@ -40,7 +40,7 @@ pub struct CreateClan<'info> {
         ],
         bump
     )]
-    pub voter_authority: UncheckedAccount<'info>,
+    voter_authority: UncheckedAccount<'info>,
 
     /// CHECK: dynamic owner
     #[account(
@@ -54,7 +54,7 @@ pub struct CreateClan<'info> {
         seeds::program = root.governance_program,
         bump
     )]
-    pub token_owner_record: UncheckedAccount<'info>, // will be created
+    token_owner_record: UncheckedAccount<'info>, // will be created
 
     /// The voter weight record is the account that will be shown to spl-governance
     /// to prove how much vote weight the voter has. See update_voter_weight_record.
@@ -68,20 +68,20 @@ pub struct CreateClan<'info> {
         payer = payer,
         space = VoterWeightRecord::SPACE,
     )]
-    pub voter_weight_record: Box<Account<'info, VoterWeightRecord>>,
+    voter_weight_record: Box<Account<'info, VoterWeightRecord>>,
 
     #[account(
         mut,
         owner = system_program::ID,
     )]
-    pub payer: Signer<'info>,
+    payer: Signer<'info>,
 
-    pub system_program: Program<'info, System>,
+    system_program: Program<'info, System>,
     /// CHECK: program
     #[account(
         executable,
     )]
-    pub governance_program: UncheckedAccount<'info>,
+    governance_program: UncheckedAccount<'info>,
 }
 
 impl<'info> CreateClan<'info> {

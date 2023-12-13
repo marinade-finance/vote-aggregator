@@ -1,22 +1,21 @@
 import {describe, it, expect} from 'bun:test';
 import {
-  CreateClanTestData,
-  successfulCreateClanTestData,
+  CreateMemberTestData,
+  successfulCreateMemberTestData,
 } from 'vote-aggregator-tests';
 import {VoteAggregatorSdk} from '../../src';
 import {PublicKey} from '@solana/web3.js';
 
-describe('create_clan instruction', () => {
-  it.each(successfulCreateClanTestData)(
+describe('create_member instruction', () => {
+  it.each(successfulCreateMemberTestData)(
     'Works',
-    async ({root, clan}: CreateClanTestData) => {
+    async ({root, member}: CreateMemberTestData) => {
       const sdk = new VoteAggregatorSdk();
       expect(
-        sdk.clan.createClanInstruction({
+        sdk.member.createMemberInstruction({
           rootAddress: root.rootAddress()[0],
           root: root.root,
-          clanAddress: clan.address.publicKey,
-          owner: clan.owner,
+          owner: member.owner.publicKey,
           payer: PublicKey.default,
         })
       ).resolves.toMatchSnapshot();

@@ -1,3 +1,3 @@
-pub mod create;
+pub mod create_clan;
 
-pub use create::*;
+pub use create_clan::*;

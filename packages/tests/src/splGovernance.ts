@@ -14,6 +14,8 @@ export type GoverningTokenConfig =
   IdlTypes<SplGovernanceIdl>['GoverningTokenConfig'];
 export type GoverningTokenType =
   IdlTypes<SplGovernanceIdl>['GoverningTokenType'];
+export type TokenOwnerRecordAccount =
+  IdlAccounts<SplGovernanceIdl>['tokenOwnerRecordV2'];
 
 export const buildSplGovernanceProgram = ({
   splGovernanceId,

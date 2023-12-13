@@ -20,4 +20,8 @@ pub mod vote_aggregator {
     pub fn create_clan(ctx: Context<CreateClan>, owner: Pubkey) -> Result<()> {
         ctx.accounts.process(owner, ctx.bumps)
     }
+
+    pub fn create_member(ctx: Context<CreateMember>) -> Result<()> {
+        ctx.accounts.process(ctx.bumps)
+    }
 }

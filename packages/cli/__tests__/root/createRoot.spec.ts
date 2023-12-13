@@ -68,15 +68,15 @@ describe('create-root command', () => {
         ])
       );
 
-      const [rootAddress, rootBump] = sdk.rootAddress({
-        realmId: realmData.id,
+      const [rootAddress, rootBump] = sdk.root.rootAddress({
+        realmAddress: realmData.id,
         governingTokenMint: realmData.realm.communityMint,
       });
 
       const [maxVoterWeightAddress, maxVoterWeightBump] =
-        sdk.maxVoterWieghtAddress({rootAddress});
+        sdk.root.maxVoterWieghtAddress({rootAddress});
 
-      expect(sdk.fetchRoot(rootAddress)).resolves.toStrictEqual({
+      expect(sdk.root.fetchRoot(rootAddress)).resolves.toStrictEqual({
         realm: realmData.id,
         governanceProgram: realmData.splGovernanceId,
         governingTokenMint: realmData.realm.communityMint,
@@ -107,7 +107,7 @@ describe('create-root command', () => {
       });
 
       expect(
-        sdk.fetchMaxVoterWeight({maxVoterWeightAddress})
+        sdk.root.fetchMaxVoterWeight({maxVoterWeightAddress})
       ).resolves.toStrictEqual({
         realm: realmData.id,
         governingTokenMint: realmData.realm.communityMint,
@@ -155,15 +155,15 @@ describe('create-root command', () => {
       ])
     );
 
-    const [rootAddress, rootBump] = sdk.rootAddress({
-      realmId: realmData.id,
+    const [rootAddress, rootBump] = sdk.root.rootAddress({
+      realmAddress: realmData.id,
       governingTokenMint: realmData.realm.config.councilMint!,
     });
 
     const [maxVoterWeightAddress, maxVoterWeightBump] =
-      sdk.maxVoterWieghtAddress({rootAddress});
+      sdk.root.maxVoterWieghtAddress({rootAddress});
 
-    expect(sdk.fetchRoot(rootAddress)).resolves.toStrictEqual({
+    expect(sdk.root.fetchRoot(rootAddress)).resolves.toStrictEqual({
       realm: realmData.id,
       governanceProgram: realmData.splGovernanceId,
       governingTokenMint: realmData.realm.config.councilMint!,
@@ -194,7 +194,7 @@ describe('create-root command', () => {
     });
 
     expect(
-      sdk.fetchMaxVoterWeight({maxVoterWeightAddress})
+      sdk.root.fetchMaxVoterWeight({maxVoterWeightAddress})
     ).resolves.toStrictEqual({
       realm: realmData.id,
       governingTokenMint: realmData.realm.config.councilMint!,

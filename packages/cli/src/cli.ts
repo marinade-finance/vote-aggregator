@@ -2,6 +2,7 @@ import {Command} from 'commander';
 import {setupContext} from './context';
 import {installRootCommands} from './root';
 import {installClanCommands} from './clan';
+import { installMemberCommands } from './member';
 
 export const cli = () => {
   const program = new Command();
@@ -20,6 +21,7 @@ export const cli = () => {
 
   installRootCommands(program);
   installClanCommands(program);
+  installMemberCommands(program);
 
   return program;
 };

@@ -29,8 +29,8 @@ const createRoot = async ({
   }
   await execute({
     instructions: [
-      await sdk.createRootInstruction({
-        realmId: await parsePubkey(realm),
+      await sdk.root.createRootInstruction({
+        realmAddress: await parsePubkey(realm),
         side,
         payer: provider.publicKey!,
       }),

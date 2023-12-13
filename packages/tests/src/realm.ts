@@ -4,6 +4,7 @@ import {
   MintMaxVoteWeightSourceType,
   getRealmConfigAddress,
   getTokenHoldingAddress,
+  getTokenOwnerRecordAddress,
 } from '@solana/spl-governance';
 import {Keypair, PublicKey} from '@solana/web3.js';
 import {AddedAccount} from 'solana-bankrun';
@@ -14,6 +15,7 @@ import {
   RealmAccount,
   RealmConfigAccount,
   SplGovernanceIdl,
+  TokenOwnerRecordAccount,
   buildSplGovernanceProgram,
 } from './splGovernance';
 import {resizeBN} from './utils';
@@ -291,5 +293,54 @@ export class RealmTestData {
       },
       reserved: new Uint8Array(200),
     });
+  }
+
+  async tokenOwnerRecord({
+    owner,
+    side,
+  }: {
+    owner: PublicKey;
+    side: 'council' | 'community';
+  }): Promise<AddedAccount> {
+    const governingTokenMint =
+      side === 'community'
+        ? this.realm.communityMint
+        : this.realm.config.councilMint!;
+
+    const record: TokenOwnerRecordAccount = {
+      accountType: {tokenOwnerRecordV2: {}},
+      version: 1,
+      realm: this.id,
+      governingTokenMint,
+      governingTokenOwner: owner,
+      governingTokenDepositAmount: resizeBN(new BN(0)),
+      unrelinquishedVotesCount: resizeBN(new BN(0)),
+      outstandingProposalCount: 0,
+      reserved: [0, 0, 0, 0, 0, 0],
+      governanceDelegate: null,
+      reservedV2: Array(128).fill(0),
+    };
+    const program = buildSplGovernanceProgram({
+      splGovernanceId: this.splGovernanceId,
+    });
+    const data = await program.coder.accounts.encode<TokenOwnerRecordAccount>(
+      'tokenOwnerRecordV2',
+      record
+    );
+
+    return {
+      address: await getTokenOwnerRecordAddress(
+        this.splGovernanceId,
+        this.id,
+        governingTokenMint,
+        owner
+      ),
+      info: {
+        executable: false,
+        owner: program.programId,
+        lamports: 1000000000000,
+        data,
+      },
+    };
   }
 }

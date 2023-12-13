@@ -4,32 +4,27 @@ import {execute} from '../execute';
 import {parseKeypair, parsePubkey} from '../keyParser';
 import {RealmSide} from 'vote-aggregator-sdk';
 import {getRealm} from '@solana/spl-governance';
-import {Keypair} from '@solana/web3.js';
 
-export const installCreateClanCLI = (program: Command) => {
+export const installCreateMemberCLI = (program: Command) => {
   program
-    .command('create-clan')
+    .command('create-member')
     .requiredOption('--realm <pubkey>', 'Realm address')
     .option('--side <string>', 'Side', 'community')
-    .option('--clan <keypair>', 'Clan address')
-    .option('--owner <pubkey>', 'Owner')
-    .action(createClan);
+    .option('--owner <keypair>', 'Owner')
+    .action(createMember);
 };
 
-const createClan = async ({
+const createMember = async ({
   realm,
   side,
-  clan,
   owner,
 }: {
   realm: string;
   side: RealmSide;
-  clan?: string;
-  owner: string;
+  owner?: string;
 }) => {
   const {sdk, provider} = context!;
-  const clanAddress = clan ? await parseKeypair(clan) : Keypair.generate();
-  const ownerPk = owner ? await parsePubkey(owner) : provider.publicKey!;
+  const ownerKp = owner ? await parseKeypair(owner) : null;
   const realmAddress = await parsePubkey(realm);
   const realmData = await getRealm(provider.connection, realmAddress);
   const governingTokenMint =
@@ -41,17 +36,19 @@ const createClan = async ({
     governingTokenMint,
   });
   const rootData = await sdk.root.fetchRoot(rootAddress);
-  console.log(`Creating clan ${clanAddress.publicKey.toBase58()}`);
+  const signers = [];
+  if (ownerKp) {
+    signers.push(ownerKp);
+  }
   await execute({
     instructions: [
-      await sdk.clan.createClanInstruction({
+      await sdk.member.createMemberInstruction({
         rootAddress,
         root: rootData,
-        clanAddress: clanAddress.publicKey,
-        owner: ownerPk,
+        owner: ownerKp?.publicKey || provider.publicKey!,
         payer: provider.publicKey!,
       }),
     ],
-    signers: [clanAddress],
+    signers,
   });
 };
