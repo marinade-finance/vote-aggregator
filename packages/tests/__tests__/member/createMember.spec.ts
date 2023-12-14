@@ -3,25 +3,33 @@ import {startTest} from '../../dev/startTest';
 import {PublicKey} from '@solana/web3.js';
 import {
   CreateMemberTestData,
+  RealmTester,
   parseLogsEvent,
   resizeBN,
-  successfulCreateMemberTestData,
+  createMemberTestData,
 } from '../../src';
 import {BN} from '@coral-xyz/anchor';
 import {SYSTEM_PROGRAM_ID} from '@solana/spl-governance';
+import {RootTester} from '../../src/VoteAggregator';
 
 describe('create_member instruction', () => {
-  it.each(successfulCreateMemberTestData)(
+  it.each(createMemberTestData.filter(({error}) => !error))(
     'Works',
-    async ({root, member}: CreateMemberTestData) => {
+    async ({realm, root, member}: CreateMemberTestData) => {
+      const realmTester = new RealmTester(realm);
+      const rootTester = new RootTester({
+        ...root,
+        realm: realmTester,
+      });
       const {context, program} = await startTest({
-        splGovernanceId: root.splGovernanceId,
+        splGovernanceId: rootTester.splGovernanceId,
         accounts: [
-          await root.realm.tokenOwnerRecord({
+          ...(await realmTester.accounts()),
+          ...(await rootTester.accounts()),
+          await rootTester.realm.tokenOwnerRecord({
             owner: member.owner.publicKey,
             side: root.side,
           }),
-          ...(await root.accounts()),
         ],
       });
 
@@ -29,27 +37,27 @@ describe('create_member instruction', () => {
         PublicKey.findProgramAddressSync(
           [
             Buffer.from('member', 'utf-8'),
-            root.rootAddress()[0].toBuffer(),
+            rootTester.rootAddress[0].toBuffer(),
             member.owner.publicKey.toBuffer(),
           ],
-          root.voteAggregatorId
+          rootTester.voteAggregatorId
         );
 
       const [tokenOwnerRecord, tokenOwnerRecordBump] =
         PublicKey.findProgramAddressSync(
           [
             Buffer.from('governance', 'utf-8'),
-            root.realm.id.toBuffer(),
-            root.governingTokenMint.toBuffer(),
+            rootTester.realm.realmAddress.toBuffer(),
+            rootTester.governingTokenMint.toBuffer(),
             member.owner.publicKey.toBuffer(),
           ],
-          root.splGovernanceId
+          rootTester.splGovernanceId
         );
 
       const tx = await program.methods
         .createMember()
         .accountsStrict({
-          root: root.rootAddress()[0],
+          root: rootTester.rootAddress[0],
           member: memberAddress,
           payer: program.provider.publicKey!,
           systemProgram: SYSTEM_PROGRAM_ID,
@@ -65,17 +73,22 @@ describe('create_member instruction', () => {
         context.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
-      ).resolves.toStrictEqual({
-        member: memberAddress,
-        root: root.rootAddress()[0],
-        memberIndex: resizeBN(new BN(0)),
-        owner: member.owner.publicKey,
-      });
+      ).resolves.toStrictEqual([
+        {
+          name: 'MemberCreated',
+          data: {
+            member: memberAddress,
+            root: rootTester.rootAddress[0],
+            memberIndex: resizeBN(new BN(0)),
+            owner: member.owner.publicKey,
+          },
+        },
+      ]);
 
       expect(
         program.account.member.fetch(memberAddress)
       ).resolves.toStrictEqual({
-        root: root.rootAddress()[0],
+        root: rootTester.rootAddress[0],
         owner: member.owner.publicKey,
         delegate: PublicKey.default,
         tokenOwnerRecord,
@@ -84,11 +97,13 @@ describe('create_member instruction', () => {
           tokenOwnerRecord: tokenOwnerRecordBump,
         },
         clan: PublicKey.default,
-        clanLeavingTime: new BN(0), // resize is not needed for signed integers
+        clanLeavingTime: new BN(0),
+        voterWeight: resizeBN(new BN(0)),
+        voterWeightExpiry: null,
       });
 
       expect(
-        program.account.root.fetch(root.rootAddress()[0])
+        program.account.root.fetch(rootTester.rootAddress[0])
       ).resolves.toMatchObject({
         clanCount: resizeBN(new BN(0)),
         memberCount: resizeBN(new BN(1)),

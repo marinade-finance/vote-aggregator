@@ -3,6 +3,7 @@ import {VoteAggregatorSdk} from './sdk';
 import {IdlAccounts} from '@coral-xyz/anchor';
 import {VoteAggregator} from './vote_aggregator';
 import {RootAccount} from './root';
+import {TokenOwnerRecord, getTokenOwnerRecord} from '@solana/spl-governance';
 
 export type ClanAccount = IdlAccounts<VoteAggregator>['clan'];
 export type VoterWeightAccount =
@@ -73,6 +74,22 @@ export class ClanSdk {
       voterWeightAddress = this.voterWeightAddress(clanAddress)[0];
     }
     return this.sdk.program.account.voterWeightRecord.fetch(voterWeightAddress);
+  }
+
+  async fetchTokenOwnerRecord({
+    root,
+    clanAddress,
+  }: {
+    root: RootAccount;
+    clanAddress: PublicKey;
+  }): Promise<TokenOwnerRecord> {
+    const [address] = this.tokenOwnerRecordAddress({
+      realmAddress: root.realm,
+      governingTokenMint: root.governingTokenMint,
+      clanAddress,
+      splGovernanceId: root.governanceProgram,
+    });
+    return (await getTokenOwnerRecord(this.sdk.connection, address)).account;
   }
 
   async createClanInstruction({

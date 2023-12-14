@@ -3,24 +3,34 @@ import {startTest} from '../../dev/startTest';
 import {PublicKey} from '@solana/web3.js';
 import {
   CreateClanTestData,
+  RealmTester,
   buildSplGovernanceProgram,
   parseLogsEvent,
   resizeBN,
-  successfulCreateClanTestData,
+  createClanTestData,
 } from '../../src';
 import {BN} from '@coral-xyz/anchor';
 import {SYSTEM_PROGRAM_ID} from '@solana/spl-governance';
+import {RootTester} from '../../src/VoteAggregator';
 
 describe('create_clan instruction', () => {
-  it.each(successfulCreateClanTestData)(
+  it.each(createClanTestData.filter(({error}) => !error))(
     'Works',
-    async ({root, clan}: CreateClanTestData) => {
+    async ({realm, root, clan}: CreateClanTestData) => {
+      const realmTester = new RealmTester(realm);
+      const rootTester = new RootTester({
+        ...root,
+        realm: realmTester,
+      });
       const {context, program} = await startTest({
-        splGovernanceId: root.splGovernanceId,
-        accounts: await root.accounts(),
+        splGovernanceId: rootTester.splGovernanceId,
+        accounts: [
+          ...(await realmTester.accounts()),
+          ...(await rootTester.accounts()),
+        ],
       });
       const splGovernance = buildSplGovernanceProgram({
-        splGovernanceId: root.splGovernanceId,
+        splGovernanceId: rootTester.splGovernanceId,
         connection: program.provider.connection,
       });
 
@@ -36,11 +46,11 @@ describe('create_clan instruction', () => {
         PublicKey.findProgramAddressSync(
           [
             Buffer.from('governance', 'utf-8'),
-            root.realm.id.toBuffer(),
-            root.governingTokenMint.toBuffer(),
+            rootTester.realm.realmAddress.toBuffer(),
+            rootTester.governingTokenMint.toBuffer(),
             voterAuthority.toBuffer(),
           ],
-          root.splGovernanceId
+          rootTester.splGovernanceId
         );
       const [voterWeightRecord, voterWeightRecordBump] =
         PublicKey.findProgramAddressSync(
@@ -54,12 +64,12 @@ describe('create_clan instruction', () => {
       const tx = await program.methods
         .createClan(clan.owner)
         .accountsStrict({
-          root: root.rootAddress()[0],
+          root: rootTester.rootAddress[0],
           clan: clan.address.publicKey,
-          realm: root.realm.id,
-          governingTokenMint: root.governingTokenMint,
+          realm: rootTester.realm.realmAddress,
+          governingTokenMint: rootTester.governingTokenMint,
           payer: program.provider.publicKey!,
-          governanceProgram: root.splGovernanceId,
+          governanceProgram: rootTester.splGovernanceId,
           systemProgram: SYSTEM_PROGRAM_ID,
           voterAuthority,
           tokenOwnerRecord,
@@ -74,17 +84,22 @@ describe('create_clan instruction', () => {
         context.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
-      ).resolves.toStrictEqual({
-        clan: clan.address.publicKey,
-        root: root.rootAddress()[0],
-        clanIndex: resizeBN(new BN(0)),
-        owner: clan.owner,
-      });
+      ).resolves.toStrictEqual([
+        {
+          name: 'ClanCreated',
+          data: {
+            clan: clan.address.publicKey,
+            root: rootTester.rootAddress[0],
+            clanIndex: resizeBN(new BN(0)),
+            owner: clan.owner,
+          },
+        },
+      ]);
 
       expect(
         program.account.clan.fetch(clan.address.publicKey)
       ).resolves.toStrictEqual({
-        root: root.rootAddress()[0],
+        root: rootTester.rootAddress[0],
         owner: clan.owner,
         delegate: PublicKey.default,
         voterAuthority,
@@ -107,8 +122,8 @@ describe('create_clan instruction', () => {
         splGovernance.account.tokenOwnerRecordV2.fetch(tokenOwnerRecord)
       ).resolves.toStrictEqual({
         accountType: {tokenOwnerRecordV2: {}},
-        realm: root.realm.id,
-        governingTokenMint: root.governingTokenMint,
+        realm: rootTester.realm.realmAddress,
+        governingTokenMint: rootTester.governingTokenMint,
         governingTokenOwner: voterAuthority,
         governingTokenDepositAmount: resizeBN(new BN(0)),
         unrelinquishedVotesCount: resizeBN(new BN(0)),
@@ -122,8 +137,8 @@ describe('create_clan instruction', () => {
       expect(
         program.account.voterWeightRecord.fetch(voterWeightRecord)
       ).resolves.toStrictEqual({
-        realm: root.realm.id,
-        governingTokenMint: root.governingTokenMint,
+        realm: rootTester.realm.realmAddress,
+        governingTokenMint: rootTester.governingTokenMint,
         governingTokenOwner: voterAuthority,
         voterWeight: resizeBN(new BN(0)),
         voterWeightExpiry: null,
@@ -133,7 +148,7 @@ describe('create_clan instruction', () => {
       });
 
       expect(
-        program.account.root.fetch(root.rootAddress()[0])
+        program.account.root.fetch(rootTester.rootAddress[0])
       ).resolves.toMatchObject({
         clanCount: resizeBN(new BN(1)),
         memberCount: resizeBN(new BN(0)),

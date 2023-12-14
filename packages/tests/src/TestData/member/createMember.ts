@@ -2,37 +2,41 @@ import {Keypair, PublicKey} from '@solana/web3.js';
 import {buildKeypair} from '../..';
 import {RealmTestData} from '../../realm';
 import {BN} from '@coral-xyz/anchor';
-import {RootTestData} from '../../root';
+import {RootTestData} from '../../VoteAggregator/root';
 
 export type CreateMemberTestData = {
+  realm: RealmTestData;
   root: RootTestData;
   member: {
     owner: Keypair;
   };
+  error?: string;
 };
 
-export const successfulCreateMemberTestData: CreateMemberTestData[] = [
+export const createMemberTestData: CreateMemberTestData[] = [
   {
-    root: new RootTestData({
-      realm: new RealmTestData({
-        splGovernanceId: new PublicKey(
-          'HS35DYHnQANTJ8YFWG2VWKm8BhPaqU7a9yqb5sg3fqHp'
-        ),
-        id: new PublicKey('5Yz3nQV5NatQNXeVxzNGzMWjdtvPnjNJd1bSvCMrFGJ7'),
-        communityMint: new PublicKey(
-          'ANBM4Yn2ks2W6KdCtuf112DmqG6NtoURH36qGBK9Jf7e'
-        ),
-        communityMintMaxVoterWeightSource: {
-          supplyFraction: new BN(32),
-        },
-        minCommunityWeightToCreateGovernance: new BN(4),
-        name: 'Community side, no plugins',
-        communityMintAuthority: new PublicKey(
-          '77hvR5P1R6MKNrtrz9qBMiweZPofxPzkA7tqXNEu5PWC'
-        ),
-      }),
+    realm: {
+      splGovernanceId: new PublicKey(
+        'HS35DYHnQANTJ8YFWG2VWKm8BhPaqU7a9yqb5sg3fqHp'
+      ),
+      realmAddress: new PublicKey(
+        '5Yz3nQV5NatQNXeVxzNGzMWjdtvPnjNJd1bSvCMrFGJ7'
+      ),
+      communityMint: new PublicKey(
+        'ANBM4Yn2ks2W6KdCtuf112DmqG6NtoURH36qGBK9Jf7e'
+      ),
+      communityMintMaxVoterWeightSource: {
+        supplyFraction: new BN(32),
+      },
+      minCommunityWeightToCreateGovernance: new BN(4),
+      name: 'Community side, no plugins',
+      communityMintAuthority: new PublicKey(
+        '77hvR5P1R6MKNrtrz9qBMiweZPofxPzkA7tqXNEu5PWC'
+      ),
+    },
+    root: {
       side: 'community',
-    }),
+    },
     member: {
       owner: buildKeypair(
         '5Gf1EKXxQdkJ6Eqjk65NwouTbLwBEjZy88fUoG3Twjb7',

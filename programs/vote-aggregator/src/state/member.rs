@@ -15,6 +15,8 @@ pub struct Member {
     pub clan: Pubkey,     // 104
     pub clan_leaving_time: i64,
     pub token_owner_record: Pubkey,
+    pub voter_weight: u64,
+    pub voter_weight_expiry: Option<u64>, // Only None is supported for now
     pub bumps: MemberBumps,
 }
 

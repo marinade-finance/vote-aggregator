@@ -1,20 +1,27 @@
 import {describe, it, expect} from 'bun:test';
 import {
   CreateMemberTestData,
-  successfulCreateMemberTestData,
+  RealmTester,
+  RootTester,
+  createMemberTestData,
 } from 'vote-aggregator-tests';
 import {VoteAggregatorSdk} from '../../src';
 import {PublicKey} from '@solana/web3.js';
 
 describe('create_member instruction', () => {
-  it.each(successfulCreateMemberTestData)(
+  it.each(createMemberTestData.filter(({error}) => !error))(
     'Works',
-    async ({root, member}: CreateMemberTestData) => {
+    async ({realm, root, member}: CreateMemberTestData) => {
+      const realmTester = new RealmTester(realm);
+      const rootTester = new RootTester({
+        ...root,
+        realm: realmTester,
+      });
       const sdk = new VoteAggregatorSdk();
       expect(
         sdk.member.createMemberInstruction({
-          rootAddress: root.rootAddress()[0],
-          root: root.root,
+          rootAddress: rootTester.rootAddress[0],
+          root: rootTester.root,
           owner: member.owner.publicKey,
           payer: PublicKey.default,
         })

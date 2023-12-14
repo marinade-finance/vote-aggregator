@@ -2,38 +2,42 @@ import {Keypair, PublicKey} from '@solana/web3.js';
 import {buildKeypair} from '../..';
 import {RealmTestData} from '../../realm';
 import {BN} from '@coral-xyz/anchor';
-import {RootTestData} from '../../root';
+import {RootTestData} from '../../VoteAggregator/root';
 
 export type CreateClanTestData = {
+  realm: RealmTestData;
   root: RootTestData;
   clan: {
     address: Keypair;
     owner: PublicKey;
   };
+  error?: string;
 };
 
-export const successfulCreateClanTestData: CreateClanTestData[] = [
+export const createClanTestData: CreateClanTestData[] = [
   {
-    root: new RootTestData({
-      realm: new RealmTestData({
-        splGovernanceId: new PublicKey(
-          'AVqrBPNur5vto9EJaETnD6HSqjpxfGQ8zPTrz9EY7T4q'
-        ),
-        id: new PublicKey('8CyksxgQZZfHGdo4rKNEnxewQjfc8o2Vp6nkeBaJSMyB'),
-        communityMint: new PublicKey(
-          'HvNCWxs9Dw8rUFYbZyu6fyBGKnrdVGHK3FAEnHrWTJLh'
-        ),
-        communityMintMaxVoterWeightSource: {
-          supplyFraction: new BN(11),
-        },
-        minCommunityWeightToCreateGovernance: new BN(6),
-        name: 'Community side, no plugins',
-        communityMintAuthority: new PublicKey(
-          '9o2TRPV9K4677o1x2DGWphTY3fXLvdASQ1uXrmyWGMWp'
-        ),
-      }),
+    realm: {
+      splGovernanceId: new PublicKey(
+        'AVqrBPNur5vto9EJaETnD6HSqjpxfGQ8zPTrz9EY7T4q'
+      ),
+      realmAddress: new PublicKey(
+        '8CyksxgQZZfHGdo4rKNEnxewQjfc8o2Vp6nkeBaJSMyB'
+      ),
+      communityMint: new PublicKey(
+        'HvNCWxs9Dw8rUFYbZyu6fyBGKnrdVGHK3FAEnHrWTJLh'
+      ),
+      communityMintMaxVoterWeightSource: {
+        supplyFraction: new BN(11),
+      },
+      minCommunityWeightToCreateGovernance: new BN(6),
+      name: 'Community side, no plugins',
+      communityMintAuthority: new PublicKey(
+        '9o2TRPV9K4677o1x2DGWphTY3fXLvdASQ1uXrmyWGMWp'
+      ),
+    },
+    root: {
       side: 'community',
-    }),
+    },
     clan: {
       address: buildKeypair(
         'aJ5V8qydHkhhGs5PnaStqi2mib4PH6uFLzntRS9AsyC',

@@ -24,4 +24,8 @@ pub mod vote_aggregator {
     pub fn create_member(ctx: Context<CreateMember>) -> Result<()> {
         ctx.accounts.process(ctx.bumps)
     }
+
+    pub fn join_clan(ctx: Context<JoinClan>) -> Result<()> {
+        ctx.accounts.process()
+    }
 }

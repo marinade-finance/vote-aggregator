@@ -8,3 +8,10 @@ pub struct RootCreated {
     pub governing_token_mint: Pubkey,
     pub voting_weight_plugin: Option<Pubkey>,
 }
+
+#[event]
+pub struct MaxVoterWeightChanged {
+    pub root: Pubkey,
+    pub old_max_voter_weight: u64,
+    pub new_max_voter_weight: u64,
+}

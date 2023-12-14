@@ -55,4 +55,7 @@ pub enum Error {
     CouncilMintRequired,
     CouncilTokenHoldingsRequired,
     CircularPluginChain,
+    VoterWeightExpiryIsNotImplemented,
+    UnexpectedWeightAction,
+    UnexpectedWeightActionTarget,
 }

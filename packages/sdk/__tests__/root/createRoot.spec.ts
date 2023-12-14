@@ -1,22 +1,24 @@
 import {describe, it, expect} from 'bun:test';
 import {
   CreateRootTestData,
-  successfulCreateRootTestData,
+  RealmTester,
+  createRootTestData,
 } from 'vote-aggregator-tests';
 import {VoteAggregatorSdk} from '../../src';
 import {PublicKey} from '@solana/web3.js';
 
 describe('create_root instruction', () => {
-  it.each(successfulCreateRootTestData)(
+  it.each(createRootTestData.filter(({error}) => !error))(
     'Works for community side',
-    async (realmData: CreateRootTestData) => {
+    async ({realm}: CreateRootTestData) => {
+      const realmTester = new RealmTester(realm);
       const sdk = new VoteAggregatorSdk();
       expect(
         sdk.root.createRootInstruction({
-          splGovernanceId: realmData.splGovernanceId,
-          realmAddress: realmData.id,
-          realmData: realmData.splRealmData(),
-          realmConfigData: realmData.splRealmConfigData(),
+          splGovernanceId: realmTester.splGovernanceId,
+          realmAddress: realmTester.realmAddress,
+          realmData: realmTester.splRealmData(),
+          realmConfigData: realmTester.splRealmConfigData(),
           side: 'community',
           payer: PublicKey.default,
         })
@@ -25,15 +27,16 @@ describe('create_root instruction', () => {
   );
 
   it.each(
-    successfulCreateRootTestData.filter(({realm}) => realm.config.councilMint)
-  )('Works for council side', async (realmData: CreateRootTestData) => {
+    createRootTestData.filter(({realm, error}) => !error && realm.councilMint)
+  )('Works for council side', async ({realm}: CreateRootTestData) => {
+    const realmTester = new RealmTester(realm);
     const sdk = new VoteAggregatorSdk();
     expect(
       sdk.root.createRootInstruction({
-        splGovernanceId: realmData.splGovernanceId,
-        realmAddress: realmData.id,
-        realmData: realmData.splRealmData(),
-        realmConfigData: realmData.splRealmConfigData(),
+        splGovernanceId: realmTester.splGovernanceId,
+        realmAddress: realmTester.realmAddress,
+        realmData: realmTester.splRealmData(),
+        realmConfigData: realmTester.splRealmConfigData(),
         side: 'council',
         payer: PublicKey.default,
       })

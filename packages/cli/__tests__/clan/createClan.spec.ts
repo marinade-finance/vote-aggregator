@@ -11,8 +11,10 @@ import {startTest} from '../../dev/startTest';
 import {PublicKey} from '@solana/web3.js';
 import {
   CreateClanTestData,
+  RealmTester,
+  RootTester,
   resizeBN,
-  successfulCreateClanTestData,
+  createClanTestData,
 } from 'vote-aggregator-tests';
 import {BN} from '@coral-xyz/anchor';
 import {context} from '../../src/context';
@@ -34,12 +36,20 @@ describe('create-clan command', () => {
     stdout.mockRestore();
   });
 
-  it.each(successfulCreateClanTestData)(
+  it.each(createClanTestData.filter(({error}) => !error))(
     'Works',
-    async ({root, clan}: CreateClanTestData) => {
+    async ({realm, root, clan}: CreateClanTestData) => {
+      const realmTester = new RealmTester(realm);
+      const rootTester = new RootTester({
+        ...root,
+        realm: realmTester,
+      });
       const {provider} = await startTest({
-        splGovernanceId: root.splGovernanceId,
-        accounts: await root.accounts(),
+        splGovernanceId: rootTester.splGovernanceId,
+        accounts: [
+          ...(await rootTester.realm.accounts()),
+          ...(await rootTester.accounts()),
+        ],
       });
       const {sdk} = context!;
 
@@ -52,7 +62,7 @@ describe('create-clan command', () => {
             [
               'create-clan',
               '--realm',
-              root.realm.id.toString(),
+              rootTester.realm.realmAddress.toString(),
               '--side',
               root.side,
               '--clan',
@@ -74,17 +84,17 @@ describe('create-clan command', () => {
       });
       const [tokenOwnerRecord, tokenOwnerRecordBump] =
         sdk.clan.tokenOwnerRecordAddress({
-          realmAddress: root.realm.id,
-          governingTokenMint: root.governingTokenMint,
+          realmAddress: rootTester.realm.realmAddress,
+          governingTokenMint: rootTester.governingTokenMint,
           clanAddress: clan.address.publicKey,
-          splGovernanceId: root.splGovernanceId,
+          splGovernanceId: rootTester.splGovernanceId,
         });
       const [voterWeightRecord, voterWeightRecordBump] =
         sdk.clan.voterWeightAddress(clan.address.publicKey);
 
       expect(sdk.clan.fetchClan(clan.address.publicKey)).resolves.toStrictEqual(
         {
-          root: root.rootAddress()[0],
+          root: rootTester.rootAddress[0],
           owner: clan.owner,
           delegate: PublicKey.default,
           voterAuthority,
@@ -109,8 +119,8 @@ describe('create-clan command', () => {
           ({account}) => account
         )
       ).resolves.toMatchObject({
-        realm: root.realm.id,
-        governingTokenMint: root.governingTokenMint,
+        realm: rootTester.realm.realmAddress,
+        governingTokenMint: rootTester.governingTokenMint,
         governingTokenOwner: voterAuthority,
         governingTokenDepositAmount: resizeBN(new BN(0)),
         unrelinquishedVotesCount: 0,
@@ -125,8 +135,8 @@ describe('create-clan command', () => {
       expect(
         sdk.clan.fetchVoterWeight({voterWeightAddress: voterWeightRecord})
       ).resolves.toStrictEqual({
-        realm: root.realm.id,
-        governingTokenMint: root.governingTokenMint,
+        realm: rootTester.realm.realmAddress,
+        governingTokenMint: rootTester.governingTokenMint,
         governingTokenOwner: voterAuthority,
         voterWeight: resizeBN(new BN(0)),
         voterWeightExpiry: null,
@@ -135,7 +145,9 @@ describe('create-clan command', () => {
         reserved: [0, 0, 0, 0, 0, 0, 0, 0],
       });
 
-      expect(sdk.root.fetchRoot(root.rootAddress()[0])).resolves.toMatchObject({
+      expect(
+        sdk.root.fetchRoot(rootTester.rootAddress[0])
+      ).resolves.toMatchObject({
         clanCount: resizeBN(new BN(1)),
         memberCount: resizeBN(new BN(0)),
       });

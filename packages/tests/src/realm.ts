@@ -18,13 +18,14 @@ import {
   TokenOwnerRecordAccount,
   buildSplGovernanceProgram,
 } from './splGovernance';
-import {resizeBN} from './utils';
+import {getMinimumBalanceForRentExemption, resizeBN} from './utils';
 import {
   Realm as SplRealm,
   RealmConfig as SplRealmConfig,
   RealmConfigAccount as SplRealmConfigAccount,
   GoverningTokenType as SplGoverningTokenType,
 } from '@solana/spl-governance';
+import {VoterWeightAccount, buildVoteAggregatorProgram} from './VoteAggregator';
 
 const splToken = buildSplTokenProgram();
 
@@ -34,9 +35,31 @@ export type GoverningTokenConfigArgs = {
   tokenType?: GoverningTokenType;
 };
 
-export class RealmTestData {
+export type VoterWeightRecordTestData = {
+  address: PublicKey;
+  voterWeight: BN;
+  voterWeightExpiry?: BN | null;
+  plugin: PublicKey;
+};
+
+export type RealmTestData = {
+  splGovernanceId: PublicKey;
+  realmAddress: PublicKey;
+  communityMint: PublicKey;
+  councilMint?: PublicKey | null;
+  communityMintMaxVoterWeightSource: {supplyFraction: BN} | {absolute: BN};
+  minCommunityWeightToCreateGovernance: BN;
+  authority?: Keypair | PublicKey | undefined;
+  name: string;
+  communityTokenConfig?: GoverningTokenConfigArgs;
+  councilTokenConfig?: GoverningTokenConfigArgs;
+  communityMintAuthority?: PublicKey | Keypair;
+  councilMintAuthority?: PublicKey | Keypair;
+};
+
+export class RealmTester {
   public splGovernanceId: PublicKey;
-  public id: PublicKey;
+  public realmAddress: PublicKey;
   public realm: RealmAccount;
   public config: RealmConfigAccount;
   public authority?: Keypair | PublicKey;
@@ -51,7 +74,7 @@ export class RealmTestData {
 
   constructor({
     splGovernanceId,
-    id,
+    realmAddress,
     communityMint,
     councilMint = null,
     communityMintMaxVoterWeightSource,
@@ -62,22 +85,9 @@ export class RealmTestData {
     councilTokenConfig = {},
     communityMintAuthority,
     councilMintAuthority,
-  }: {
-    splGovernanceId: PublicKey;
-    id: PublicKey;
-    communityMint: PublicKey;
-    councilMint?: PublicKey | null;
-    communityMintMaxVoterWeightSource: {supplyFraction: BN} | {absolute: BN};
-    minCommunityWeightToCreateGovernance: BN;
-    authority?: Keypair | PublicKey | undefined;
-    name: string;
-    communityTokenConfig?: GoverningTokenConfigArgs;
-    councilTokenConfig?: GoverningTokenConfigArgs;
-    communityMintAuthority?: PublicKey | Keypair;
-    councilMintAuthority?: PublicKey | Keypair;
-  }) {
+  }: RealmTestData) {
     this.splGovernanceId = splGovernanceId;
-    this.id = id;
+    this.realmAddress = realmAddress;
     if ('supplyFraction' in communityMintMaxVoterWeightSource) {
       communityMintMaxVoterWeightSource.supplyFraction = resizeBN(
         communityMintMaxVoterWeightSource.supplyFraction
@@ -116,7 +126,7 @@ export class RealmTestData {
     };
     this.config = {
       accountType: {realmConfig: {}},
-      realm: this.id,
+      realm: this.realmAddress,
       communityTokenConfig: {
         voterWeightAddin: communityTokenConfig.voterWeightAddin || null,
         maxVoterWeightAddin: communityTokenConfig.maxVoterWeightAddin || null,
@@ -134,14 +144,14 @@ export class RealmTestData {
   }
 
   realmConfigId(): Promise<PublicKey> {
-    return getRealmConfigAddress(this.splGovernanceId, this.id);
+    return getRealmConfigAddress(this.splGovernanceId, this.realmAddress);
   }
 
   councilTokenHoldings(): Promise<PublicKey | null> {
     if (!this.realm.config.councilMint) return Promise.resolve(null);
     return getTokenHoldingAddress(
       this.splGovernanceId,
-      this.id,
+      this.realmAddress,
       this.realm.config.councilMint!
     );
   }
@@ -149,7 +159,7 @@ export class RealmTestData {
   communityTokenHoldings(): Promise<PublicKey> {
     return getTokenHoldingAddress(
       this.splGovernanceId,
-      this.id,
+      this.realmAddress,
       this.realm.communityMint
     );
   }
@@ -158,23 +168,26 @@ export class RealmTestData {
     const program = buildSplGovernanceProgram({
       splGovernanceId: this.splGovernanceId,
     });
-    const realm = await program.coder.accounts.encode<RealmAccount>(
+    const realmData = await program.coder.accounts.encode<RealmAccount>(
       'realmV2',
       this.realm
     );
-    let config = await program.coder.accounts.encode<RealmConfigAccount>(
+    let configData = await program.coder.accounts.encode<RealmConfigAccount>(
       'realmConfigAccount',
       this.config
     );
-    config = Buffer.concat([config, Buffer.alloc(293 - config.length)]);
+    configData = Buffer.concat([
+      configData,
+      Buffer.alloc(293 - configData.length),
+    ]);
     const accounts = [
       {
-        address: this.id,
+        address: this.realmAddress,
         info: {
           executable: false,
           owner: program.programId,
-          lamports: 1000000000000,
-          data: realm,
+          lamports: getMinimumBalanceForRentExemption(realmData.length),
+          data: realmData,
         },
       },
       {
@@ -182,8 +195,8 @@ export class RealmTestData {
         info: {
           executable: false,
           owner: program.programId,
-          lamports: 1000000000000,
-          data: config,
+          lamports: getMinimumBalanceForRentExemption(configData.length),
+          data: configData,
         },
       },
     ];
@@ -192,20 +205,23 @@ export class RealmTestData {
         this.communityMintAuthority instanceof Keypair
           ? this.communityMintAuthority.publicKey
           : this.communityMintAuthority;
-      const mint = await splToken.coder.accounts.encode<MintAccount>('mint', {
-        mintAuthority,
-        supply: new BN(0),
-        decimals: 0,
-        isInitialized: true,
-        freezeAuthority: null,
-      });
+      const mintData = await splToken.coder.accounts.encode<MintAccount>(
+        'mint',
+        {
+          mintAuthority,
+          supply: new BN(0),
+          decimals: 0,
+          isInitialized: true,
+          freezeAuthority: null,
+        }
+      );
       accounts.push({
         address: this.realm.communityMint,
         info: {
           executable: false,
           owner: TOKEN_PROGRAM_ID,
-          lamports: 1000000000000,
-          data: mint,
+          lamports: getMinimumBalanceForRentExemption(mintData.length),
+          data: mintData,
         },
       });
     }
@@ -217,20 +233,23 @@ export class RealmTestData {
         this.councilMintAuthority instanceof Keypair
           ? this.councilMintAuthority.publicKey
           : this.councilMintAuthority;
-      const mint = await splToken.coder.accounts.encode<MintAccount>('mint', {
-        mintAuthority,
-        supply: new BN(0),
-        decimals: 0,
-        isInitialized: true,
-        freezeAuthority: null,
-      });
+      const mintData = await splToken.coder.accounts.encode<MintAccount>(
+        'mint',
+        {
+          mintAuthority,
+          supply: new BN(0),
+          decimals: 0,
+          isInitialized: true,
+          freezeAuthority: null,
+        }
+      );
       accounts.push({
         address: this.realm.config.councilMint,
         info: {
           executable: false,
           owner: TOKEN_PROGRAM_ID,
-          lamports: 1000000000000,
-          data: mint,
+          lamports: getMinimumBalanceForRentExemption(mintData.length),
+          data: mintData,
         },
       });
     }
@@ -266,7 +285,7 @@ export class RealmTestData {
 
   splRealmConfigData(): SplRealmConfigAccount {
     return new SplRealmConfigAccount({
-      realm: this.id,
+      realm: this.realmAddress,
       communityTokenConfig: {
         voterWeightAddin:
           this.config.communityTokenConfig.voterWeightAddin || undefined,
@@ -310,7 +329,7 @@ export class RealmTestData {
     const record: TokenOwnerRecordAccount = {
       accountType: {tokenOwnerRecordV2: {}},
       version: 1,
-      realm: this.id,
+      realm: this.realmAddress,
       governingTokenMint,
       governingTokenOwner: owner,
       governingTokenDepositAmount: resizeBN(new BN(0)),
@@ -331,14 +350,57 @@ export class RealmTestData {
     return {
       address: await getTokenOwnerRecordAddress(
         this.splGovernanceId,
-        this.id,
+        this.realmAddress,
         governingTokenMint,
         owner
       ),
       info: {
         executable: false,
         owner: program.programId,
-        lamports: 1000000000000,
+        lamports: getMinimumBalanceForRentExemption(data.length),
+        data,
+      },
+    };
+  }
+
+  async voterWeightRecord({
+    address,
+    plugin,
+    owner,
+    side,
+    voterWeight,
+    voterWeightExpiry = null,
+  }: VoterWeightRecordTestData & {
+    owner: PublicKey;
+    side: 'council' | 'community';
+  }): Promise<AddedAccount> {
+    const governingTokenMint =
+      side === 'community'
+        ? this.realm.communityMint
+        : this.realm.config.councilMint!;
+
+    const record: VoterWeightAccount = {
+      realm: this.realmAddress,
+      governingTokenMint,
+      governingTokenOwner: owner,
+      voterWeight: resizeBN(voterWeight),
+      voterWeightExpiry: voterWeightExpiry && resizeBN(voterWeightExpiry),
+      weightAction: null,
+      weightActionTarget: null,
+      reserved: [0, 0, 0, 0, 0, 0, 0, 0],
+    };
+    const program = buildVoteAggregatorProgram({});
+    const data = await program.coder.accounts.encode<VoterWeightAccount>(
+      'voterWeightRecord',
+      record
+    );
+
+    return {
+      address,
+      info: {
+        executable: false,
+        owner: plugin,
+        lamports: getMinimumBalanceForRentExemption(data.length),
         data,
       },
     };

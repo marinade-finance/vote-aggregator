@@ -65,6 +65,8 @@ impl<'info> CreateMember<'info> {
             clan: Pubkey::default(),
             clan_leaving_time: 0,
             token_owner_record: self.token_owner_record.key(),
+            voter_weight: 0,
+            voter_weight_expiry: None,
             bumps: MemberBumps {
                 address: bumps.member,
                 token_owner_record: bumps.token_owner_record,

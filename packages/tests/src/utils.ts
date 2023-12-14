@@ -1,4 +1,4 @@
-import {BN, Idl, Program} from '@coral-xyz/anchor';
+import {BN, Idl, Program, Event} from '@coral-xyz/anchor';
 import {IdlEvent} from '@coral-xyz/anchor/dist/cjs/idl';
 import {Keypair, PublicKey} from '@solana/web3.js';
 import assert from 'assert';
@@ -41,6 +41,20 @@ export function parseLogLine<P extends Idl, T>(
 export function parseLogsEvent<P extends Idl>(
   program: Program<P>,
   logs: string[]
-) {
-  return logs.map(l => parseLogLine(program, l)?.data).find(e => e);
+): Event[] {
+  return logs.map(l => parseLogLine(program, l)).filter(e => e) as Event[];
+}
+
+const ACCOUNT_STORAGE_OVERHEAD = 128;
+const DEFAULT_LAMPORTS_PER_BYTE_YEAR = Math.floor(
+  ((1_000_000_000 / 100) * 365) / (1024 * 1024)
+);
+const DEFAULT_EXEMPTION_THRESHOLD = 2.0;
+
+export function getMinimumBalanceForRentExemption(bytes: number) {
+  return (
+    (ACCOUNT_STORAGE_OVERHEAD + bytes) *
+    DEFAULT_LAMPORTS_PER_BYTE_YEAR *
+    DEFAULT_EXEMPTION_THRESHOLD
+  );
 }
