@@ -36,6 +36,7 @@ export const startTest = async ({
     provider,
   });
   return {
+    testContext,
     provider,
   };
 };

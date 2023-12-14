@@ -1,4 +1,4 @@
-import {PublicKey, SystemProgram} from '@solana/web3.js';
+import {PublicKey} from '@solana/web3.js';
 import {VoteAggregatorSdk} from './sdk';
 import {BN, IdlAccounts} from '@coral-xyz/anchor';
 import {VoteAggregator} from './vote_aggregator';
@@ -220,6 +220,23 @@ export class MemberSdk {
         maxVoterWeightRecord: this.sdk.root.maxVoterWieghtAddress({
           rootAddress: member.root,
         })[0],
+      })
+      .instruction();
+  }
+
+  async startLeavingClanInstruction({member}: {member: MemberAccount}) {
+    const [memberAddress] = this.memberAddress({
+      rootAddress: member.root,
+      owner: member.owner,
+    });
+    return await this.sdk.program.methods
+      .startLeavingClan()
+      .accountsStrict({
+        root: member.root,
+        member: memberAddress,
+        clan: member.clan,
+        memberAuthority: member.owner, // TODO delegate
+        clanVoterWeightRecord: this.sdk.clan.voterWeightAddress(member.clan)[0],
       })
       .instruction();
   }

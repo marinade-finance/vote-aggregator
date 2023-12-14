@@ -8,7 +8,6 @@ import {
   Mock,
 } from 'bun:test';
 import {startTest} from '../../dev/startTest';
-import {PublicKey} from '@solana/web3.js';
 import {
   JoinClanTestData,
   RealmTester,
@@ -18,7 +17,6 @@ import {
   MemberTester,
   ClanTester,
 } from 'vote-aggregator-tests';
-import {BN} from '@coral-xyz/anchor';
 import {context} from '../../src/context';
 import {cli} from '../../src/cli';
 

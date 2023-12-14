@@ -13,6 +13,7 @@ export type RootTestData = {
   clanCount?: BN;
   memberCount?: BN;
   maxVoterWeight?: BN;
+  maxProposalLifetime?: BN;
 };
 
 export class RootTester {
@@ -65,6 +66,7 @@ export class RootTester {
     clanCount = new BN(0),
     memberCount = new BN(0),
     maxVoterWeight = new BN(0),
+    maxProposalLifetime = new BN(0),
   }: RootTestData & {realm: RealmTester}) {
     this.realm = realm;
     this.side = side;
@@ -79,7 +81,7 @@ export class RootTester {
         side === 'community'
           ? realm.realm.communityMint
           : realm.realm.config.councilMint!,
-      maxProposalLifetime: resizeBN(new BN(0)),
+      maxProposalLifetime: resizeBN(maxProposalLifetime),
       votingWeightPlugin,
       clanCount,
       memberCount,
