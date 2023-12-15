@@ -23,3 +23,11 @@ pub struct ClanVoterWeightChanged {
     pub old_voter_weight: u64,
     pub new_voter_weight: u64,
 }
+
+#[event]
+pub struct ClanMemberLeft {
+    pub clan: Pubkey,
+    pub member: Pubkey,
+    pub root: Pubkey,
+    pub owner: Pubkey,
+}

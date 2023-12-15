@@ -9,18 +9,19 @@ import {
 } from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
-  JoinClanTestData,
+  StartLeavingClanTestData,
   RealmTester,
   RootTester,
   resizeBN,
-  joinClanTestData,
+  startLeavingClanTestData,
   MemberTester,
   ClanTester,
 } from 'vote-aggregator-tests';
 import {context} from '../../src/context';
 import {cli} from '../../src/cli';
+import {BN} from '@coral-xyz/anchor';
 
-describe('join-clan command', () => {
+describe('start-leaving-clan command', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
 
@@ -32,38 +33,32 @@ describe('join-clan command', () => {
     stdout.mockRestore();
   });
 
-  it.each(joinClanTestData.filter(({error}) => !error))(
+  it.each(startLeavingClanTestData.filter(({error}) => !error))(
     'Works',
-    async ({
-      realm,
-      root,
-      member,
-      memberVoterWeight,
-      clan,
-    }: JoinClanTestData) => {
+    async ({realm, root, member}: StartLeavingClanTestData) => {
       const realmTester = new RealmTester(realm);
       const rootTester = new RootTester({
         ...root,
         realm: realmTester,
       });
-      const memberTester = new MemberTester({...member, root: rootTester});
-      const clanTester = new ClanTester({...clan, root: rootTester});
-      await startTest({
+      const memberTester = new MemberTester({
+        ...member,
+        root: rootTester,
+        clan: member.clan!.address,
+      });
+      const clanTester = new ClanTester({...member.clan!, root: rootTester});
+      const {testContext} = await startTest({
         splGovernanceId: rootTester.splGovernanceId,
         accounts: [
           ...(await realmTester.accounts()),
           ...(await rootTester.accounts()),
           ...(await memberTester.accounts()),
           ...(await clanTester.accounts()),
-          await realmTester.voterWeightRecord({
-            ...memberVoterWeight,
-            side: root.side,
-            owner: member.owner.publicKey,
-          }),
         ],
       });
       const {sdk} = context!;
 
+      const time = (await testContext.banksClient.getClock()).unixTimestamp;
       expect(
         cli()
           .exitOverride(err => {
@@ -71,13 +66,13 @@ describe('join-clan command', () => {
           })
           .parseAsync(
             [
-              'join-clan',
+              'start-leaving-clan',
+              '--realm',
+              rootTester.realm.realmAddress.toString(),
+              '--side',
+              rootTester.side,
               '--owner',
               '[' + member.owner.secretKey.toString() + ']',
-              '--member-voter-weight',
-              memberVoterWeight.address.toBase58(),
-              '--clan',
-              clanTester.clanAddress.toBase58(),
             ],
             {from: 'user'}
           )
@@ -92,23 +87,16 @@ describe('join-clan command', () => {
         sdk.member.fetchMember({memberAddress: memberTester.memberAddress[0]})
       ).resolves.toStrictEqual({
         ...memberTester.member,
-        clan: clanTester.clanAddress,
-        voterWeight: resizeBN(memberVoterWeight.voterWeight),
-        voterWeightExpiry:
-          (memberVoterWeight.voterWeightExpiry &&
-            resizeBN(memberVoterWeight.voterWeightExpiry)) ||
-          null,
+        clanLeavingTime: new BN(time.toString()).add(
+          rootTester.root.maxProposalLifetime
+        ),
       });
 
       expect(sdk.clan.fetchClan(clanTester.clanAddress)).resolves.toStrictEqual(
         {
           ...clanTester.clan,
-          potentialVoterWeight: resizeBN(
-            clanTester.clan.potentialVoterWeight.add(
-              memberVoterWeight.voterWeight
-            )
-          ),
-          activeMembers: resizeBN(clanTester.clan.activeMembers.addn(1)),
+          activeMembers: resizeBN(clanTester.clan.activeMembers.subn(1)),
+          leavingMembers: resizeBN(clanTester.clan.leavingMembers.addn(1)),
         }
       );
 
@@ -119,19 +107,8 @@ describe('join-clan command', () => {
       ).resolves.toStrictEqual({
         ...clanTester.voterWeightRecord,
         voterWeight: resizeBN(
-          clanTester.voterWeightRecord.voterWeight.add(
-            memberVoterWeight.voterWeight
-          )
-        ),
-      });
-
-      expect(
-        sdk.root.fetchMaxVoterWeight({rootAddress: rootTester.rootAddress[0]})
-      ).resolves.toMatchObject({
-        ...rootTester.maxVoterWeight,
-        maxVoterWeight: resizeBN(
-          rootTester.maxVoterWeight.maxVoterWeight.add(
-            memberVoterWeight.voterWeight
+          clanTester.voterWeightRecord.voterWeight.sub(
+            memberTester.member.voterWeight
           )
         ),
       });

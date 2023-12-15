@@ -101,7 +101,7 @@ impl<'info> CreateClan<'info> {
             },
             active_members: 0,
             leaving_members: 0,
-            potential_voting_weight: 0,
+            potential_voter_weight: 0,
             name: "".to_owned(),
             description: "".to_owned(),
         });

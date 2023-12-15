@@ -118,6 +118,7 @@ impl<'info> JoinClan<'info> {
         self.member.voter_weight_expiry = vwr.voter_weight_expiry;
         self.member.clan = self.clan.key();
         self.clan.active_members += 1;
+        self.clan.potential_voter_weight += self.member.voter_weight;
         self.clan_voter_weight_record.voter_weight += self.member.voter_weight;
 
         emit!(ClanMemberAdded {

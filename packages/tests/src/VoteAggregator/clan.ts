@@ -17,7 +17,7 @@ export type ClanTestData = {
   minVotingWeightToJoin?: BN;
   activeMembers?: BN;
   leavingMembers?: BN;
-  potentialVotingWeight?: BN;
+  potentialVoterWeight?: BN;
   name: string;
   description?: string;
   voterWeight?: BN;
@@ -70,10 +70,10 @@ export class ClanTester {
     minVotingWeightToJoin = new BN(0),
     activeMembers = new BN(0),
     leavingMembers = new BN(0),
-    potentialVotingWeight = new BN(0),
     name,
     description = '',
     voterWeight = new BN(0),
+    potentialVoterWeight = voterWeight,
     governingTokenDepositAmount = new BN(0),
     unrelinquishedVotesCount = new BN(0),
     outstandingProposalCount = 0,
@@ -128,7 +128,7 @@ export class ClanTester {
       },
       activeMembers: resizeBN(activeMembers),
       leavingMembers: resizeBN(leavingMembers),
-      potentialVotingWeight: resizeBN(potentialVotingWeight),
+      potentialVoterWeight: resizeBN(potentialVoterWeight),
       name,
       description,
     };

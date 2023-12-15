@@ -11,7 +11,7 @@ export const startTest = async ({
   splGovernanceId: PublicKey;
   accounts?: AddedAccount[];
 }) => {
-  const context = await startAnchor(
+  const testContext = await startAnchor(
     '../..',
     [
       {
@@ -21,7 +21,7 @@ export const startTest = async ({
     ],
     accounts
   );
-  const provider = new BankrunProvider(context);
+  const provider = new BankrunProvider(testContext);
   const program = new Program<VoteAggregator>(
     IDL,
     new PublicKey('VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT'),
@@ -29,7 +29,7 @@ export const startTest = async ({
   );
 
   return {
-    context,
+    testContext,
     program,
   };
 };

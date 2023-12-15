@@ -17,7 +17,7 @@ describe('create_root instruction', () => {
     'Works for community side',
     async ({realm}: CreateRootTestData) => {
       const realmTester = new RealmTester(realm);
-      const {program, context} = await startTest({
+      const {program, testContext} = await startTest({
         splGovernanceId: realmTester.splGovernanceId,
         accounts: await realmTester.accounts(),
       });
@@ -107,12 +107,12 @@ describe('create_root instruction', () => {
         })
         .remainingAccounts(extraAccounts)
         .transaction();
-      tx.recentBlockhash = context.lastBlockhash;
-      tx.feePayer = context.payer.publicKey;
-      tx.sign(context.payer, realmTester.authority as Keypair);
+      tx.recentBlockhash = testContext.lastBlockhash;
+      tx.feePayer = testContext.payer.publicKey;
+      tx.sign(testContext.payer, realmTester.authority as Keypair);
 
       expect(
-        context.banksClient
+        testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
       ).resolves.toStrictEqual([
@@ -175,7 +175,7 @@ describe('create_root instruction', () => {
     createRootTestData.filter(({realm, error}) => !error && realm.councilMint)
   )('Works for council side', async ({realm}: CreateRootTestData) => {
     const realmTester = new RealmTester(realm);
-    const {program, context} = await startTest({
+    const {program, testContext} = await startTest({
       splGovernanceId: realmTester.splGovernanceId,
       accounts: await realmTester.accounts(),
     });
@@ -266,12 +266,12 @@ describe('create_root instruction', () => {
       })
       .remainingAccounts(extraAccounts)
       .transaction();
-    tx.recentBlockhash = context.lastBlockhash;
-    tx.feePayer = context.payer.publicKey;
-    tx.sign(context.payer, realmTester.authority as Keypair);
+    tx.recentBlockhash = testContext.lastBlockhash;
+    tx.feePayer = testContext.payer.publicKey;
+    tx.sign(testContext.payer, realmTester.authority as Keypair);
 
     expect(
-      context.banksClient
+      testContext.banksClient
         .processTransaction(tx)
         .then(meta => parseLogsEvent(program, meta.logMessages))
     ).resolves.toStrictEqual([

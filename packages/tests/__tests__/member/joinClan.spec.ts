@@ -26,7 +26,7 @@ describe('join_clan instruction', () => {
       });
       const memberTester = new MemberTester({...member, root: rootTester});
       const clanTester = new ClanTester({...clan, root: rootTester});
-      const {context, program} = await startTest({
+      const {testContext, program} = await startTest({
         splGovernanceId: rootTester.splGovernanceId,
         accounts: [
           ...(await realmTester.accounts()),
@@ -54,12 +54,12 @@ describe('join_clan instruction', () => {
           maxVoterWeightRecord: rootTester.maxVoterWeightAddress[0],
         })
         .transaction();
-      tx.recentBlockhash = context.lastBlockhash;
-      tx.feePayer = context.payer.publicKey;
-      tx.sign(context.payer, member.owner);
+      tx.recentBlockhash = testContext.lastBlockhash;
+      tx.feePayer = testContext.payer.publicKey;
+      tx.sign(testContext.payer, member.owner);
 
       expect(
-        context.banksClient
+        testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
       ).resolves.toStrictEqual([
@@ -126,6 +126,11 @@ describe('join_clan instruction', () => {
         program.account.clan.fetch(clanTester.clanAddress)
       ).resolves.toStrictEqual({
         ...clanTester.clan,
+        potentialVoterWeight: resizeBN(
+          clanTester.clan.potentialVoterWeight.add(
+            memberVoterWeight.voterWeight
+          )
+        ),
         activeMembers: resizeBN(clanTester.clan.activeMembers.addn(1)),
       });
 

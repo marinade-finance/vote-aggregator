@@ -22,7 +22,7 @@ describe('create_clan instruction', () => {
         ...root,
         realm: realmTester,
       });
-      const {context, program} = await startTest({
+      const {testContext, program} = await startTest({
         splGovernanceId: rootTester.splGovernanceId,
         accounts: [
           ...(await realmTester.accounts()),
@@ -76,12 +76,12 @@ describe('create_clan instruction', () => {
           voterWeightRecord,
         })
         .transaction();
-      tx.recentBlockhash = context.lastBlockhash;
-      tx.feePayer = context.payer.publicKey;
-      tx.sign(context.payer, clan.address);
+      tx.recentBlockhash = testContext.lastBlockhash;
+      tx.feePayer = testContext.payer.publicKey;
+      tx.sign(testContext.payer, clan.address);
 
       expect(
-        context.banksClient
+        testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
       ).resolves.toStrictEqual([
@@ -113,7 +113,7 @@ describe('create_clan instruction', () => {
         },
         activeMembers: resizeBN(new BN(0)),
         leavingMembers: resizeBN(new BN(0)),
-        potentialVotingWeight: resizeBN(new BN(0)),
+        potentialVoterWeight: resizeBN(new BN(0)),
         name: '',
         description: '',
       });

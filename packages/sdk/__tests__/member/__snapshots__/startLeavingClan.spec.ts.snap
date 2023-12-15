@@ -1,0 +1,161 @@
+// Bun Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`start_leaving_clan instruction Works 1`] = `
+TransactionInstruction {
+  "data": {
+    "data": [
+      212,
+      61,
+      240,
+      171,
+      150,
+      39,
+      208,
+      37,
+    ],
+    "type": "Buffer",
+  },
+  "keys": [
+    {
+      "isSigner": false,
+      "isWritable": true,
+      "pubkey": PublicKey(BgFeLQgzgkbY77wjS4xuv5Hpd1jCP5FS1qhLQAX1mTWH) PublicKey {
+        "_bn": BN {
+          "length": 10,
+          "negative": 0,
+          "red": null,
+          "words": [
+            61956266,
+            10027135,
+            14796948,
+            19005801,
+            36567953,
+            3063363,
+            59521382,
+            48513037,
+            1620828,
+            2599109,
+            0,
+          ],
+        },
+      },
+    },
+    {
+      "isSigner": false,
+      "isWritable": true,
+      "pubkey": PublicKey(4G4wcigQWN98PhYePHWdwHtoBEGmhQytoRfJwgeQYY8E) PublicKey {
+        "_bn": BN {
+          "length": 10,
+          "negative": 0,
+          "red": null,
+          "words": [
+            2902055,
+            21450384,
+            60772497,
+            12728567,
+            44068562,
+            56665588,
+            66647789,
+            17087946,
+            47269288,
+            793550,
+            0,
+          ],
+        },
+      },
+    },
+    {
+      "isSigner": false,
+      "isWritable": false,
+      "pubkey": PublicKey(8YLCXi64yRzhGZCKShsSRewgURAc2kmj1cRnruUsb1aE) PublicKey {
+        "_bn": BN {
+          "length": 10,
+          "negative": 0,
+          "red": null,
+          "words": [
+            21997143,
+            47068774,
+            1877581,
+            13936119,
+            42601250,
+            65971470,
+            27077592,
+            44181268,
+            26090815,
+            1835553,
+            0,
+          ],
+        },
+      },
+    },
+    {
+      "isSigner": false,
+      "isWritable": true,
+      "pubkey": PublicKey(7rbsNEohiWgLoZcw7rTmQT2Da7nRFNhSNy39xEcVf9dV) PublicKey {
+        "_bn": BN {
+          "length": 10,
+          "negative": 0,
+          "red": null,
+          "words": [
+            3890356,
+            957495,
+            43876896,
+            48575244,
+            18436342,
+            1019061,
+            18208713,
+            62137765,
+            30100578,
+            1668800,
+            0,
+          ],
+        },
+      },
+    },
+    {
+      "isSigner": true,
+      "isWritable": false,
+      "pubkey": PublicKey(8P6pvbVLaj6e7R5bX8MJoeyKLCnkdSBjCp4yvYhWnXbM) PublicKey {
+        "_bn": BN {
+          "length": 10,
+          "negative": 0,
+          "red": null,
+          "words": [
+            43781912,
+            28951662,
+            15562332,
+            66661575,
+            35447426,
+            49858796,
+            44273822,
+            43153491,
+            9453743,
+            1796811,
+            0,
+          ],
+        },
+      },
+    },
+  ],
+  "programId": PublicKey(VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT) PublicKey {
+    "_bn": BN {
+      "length": 10,
+      "negative": 0,
+      "red": null,
+      "words": [
+        8873870,
+        60943108,
+        23935113,
+        33099803,
+        59555925,
+        65803128,
+        11262563,
+        66819466,
+        50754419,
+        120882,
+        0,
+      ],
+    },
+  },
+}
+`;

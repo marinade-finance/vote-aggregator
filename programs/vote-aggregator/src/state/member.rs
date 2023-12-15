@@ -23,4 +23,6 @@ pub struct Member {
 impl Member {
     pub const SPACE: usize = 8 + std::mem::size_of::<Self>();
     pub const ADDRESS_SEED: &'static [u8] = b"member";
+    pub const NO_CLAN: Pubkey = Pubkey::new_from_array([0u8; 32]); // same as Pubkey::default()
+    pub const NOT_LEAVING_CLAN: i64 = i64::MAX;
 }

@@ -21,7 +21,7 @@ describe('create_member instruction', () => {
         ...root,
         realm: realmTester,
       });
-      const {context, program} = await startTest({
+      const {testContext, program} = await startTest({
         splGovernanceId: rootTester.splGovernanceId,
         accounts: [
           ...(await realmTester.accounts()),
@@ -65,12 +65,12 @@ describe('create_member instruction', () => {
           owner: member.owner.publicKey,
         })
         .transaction();
-      tx.recentBlockhash = context.lastBlockhash;
-      tx.feePayer = context.payer.publicKey;
-      tx.sign(context.payer, member.owner);
+      tx.recentBlockhash = testContext.lastBlockhash;
+      tx.feePayer = testContext.payer.publicKey;
+      tx.sign(testContext.payer, member.owner);
 
       expect(
-        context.banksClient
+        testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
       ).resolves.toStrictEqual([
@@ -97,7 +97,7 @@ describe('create_member instruction', () => {
           tokenOwnerRecord: tokenOwnerRecordBump,
         },
         clan: PublicKey.default,
-        clanLeavingTime: new BN(0),
+        clanLeavingTime: new BN('9223372036854775807'), // i64::MAX
         voterWeight: resizeBN(new BN(0)),
         voterWeightExpiry: null,
       });

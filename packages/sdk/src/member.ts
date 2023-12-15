@@ -240,4 +240,20 @@ export class MemberSdk {
       })
       .instruction();
   }
+
+  async leaveClanInstruction({member}: {member: MemberAccount}) {
+    const [memberAddress] = this.memberAddress({
+      rootAddress: member.root,
+      owner: member.owner,
+    });
+    return await this.sdk.program.methods
+      .leaveClan()
+      .accountsStrict({
+        root: member.root,
+        member: memberAddress,
+        clan: member.clan,
+        memberAuthority: member.owner, // TODO delegate
+      })
+      .instruction();
+  }
 }

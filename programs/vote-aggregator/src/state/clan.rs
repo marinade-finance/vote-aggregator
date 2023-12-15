@@ -20,7 +20,7 @@ pub struct Clan {
     pub bumps: ClanBumps,
     pub active_members: u64,
     pub leaving_members: u64,
-    pub potential_voting_weight: u64, // Including leaving members
+    pub potential_voter_weight: u64, // Including leaving and outdated members
     pub name: String,
     pub description: String,
 }

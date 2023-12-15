@@ -60,7 +60,7 @@ export class MemberTester {
     delegate,
     root,
     clan,
-    clanLeavingTime = new BN(0),
+    clanLeavingTime = new BN('9223372036854775807'), // i64::MAX
     voterWeight = new BN(0),
     voterWeightExpiry = null,
     governingTokenDepositAmount = new BN(0),

@@ -32,4 +32,8 @@ pub mod vote_aggregator {
     pub fn start_leaving_clan(ctx: Context<StartLeavingClan>) -> Result<()> {
         ctx.accounts.process()
     }
+
+    pub fn leave_clan(ctx: Context<LeaveClan>) -> Result<()> {
+        ctx.accounts.process()
+    }
 }
