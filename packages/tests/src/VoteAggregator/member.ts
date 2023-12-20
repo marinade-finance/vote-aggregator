@@ -16,6 +16,7 @@ export type MemberTestData = {
   delegate?: PublicKey | Keypair;
   clan?: PublicKey;
   clanLeavingTime?: BN;
+  voterWeightRecord?: PublicKey;
   voterWeight?: BN;
   voterWeightExpiry?: BN | null;
   governingTokenDepositAmount?: BN;
@@ -61,6 +62,7 @@ export class MemberTester {
     root,
     clan,
     clanLeavingTime = new BN('9223372036854775807'), // i64::MAX
+    voterWeightRecord = PublicKey.default,
     voterWeight = new BN(0),
     voterWeightExpiry = null,
     governingTokenDepositAmount = new BN(0),
@@ -111,6 +113,7 @@ export class MemberTester {
       voterWeight: resizeBN(voterWeight),
       voterWeightExpiry: voterWeightExpiry && resizeBN(voterWeightExpiry),
       tokenOwnerRecord,
+      voterWeightRecord,
       bumps: {
         address: addressBump,
         tokenOwnerRecord: tokenOwnerRecordBump,

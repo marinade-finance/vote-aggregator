@@ -115,6 +115,7 @@ describe('join_clan instruction', () => {
       ).resolves.toStrictEqual({
         ...memberTester.member,
         clan: clanTester.clanAddress,
+        voterWeightRecord: memberVoterWeight.address,
         voterWeight: resizeBN(memberVoterWeight.voterWeight),
         voterWeightExpiry:
           (memberVoterWeight.voterWeightExpiry &&

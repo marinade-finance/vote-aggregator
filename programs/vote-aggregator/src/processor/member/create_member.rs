@@ -65,6 +65,7 @@ impl<'info> CreateMember<'info> {
             clan: Member::NO_CLAN,
             clan_leaving_time: Member::NOT_LEAVING_CLAN,
             token_owner_record: self.token_owner_record.key(),
+            voter_weight_record: Pubkey::default(),
             voter_weight: 0,
             voter_weight_expiry: None,
             bumps: MemberBumps {

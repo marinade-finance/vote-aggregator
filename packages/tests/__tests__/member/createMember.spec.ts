@@ -98,6 +98,7 @@ describe('create_member instruction', () => {
         },
         clan: PublicKey.default,
         clanLeavingTime: new BN('9223372036854775807'), // i64::MAX
+        voterWeightRecord: PublicKey.default,
         voterWeight: resizeBN(new BN(0)),
         voterWeightExpiry: null,
       });

@@ -112,6 +112,7 @@ impl<'info> JoinClan<'info> {
         let old_clan_voter_weight = self.clan_voter_weight_record.voter_weight;
         let old_max_voter_weight = self.max_voter_weight_record.max_voter_weight;
         self.max_voter_weight_record.max_voter_weight -= old_member_voter_weight;
+        self.member.voter_weight_record = self.member_voter_weight_record.key();
         self.member.voter_weight = vwr.voter_weight;
         self.max_voter_weight_record.max_voter_weight += self.member.voter_weight;
         // TODO: check expiry
