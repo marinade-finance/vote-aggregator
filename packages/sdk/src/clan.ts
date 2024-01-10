@@ -129,4 +129,37 @@ export class ClanSdk {
       })
       .instruction();
   }
+
+  async setVotingDelegateInstruction({
+    rootAddress,
+    root,
+    clanAddress,
+    clanAuthority,
+    newVotingDelegate,
+  }: {
+    rootAddress: PublicKey;
+    root: RootAccount;
+    clanAddress: PublicKey;
+    clanAuthority: PublicKey;
+    newVotingDelegate: PublicKey | null;
+  }) {
+    const [voterAuthority] = this.voterAuthority({clanAddress});
+    const [tokenOwnerRecord] = this.tokenOwnerRecordAddress({
+      realmAddress: root.realm,
+      governingTokenMint: root.governingTokenMint,
+      clanAddress,
+      splGovernanceId: root.governanceProgram,
+    });
+    return await this.sdk.program.methods
+      .setVotingDelegate(newVotingDelegate || PublicKey.default)
+      .accountsStrict({
+        root: rootAddress,
+        clan: clanAddress,
+        governanceProgram: root.governanceProgram,
+        voterAuthority,
+        tokenOwnerRecord,
+        clanAuthority,
+      })
+      .instruction();
+  }
 }

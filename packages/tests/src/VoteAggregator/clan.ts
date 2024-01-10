@@ -102,7 +102,7 @@ export class ClanTester {
           Buffer.from('governance', 'utf-8'),
           root.realm.realmAddress.toBuffer(),
           root.governingTokenMint.toBuffer(),
-          owner.toBuffer(),
+          voterAuthority.toBuffer(),
         ],
         root.splGovernanceId
       );
@@ -204,16 +204,18 @@ export class ClanTester {
     }
 
     {
-      const torData =
+      let torData =
         await splGovernance.coder.accounts.encode<TokenOwnerRecordAccount>(
           'tokenOwnerRecordV2',
           this.tokenOwnerRecord
         );
+      // append 64 zeroes to the torData: Buffer
+      torData = Buffer.concat([torData, Buffer.alloc(64)]);
       accounts.push({
         address: this.tokenOwnerRecordAddress[0],
         info: {
           executable: false,
-          owner: this.root.voteAggregatorId,
+          owner: this.root.splGovernanceId,
           lamports: getMinimumBalanceForRentExemption(torData.length),
           data: torData,
         },

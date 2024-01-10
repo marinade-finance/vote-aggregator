@@ -31,3 +31,10 @@ pub struct ClanMemberLeft {
     pub root: Pubkey,
     pub owner: Pubkey,
 }
+
+#[event]
+pub struct ClanVotingDelegateChanged {
+    pub clan: Pubkey,
+    pub new_voting_delegate: Option<Pubkey>,
+    pub old_voting_delegate: Option<Pubkey>,
+}

@@ -13,7 +13,9 @@ declare_id!("VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT");
 pub mod vote_aggregator {
     use super::*;
 
-    pub fn create_root<'a, 'b, 'c, 'info>(ctx: Context<'a, 'b, 'c, 'info, CreateRoot<'info>>) -> Result<()> {
+    pub fn create_root<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, CreateRoot<'info>>,
+    ) -> Result<()> {
         ctx.accounts.process(ctx.remaining_accounts, ctx.bumps)
     }
 
@@ -35,5 +37,12 @@ pub mod vote_aggregator {
 
     pub fn leave_clan(ctx: Context<LeaveClan>) -> Result<()> {
         ctx.accounts.process()
+    }
+
+    pub fn set_voting_delegate(
+        ctx: Context<SetVotingDelegate>,
+        new_voting_delegate: Pubkey,
+    ) -> Result<()> {
+        ctx.accounts.process(new_voting_delegate)
     }
 }
