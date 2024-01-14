@@ -43,7 +43,7 @@ exports[`create_root instruction Works for community side 1`] = `
       },
       {
         "isSigner": false,
-        "isWritable": true,
+        "isWritable": false,
         "pubkey": PublicKey(BvQys4bSSzv8HnTUse17x6sm67qbQ5u7xj2BiCkQZc4d) PublicKey {
           "_bn": BN {
             "length": 10,
@@ -67,7 +67,7 @@ exports[`create_root instruction Works for community side 1`] = `
       },
       {
         "isSigner": false,
-        "isWritable": true,
+        "isWritable": false,
         "pubkey": PublicKey(ETSoAX2JebkucZHW5Vg8JRBRoqptp8vTUMjw3G9fKYSg) PublicKey {
           "_bn": BN {
             "length": 10,
@@ -523,7 +523,7 @@ exports[`create_root instruction Works for community side 2`] = `
       },
       {
         "isSigner": false,
-        "isWritable": true,
+        "isWritable": false,
         "pubkey": PublicKey(HaP8jMNA5tyyZo4WUybWzw2JDm26ks1tM8hzdtFgQ9j4) PublicKey {
           "_bn": BN {
             "length": 10,
@@ -547,7 +547,7 @@ exports[`create_root instruction Works for community side 2`] = `
       },
       {
         "isSigner": false,
-        "isWritable": true,
+        "isWritable": false,
         "pubkey": PublicKey(7xi6tNMR7mjVUoT96BAC5RRgGGtsV7ot5PtE5ogCu1yS) PublicKey {
           "_bn": BN {
             "length": 10,
@@ -1027,7 +1027,7 @@ exports[`create_root instruction Works for community side 3`] = `
       },
       {
         "isSigner": false,
-        "isWritable": true,
+        "isWritable": false,
         "pubkey": PublicKey(BgdaaVW8xi3stnmSQxDgbUSrKETHehgKdZnDLf25nqoc) PublicKey {
           "_bn": BN {
             "length": 10,
@@ -1051,7 +1051,7 @@ exports[`create_root instruction Works for community side 3`] = `
       },
       {
         "isSigner": false,
-        "isWritable": true,
+        "isWritable": false,
         "pubkey": PublicKey(Azrzh6gfwi2ixMmDH4Xqo7NBwpgUfcxZdm7Kw1iMxt81) PublicKey {
           "_bn": BN {
             "length": 10,
@@ -1555,7 +1555,7 @@ exports[`create_root instruction Works for community side 4`] = `
       },
       {
         "isSigner": false,
-        "isWritable": true,
+        "isWritable": false,
         "pubkey": PublicKey(9a5LFeRuT5mSvFw5pNQFCaXLJb4HE83JBxY9s2BnAiiZ) PublicKey {
           "_bn": BN {
             "length": 10,
@@ -1579,7 +1579,7 @@ exports[`create_root instruction Works for community side 4`] = `
       },
       {
         "isSigner": false,
-        "isWritable": true,
+        "isWritable": false,
         "pubkey": PublicKey(HKcHwT4Vf6qHc5xBNSWcNwJ7iQNMYbUWbGSgv4qDwz98) PublicKey {
           "_bn": BN {
             "length": 10,
@@ -2155,7 +2155,7 @@ exports[`create_root instruction Works for council side 1`] = `
       },
       {
         "isSigner": false,
-        "isWritable": true,
+        "isWritable": false,
         "pubkey": PublicKey(BgdaaVW8xi3stnmSQxDgbUSrKETHehgKdZnDLf25nqoc) PublicKey {
           "_bn": BN {
             "length": 10,
@@ -2179,7 +2179,7 @@ exports[`create_root instruction Works for council side 1`] = `
       },
       {
         "isSigner": false,
-        "isWritable": true,
+        "isWritable": false,
         "pubkey": PublicKey(Azrzh6gfwi2ixMmDH4Xqo7NBwpgUfcxZdm7Kw1iMxt81) PublicKey {
           "_bn": BN {
             "length": 10,
@@ -2683,7 +2683,7 @@ exports[`create_root instruction Works for council side 2`] = `
       },
       {
         "isSigner": false,
-        "isWritable": true,
+        "isWritable": false,
         "pubkey": PublicKey(9a5LFeRuT5mSvFw5pNQFCaXLJb4HE83JBxY9s2BnAiiZ) PublicKey {
           "_bn": BN {
             "length": 10,
@@ -2707,7 +2707,7 @@ exports[`create_root instruction Works for council side 2`] = `
       },
       {
         "isSigner": false,
-        "isWritable": true,
+        "isWritable": false,
         "pubkey": PublicKey(HKcHwT4Vf6qHc5xBNSWcNwJ7iQNMYbUWbGSgv4qDwz98) PublicKey {
           "_bn": BN {
             "length": 10,

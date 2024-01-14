@@ -30,13 +30,11 @@ pub struct CreateRoot<'info> {
 
     /// CHECK: An spl-governance realm (dynamic owner ID)
     #[account(
-        mut,
         owner = governance_program.key(),
     )]
     realm: UncheckedAccount<'info>,
     /// CHECK: dynamic owner
     #[account(
-        mut,
         owner = governance_program.key(),
         seeds = [
             b"realm-config",
