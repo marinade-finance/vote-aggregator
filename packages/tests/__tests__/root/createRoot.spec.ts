@@ -1,6 +1,6 @@
 import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
-import {AccountMeta, Keypair, SystemProgram} from '@solana/web3.js';
+import {Keypair, SystemProgram} from '@solana/web3.js';
 import {PublicKey} from '@solana/web3.js';
 import {buildSplGovernanceProgram} from '../../src/splGovernance';
 import {
@@ -11,6 +11,12 @@ import {
   createRootTestData,
 } from '../../src';
 import {BN} from '@coral-xyz/anchor';
+import {
+  GoverningTokenType,
+  MintMaxVoteWeightSource,
+  MintMaxVoteWeightSourceType,
+  createSetRealmConfig,
+} from '@solana/spl-governance';
 
 describe('create_root instruction', () => {
   it.each(createRootTestData.filter(({error}) => !error))(
@@ -38,58 +44,45 @@ describe('create_root instruction', () => {
           [Buffer.from('max-voter-weight', 'utf-8'), rootAddress.toBuffer()],
           program.programId
         );
-      const extraAccounts: AccountMeta[] = [
-        {
-          pubkey: realmTester.realm.communityMint,
-          isWritable: true,
-          isSigner: false,
-        },
-        {
-          pubkey: await realmTester.communityTokenHoldings(),
-          isWritable: true,
-          isSigner: false,
-        },
-      ];
-      if (realmTester.realm.config.councilMint) {
-        extraAccounts.push({
-          pubkey: realmTester.realm.config.councilMint!,
-          isWritable: true,
-          isSigner: false,
-        });
-        extraAccounts.push({
-          pubkey: (await realmTester.councilTokenHoldings())!,
-          isWritable: true,
-          isSigner: false,
-        });
-      }
-      if (realmTester.config.communityTokenConfig.voterWeightAddin) {
-        extraAccounts.push({
-          pubkey: realmTester.config.communityTokenConfig.voterWeightAddin,
-          isWritable: false,
-          isSigner: false,
-        });
-      }
-      if (realmTester.config.communityTokenConfig.maxVoterWeightAddin) {
-        extraAccounts.push({
-          pubkey: realmTester.config.communityTokenConfig.maxVoterWeightAddin,
-          isWritable: false,
-          isSigner: false,
-        });
-      }
-      if (realmTester.config.councilTokenConfig.voterWeightAddin) {
-        extraAccounts.push({
-          pubkey: realmTester.config.councilTokenConfig.voterWeightAddin,
-          isWritable: false,
-          isSigner: false,
-        });
-      }
-      if (realmTester.config.councilTokenConfig.maxVoterWeightAddin) {
-        extraAccounts.push({
-          pubkey: realmTester.config.councilTokenConfig.maxVoterWeightAddin,
-          isWritable: false,
-          isSigner: false,
-        });
-      }
+
+      const communityTokenConfigArgs = {
+        voterWeightAddin: new PublicKey(
+          'VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT'
+        ),
+        maxVoterWeightAddin:
+          realmTester.config.communityTokenConfig.maxVoterWeightAddin ||
+          undefined,
+        tokenType: realmTester.config.communityTokenConfig.tokenType.liquid
+          ? GoverningTokenType.Liquid
+          : realmTester.config.communityTokenConfig.tokenType.membership
+          ? GoverningTokenType.Membership
+          : GoverningTokenType.Dormant,
+        useVoterWeightAddin: Boolean(
+          realmTester.config.communityTokenConfig.voterWeightAddin
+        ),
+        useMaxVoterWeightAddin: Boolean(
+          realmTester.config.communityTokenConfig.maxVoterWeightAddin
+        ),
+      };
+      const councilTokenConfigArgs = realmTester.realm.config.councilMint
+        ? {
+            voterWeightAddin:
+              realmTester.config.councilTokenConfig.voterWeightAddin ||
+              undefined,
+            maxVoterWeightAddin:
+              realmTester.config.councilTokenConfig.maxVoterWeightAddin ||
+              undefined,
+            tokenType: realmTester.config.councilTokenConfig.tokenType.liquid
+              ? GoverningTokenType.Liquid
+              : realmTester.config.councilTokenConfig.tokenType.membership
+              ? GoverningTokenType.Membership
+              : GoverningTokenType.Dormant,
+            useVoterWeightAddin: true,
+            useMaxVoterWeightAddin: Boolean(
+              realmTester.config.councilTokenConfig.maxVoterWeightAddin
+            ),
+          }
+        : undefined;
 
       const tx = await program.methods
         .createRoot()
@@ -105,7 +98,29 @@ describe('create_root instruction', () => {
           systemProgram: SystemProgram.programId,
           voteAggregatorProgram: program.programId,
         })
-        .remainingAccounts(extraAccounts)
+        .postInstructions([
+          await createSetRealmConfig(
+            realmTester.splGovernanceId,
+            3,
+            realmTester.realmAddress,
+            realmTester.realm.authority!,
+            realmTester.realm.config.councilMint || undefined,
+            new MintMaxVoteWeightSource({
+              type: realmTester.realm.config.communityMintMaxVoterWeightSource
+                .absolute
+                ? MintMaxVoteWeightSourceType.Absolute
+                : MintMaxVoteWeightSourceType.SupplyFraction,
+              value: (realmTester.realm.config.communityMintMaxVoterWeightSource
+                .absolute ||
+                realmTester.realm.config.communityMintMaxVoterWeightSource
+                  .supplyFraction) as unknown as BN,
+            }),
+            realmTester.realm.config.minCommunityWeightToCreateGovernance,
+            communityTokenConfigArgs,
+            councilTokenConfigArgs,
+            program.provider.publicKey!
+          ),
+        ])
         .transaction();
       tx.recentBlockhash = testContext.lastBlockhash;
       tx.feePayer = testContext.payer.publicKey;
@@ -197,58 +212,40 @@ describe('create_root instruction', () => {
         program.programId
       );
 
-    const extraAccounts: AccountMeta[] = [
-      {
-        pubkey: realmTester.realm.communityMint,
-        isWritable: true,
-        isSigner: false,
-      },
-      {
-        pubkey: await realmTester.communityTokenHoldings(),
-        isWritable: true,
-        isSigner: false,
-      },
-    ];
-    if (realmTester.realm.config.councilMint) {
-      extraAccounts.push({
-        pubkey: realmTester.realm.config.councilMint!,
-        isWritable: true,
-        isSigner: false,
-      });
-      extraAccounts.push({
-        pubkey: (await realmTester.councilTokenHoldings())!,
-        isWritable: true,
-        isSigner: false,
-      });
-    }
-    if (realmTester.config.communityTokenConfig.voterWeightAddin) {
-      extraAccounts.push({
-        pubkey: realmTester.config.communityTokenConfig.voterWeightAddin,
-        isWritable: false,
-        isSigner: false,
-      });
-    }
-    if (realmTester.config.communityTokenConfig.maxVoterWeightAddin) {
-      extraAccounts.push({
-        pubkey: realmTester.config.communityTokenConfig.maxVoterWeightAddin,
-        isWritable: false,
-        isSigner: false,
-      });
-    }
-    if (realmTester.config.councilTokenConfig.voterWeightAddin) {
-      extraAccounts.push({
-        pubkey: realmTester.config.councilTokenConfig.voterWeightAddin,
-        isWritable: false,
-        isSigner: false,
-      });
-    }
-    if (realmTester.config.councilTokenConfig.maxVoterWeightAddin) {
-      extraAccounts.push({
-        pubkey: realmTester.config.councilTokenConfig.maxVoterWeightAddin,
-        isWritable: false,
-        isSigner: false,
-      });
-    }
+    const communityTokenConfigArgs = {
+      voterWeightAddin:
+        realmTester.config.communityTokenConfig.voterWeightAddin || undefined,
+      maxVoterWeightAddin:
+        realmTester.config.communityTokenConfig.maxVoterWeightAddin ||
+        undefined,
+      tokenType: realmTester.config.communityTokenConfig.tokenType.liquid
+        ? GoverningTokenType.Liquid
+        : realmTester.config.communityTokenConfig.tokenType.membership
+        ? GoverningTokenType.Membership
+        : GoverningTokenType.Dormant,
+      useVoterWeightAddin: Boolean(
+        realmTester.config.communityTokenConfig.voterWeightAddin
+      ),
+      useMaxVoterWeightAddin: Boolean(
+        realmTester.config.communityTokenConfig.maxVoterWeightAddin
+      ),
+    };
+    const councilTokenConfigArgs = {
+      voterWeightAddin: new PublicKey(
+        'VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT'
+      ),
+      maxVoterWeightAddin:
+        realmTester.config.councilTokenConfig.maxVoterWeightAddin || undefined,
+      tokenType: realmTester.config.councilTokenConfig.tokenType.liquid
+        ? GoverningTokenType.Liquid
+        : realmTester.config.councilTokenConfig.tokenType.membership
+        ? GoverningTokenType.Membership
+        : GoverningTokenType.Dormant,
+      useVoterWeightAddin: true,
+      useMaxVoterWeightAddin: Boolean(
+        realmTester.config.councilTokenConfig.maxVoterWeightAddin
+      ),
+    };
 
     const tx = await program.methods
       .createRoot()
@@ -264,7 +261,29 @@ describe('create_root instruction', () => {
         systemProgram: SystemProgram.programId,
         voteAggregatorProgram: program.programId,
       })
-      .remainingAccounts(extraAccounts)
+      .postInstructions([
+        await createSetRealmConfig(
+          realmTester.splGovernanceId,
+          3,
+          realmTester.realmAddress,
+          realmTester.realm.authority!,
+          realmTester.realm.config.councilMint!,
+          new MintMaxVoteWeightSource({
+            type: realmTester.realm.config.communityMintMaxVoterWeightSource
+              .absolute
+              ? MintMaxVoteWeightSourceType.Absolute
+              : MintMaxVoteWeightSourceType.SupplyFraction,
+            value: (realmTester.realm.config.communityMintMaxVoterWeightSource
+              .absolute ||
+              realmTester.realm.config.communityMintMaxVoterWeightSource
+                .supplyFraction) as unknown as BN,
+          }),
+          realmTester.realm.config.minCommunityWeightToCreateGovernance,
+          communityTokenConfigArgs,
+          councilTokenConfigArgs,
+          program.provider.publicKey!
+        ),
+      ])
       .transaction();
     tx.recentBlockhash = testContext.lastBlockhash;
     tx.feePayer = testContext.payer.publicKey;

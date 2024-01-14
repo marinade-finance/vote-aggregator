@@ -58,4 +58,5 @@ pub enum Error {
     VoterWeightExpiryIsNotImplemented,
     UnexpectedWeightAction,
     UnexpectedWeightActionTarget,
+    NextInstructionMustBeSetRealmConfig,
 }

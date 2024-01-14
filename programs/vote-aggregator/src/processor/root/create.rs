@@ -1,15 +1,6 @@
-use anchor_lang::{
-    prelude::*,
-    solana_program::{program::invoke, system_program},
-};
+use anchor_lang::{prelude::*, solana_program::system_program};
 use anchor_spl::token::Mint;
-use spl_governance::{
-    instruction::set_realm_config,
-    state::{
-        realm::{self, GoverningTokenConfigAccountArgs},
-        realm_config::get_realm_config_data_for_realm,
-    },
-};
+use spl_governance::state::{realm, realm_config::get_realm_config_data_for_realm};
 
 use crate::{
     error::Error,
@@ -86,11 +77,7 @@ pub struct CreateRoot<'info> {
 }
 
 impl<'info> CreateRoot<'info> {
-    pub fn process(
-        &mut self,
-        remaining_accounts: &[AccountInfo<'info>],
-        bumps: CreateRootBumps,
-    ) -> Result<()> {
+    pub fn process(&mut self, bumps: CreateRootBumps) -> Result<()> {
         // Verify that "realm_authority" is the expected authority on "realm"
         // and that the mint matches one of the realm mints too.
         let realm = realm::get_realm_data_for_governing_token_mint(
@@ -121,83 +108,11 @@ impl<'info> CreateRoot<'info> {
             Error::WrongRealmAuthority
         );
 
-        let (voting_weight_plugin, community_token_config_args, council_token_config_args) =
-            if self.governing_token_mint.key() == realm.community_mint {
-                (
-                    realm_config.community_token_config.voter_weight_addin,
-                    GoverningTokenConfigAccountArgs {
-                        voter_weight_addin: Some(crate::ID),
-                        max_voter_weight_addin: realm_config
-                            .community_token_config
-                            .max_voter_weight_addin,
-                        token_type: realm_config.community_token_config.token_type,
-                    },
-                    GoverningTokenConfigAccountArgs {
-                        voter_weight_addin: realm_config.council_token_config.voter_weight_addin,
-                        max_voter_weight_addin: realm_config
-                            .council_token_config
-                            .max_voter_weight_addin,
-                        token_type: realm_config.council_token_config.token_type,
-                    },
-                )
-            } else {
-                require_keys_eq!(
-                    self.governing_token_mint.key(),
-                    realm
-                        .config
-                        .council_mint
-                        .ok_or(error!(Error::UnknownGoverningTokenMint))?,
-                    Error::UnknownGoverningTokenMint
-                );
-                (
-                    realm_config.council_token_config.voter_weight_addin,
-                    GoverningTokenConfigAccountArgs {
-                        voter_weight_addin: realm_config.community_token_config.voter_weight_addin,
-                        max_voter_weight_addin: realm_config
-                            .community_token_config
-                            .max_voter_weight_addin,
-                        token_type: realm_config.community_token_config.token_type,
-                    },
-                    GoverningTokenConfigAccountArgs {
-                        voter_weight_addin: Some(crate::ID),
-                        max_voter_weight_addin: realm_config
-                            .council_token_config
-                            .max_voter_weight_addin,
-                        token_type: realm_config.council_token_config.token_type,
-                    },
-                )
-            };
-        if let Some(voting_weight_plugin) = voting_weight_plugin {
-            require_keys_neq!(voting_weight_plugin, crate::ID, Error::CircularPluginChain);
-        }
-
-        let ix = set_realm_config(
-            self.governance_program.key,
-            self.realm.key,
-            self.realm_authority.key,
-            realm.config.council_mint,
-            self.payer.key,
-            Some(community_token_config_args),
-            Some(council_token_config_args),
-            realm.config.min_community_weight_to_create_governance,
-            realm.config.community_mint_max_voter_weight_source,
-        );
-
-        let accounts = [
-            &[
-                self.governance_program.to_account_info(),
-                self.realm_config.to_account_info(),
-                self.governing_token_mint.to_account_info(),
-                self.realm.to_account_info(),
-                self.realm_authority.to_account_info(),
-                self.payer.to_account_info(),
-                self.vote_aggregator_program.to_account_info(),
-            ],
-            remaining_accounts,
-        ]
-        .concat();
-
-        invoke(&ix, &accounts)?;
+        let voting_weight_plugin = if self.governing_token_mint.key() == realm.community_mint {
+            realm_config.community_token_config.voter_weight_addin
+        } else {
+            realm_config.council_token_config.voter_weight_addin
+        };
 
         self.root.set_inner(Root {
             governance_program: self.governance_program.key(),

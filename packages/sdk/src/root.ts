@@ -1,5 +1,4 @@
 import {
-  AccountMeta,
   PublicKey,
   SystemProgram,
   TransactionInstruction,
@@ -8,10 +7,10 @@ import {RealmSide, VoteAggregatorSdk} from './sdk';
 import {
   Realm,
   RealmConfigAccount,
+  createSetRealmConfig,
   getRealm,
   getRealmConfig,
   getRealmConfigAddress,
-  getTokenHoldingAddress,
 } from '@solana/spl-governance';
 import {IdlAccounts} from '@coral-xyz/anchor';
 import {VoteAggregator} from './vote_aggregator';
@@ -73,7 +72,7 @@ export class RootSdk {
     );
   }
 
-  async createRootInstruction({
+  async createRootInstructions({
     splGovernanceId,
     realmAddress,
     realmData,
@@ -87,7 +86,7 @@ export class RootSdk {
     realmConfigData?: RealmConfigAccount;
     side: RealmSide;
     payer: PublicKey;
-  }): Promise<TransactionInstruction> {
+  }): Promise<TransactionInstruction[]> {
     if (!realmData) {
       const {account, owner} = await getRealm(
         this.sdk.connection,
@@ -123,68 +122,7 @@ export class RootSdk {
     const [rootAddress] = this.rootAddress({realmAddress, governingTokenMint});
     const [maxVoterWeightAddress] = this.maxVoterWieghtAddress({rootAddress});
 
-    const extraAccounts: AccountMeta[] = [
-      {
-        pubkey: realmData.communityMint,
-        isWritable: true,
-        isSigner: false,
-      },
-      {
-        pubkey: await getTokenHoldingAddress(
-          splGovernanceId,
-          realmAddress,
-          realmData.communityMint
-        ),
-        isWritable: true,
-        isSigner: false,
-      },
-    ];
-    if (realmData.config.councilMint) {
-      extraAccounts.push({
-        pubkey: realmData.config.councilMint!,
-        isWritable: true,
-        isSigner: false,
-      });
-      extraAccounts.push({
-        pubkey: await getTokenHoldingAddress(
-          splGovernanceId,
-          realmAddress,
-          realmData.config.councilMint
-        ),
-        isWritable: true,
-        isSigner: false,
-      });
-    }
-    if (realmConfigData.communityTokenConfig.voterWeightAddin) {
-      extraAccounts.push({
-        pubkey: realmConfigData.communityTokenConfig.voterWeightAddin,
-        isWritable: false,
-        isSigner: false,
-      });
-    }
-    if (realmConfigData.communityTokenConfig.maxVoterWeightAddin) {
-      extraAccounts.push({
-        pubkey: realmConfigData.communityTokenConfig.maxVoterWeightAddin,
-        isWritable: false,
-        isSigner: false,
-      });
-    }
-    if (realmConfigData.councilTokenConfig.voterWeightAddin) {
-      extraAccounts.push({
-        pubkey: realmConfigData.councilTokenConfig.voterWeightAddin,
-        isWritable: false,
-        isSigner: false,
-      });
-    }
-    if (realmConfigData.councilTokenConfig.maxVoterWeightAddin) {
-      extraAccounts.push({
-        pubkey: realmConfigData.councilTokenConfig.maxVoterWeightAddin,
-        isWritable: false,
-        isSigner: false,
-      });
-    }
-
-    return await this.sdk.program.methods
+    const createRootIx = await this.sdk.program.methods
       .createRoot()
       .accountsStrict({
         root: rootAddress,
@@ -198,7 +136,53 @@ export class RootSdk {
         systemProgram: SystemProgram.programId,
         voteAggregatorProgram: this.sdk.program.programId,
       })
-      .remainingAccounts(extraAccounts)
       .instruction();
+
+    const communityTokenConfigArgs = {
+      voterWeightAddin:
+        side === 'community'
+          ? this.sdk.program.programId
+          : realmConfigData.communityTokenConfig.voterWeightAddin,
+      maxVoterWeightAddin:
+        realmConfigData.communityTokenConfig.maxVoterWeightAddin,
+      tokenType: realmConfigData.communityTokenConfig.tokenType,
+      useVoterWeightAddin:
+        side === 'community' ||
+        Boolean(realmConfigData.communityTokenConfig.voterWeightAddin),
+      useMaxVoterWeightAddin: Boolean(
+        realmConfigData.communityTokenConfig.maxVoterWeightAddin
+      ),
+    };
+    const councilTokenConfigArgs = realmData.config.councilMint
+      ? {
+          voterWeightAddin:
+            side === 'council'
+              ? this.sdk.program.programId
+              : realmConfigData.councilTokenConfig.voterWeightAddin,
+          maxVoterWeightAddin:
+            realmConfigData.councilTokenConfig.maxVoterWeightAddin,
+          tokenType: realmConfigData.councilTokenConfig.tokenType,
+          useVoterWeightAddin:
+            side === 'council' ||
+            Boolean(realmConfigData.councilTokenConfig.voterWeightAddin),
+          useMaxVoterWeightAddin: Boolean(
+            realmConfigData.councilTokenConfig.maxVoterWeightAddin
+          ),
+        }
+      : undefined;
+
+    const setRealmConfigIx = await createSetRealmConfig(
+      splGovernanceId,
+      3,
+      realmAddress,
+      realmData.authority!,
+      realmData.config.councilMint || undefined,
+      realmData.config.communityMintMaxVoteWeightSource,
+      realmData.config.minCommunityTokensToCreateGovernance,
+      communityTokenConfigArgs,
+      councilTokenConfigArgs,
+      payer
+    );
+    return [createRootIx, setRealmConfigIx];
   }
 }

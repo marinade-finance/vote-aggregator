@@ -28,13 +28,11 @@ const createRoot = async ({
     signers.push(await parseKeypair(realmAuthority));
   }
   await execute({
-    instructions: [
-      await sdk.root.createRootInstruction({
-        realmAddress: await parsePubkey(realm),
-        side,
-        payer: provider.publicKey!,
-      }),
-    ],
+    instructions: await sdk.root.createRootInstructions({
+      realmAddress: await parsePubkey(realm),
+      side,
+      payer: provider.publicKey!,
+    }),
     signers,
   });
 };

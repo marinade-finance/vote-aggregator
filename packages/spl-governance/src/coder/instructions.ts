@@ -31,6 +31,9 @@ export class SplGovernanceInstructionCoder implements InstructionCoder {
       case "addSignatory": {
         return encodeAddSignatory(ix);
       }
+      case "removeSignatory": {
+        return encodeRemoveSignatory(ix);
+      }
       case "insertTransaction": {
         return encodeInsertTransaction(ix);
       }
@@ -87,12 +90,6 @@ export class SplGovernanceInstructionCoder implements InstructionCoder {
       }
       case "completeProposal": {
         return encodeCompleteProposal(ix);
-      }
-      case "addRequiredSignatory": {
-        return encodeAddRequiredSignatory(ix);
-      }
-      case "removeRequiredSignatory": {
-        return encodeRemoveRequiredSignatory(ix);
       }
 
       default: {
@@ -368,6 +365,10 @@ function encodeCreateProposal({
 
 function encodeAddSignatory({ signatory }: any): Buffer {
   return encodeData({ addSignatory: { signatory } }, 1 + 32);
+}
+
+function encodeRemoveSignatory({ signatory }: any): Buffer {
+  return encodeData({ removeSignatory: { signatory } }, 1 + 32);
 }
 
 function encodeInsertTransaction({
@@ -743,14 +744,6 @@ function encodeCompleteProposal({}: any): Buffer {
   return encodeData({ completeProposal: {} }, 1);
 }
 
-function encodeAddRequiredSignatory({ signatory }: any): Buffer {
-  return encodeData({ addRequiredSignatory: { signatory } }, 1 + 32);
-}
-
-function encodeRemoveRequiredSignatory({}: any): Buffer {
-  return encodeData({ removeRequiredSignatory: {} }, 1);
-}
-
 const LAYOUT = B.union(B.u8("instruction"));
 LAYOUT.addVariant(
   0,
@@ -958,8 +951,9 @@ LAYOUT.addVariant(
   "createProposal"
 );
 LAYOUT.addVariant(7, B.struct([B.publicKey("signatory")]), "addSignatory");
+LAYOUT.addVariant(8, B.struct([B.publicKey("signatory")]), "removeSignatory");
 LAYOUT.addVariant(
-  8,
+  9,
   B.struct([
     B.u8("optionIndex"),
     B.u16("index"),
@@ -982,11 +976,11 @@ LAYOUT.addVariant(
   ]),
   "insertTransaction"
 );
-LAYOUT.addVariant(9, B.struct([]), "removeTransaction");
-LAYOUT.addVariant(10, B.struct([]), "cancelProposal");
-LAYOUT.addVariant(11, B.struct([]), "signOffProposal");
+LAYOUT.addVariant(10, B.struct([]), "removeTransaction");
+LAYOUT.addVariant(11, B.struct([]), "cancelProposal");
+LAYOUT.addVariant(12, B.struct([]), "signOffProposal");
 LAYOUT.addVariant(
-  12,
+  13,
   B.struct([
     ((p: string) => {
       const U = B.union(B.u8("discriminator"), null, p);
@@ -1003,11 +997,11 @@ LAYOUT.addVariant(
   ]),
   "castVote"
 );
-LAYOUT.addVariant(13, B.struct([]), "finalizeVote");
-LAYOUT.addVariant(14, B.struct([]), "relinquishVote");
-LAYOUT.addVariant(15, B.struct([]), "executeTransaction");
+LAYOUT.addVariant(14, B.struct([]), "finalizeVote");
+LAYOUT.addVariant(15, B.struct([]), "relinquishVote");
+LAYOUT.addVariant(16, B.struct([]), "executeTransaction");
 LAYOUT.addVariant(
-  16,
+  17,
   B.struct([
     B.struct(
       [
@@ -1067,7 +1061,7 @@ LAYOUT.addVariant(
   "createMintGovernance"
 );
 LAYOUT.addVariant(
-  17,
+  18,
   B.struct([
     B.struct(
       [
@@ -1127,7 +1121,7 @@ LAYOUT.addVariant(
   "createTokenGovernance"
 );
 LAYOUT.addVariant(
-  18,
+  19,
   B.struct([
     B.struct(
       [
@@ -1185,9 +1179,9 @@ LAYOUT.addVariant(
   ]),
   "setGovernanceConfig"
 );
-LAYOUT.addVariant(19, B.struct([]), "flagTransactionError");
+LAYOUT.addVariant(20, B.struct([]), "flagTransactionError");
 LAYOUT.addVariant(
-  20,
+  21,
   B.struct([
     ((p: string) => {
       const U = B.union(B.u8("discriminator"), null, p);
@@ -1200,7 +1194,7 @@ LAYOUT.addVariant(
   "setRealmAuthority"
 );
 LAYOUT.addVariant(
-  21,
+  22,
   B.struct([
     B.struct(
       [
@@ -1246,17 +1240,11 @@ LAYOUT.addVariant(
   ]),
   "setRealmConfig"
 );
-LAYOUT.addVariant(22, B.struct([]), "createTokenOwnerRecord");
-LAYOUT.addVariant(23, B.struct([]), "createNativeTreasury");
-LAYOUT.addVariant(24, B.struct([B.u64("amount")]), "revokeGoverningTokens");
-LAYOUT.addVariant(25, B.struct([]), "refundProposalDeposit");
-LAYOUT.addVariant(26, B.struct([]), "completeProposal");
-LAYOUT.addVariant(
-  27,
-  B.struct([B.publicKey("signatory")]),
-  "addRequiredSignatory"
-);
-LAYOUT.addVariant(28, B.struct([]), "removeRequiredSignatory");
+LAYOUT.addVariant(23, B.struct([]), "createTokenOwnerRecord");
+LAYOUT.addVariant(24, B.struct([]), "createNativeTreasury");
+LAYOUT.addVariant(25, B.struct([B.u64("amount")]), "revokeGoverningTokens");
+LAYOUT.addVariant(26, B.struct([]), "refundProposalDeposit");
+LAYOUT.addVariant(27, B.struct([]), "completeProposal");
 
 function encodeData(ix: any, span: number): Buffer {
   const b = Buffer.alloc(span);

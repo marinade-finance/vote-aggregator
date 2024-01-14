@@ -80,11 +80,6 @@ export class SplGovernanceAccountsCoder<A extends string = string>
         const len = REALM_CONFIG_ACCOUNT_LAYOUT.encode(account, buffer);
         return buffer.slice(0, len);
       }
-      case "requiredSignatory": {
-        const buffer = Buffer.alloc(66);
-        const len = REQUIRED_SIGNATORY_LAYOUT.encode(account, buffer);
-        return buffer.slice(0, len);
-      }
       case "signatoryRecordV2": {
         const buffer = Buffer.alloc(74);
         const len = SIGNATORY_RECORD_V2_LAYOUT.encode(account, buffer);
@@ -153,9 +148,6 @@ export class SplGovernanceAccountsCoder<A extends string = string>
       }
       case "realmConfigAccount": {
         return decodeRealmConfigAccountAccount(ix);
-      }
-      case "requiredSignatory": {
-        return decodeRequiredSignatoryAccount(ix);
       }
       case "signatoryRecordV2": {
         return decodeSignatoryRecordV2Account(ix);
@@ -247,11 +239,6 @@ export class SplGovernanceAccountsCoder<A extends string = string>
           // Space is variable
         };
       }
-      case "requiredSignatory": {
-        return {
-          dataSize: 66,
-        };
-      }
       case "signatoryRecordV2": {
         return {
           dataSize: 74,
@@ -317,9 +304,6 @@ export class SplGovernanceAccountsCoder<A extends string = string>
       case "realmConfigAccount": {
         return 0; // Space is variable;
       }
-      case "requiredSignatory": {
-        return 66;
-      }
       case "signatoryRecordV2": {
         return 74;
       }
@@ -378,9 +362,6 @@ function decodeRealmV2Account<T = any>(ix: Buffer): T {
 function decodeRealmConfigAccountAccount<T = any>(ix: Buffer): T {
   return REALM_CONFIG_ACCOUNT_LAYOUT.decode(ix) as T;
 }
-function decodeRequiredSignatoryAccount<T = any>(ix: Buffer): T {
-  return REQUIRED_SIGNATORY_LAYOUT.decode(ix) as T;
-}
 function decodeSignatoryRecordV2Account<T = any>(ix: Buffer): T {
   return SIGNATORY_RECORD_V2_LAYOUT.decode(ix) as T;
 }
@@ -418,7 +399,6 @@ const GOVERNANCE_V2_LAYOUT: any = B.struct([
     U.addVariant(21, B.struct([]), "tokenGovernanceV2");
     U.addVariant(22, B.struct([]), "signatoryRecordV2");
     U.addVariant(23, B.struct([]), "proposalDeposit");
-    U.addVariant(24, B.struct([]), "requiredSignatory");
     return U;
   })("accountType"),
   B.publicKey("realm"),
@@ -478,7 +458,6 @@ const GOVERNANCE_V2_LAYOUT: any = B.struct([
     "config"
   ),
   B.u8("reservedV2"),
-  B.u8("requiredSignatoriesCount"),
   B.u64("activeProposalCount"),
 ]);
 
@@ -509,7 +488,6 @@ const REALM_V1_LAYOUT: any = B.struct([
     U.addVariant(21, B.struct([]), "tokenGovernanceV2");
     U.addVariant(22, B.struct([]), "signatoryRecordV2");
     U.addVariant(23, B.struct([]), "proposalDeposit");
-    U.addVariant(24, B.struct([]), "requiredSignatory");
     return U;
   })("accountType"),
   B.publicKey("communityMint"),
@@ -562,7 +540,6 @@ const TOKEN_OWNER_RECORD_V1_LAYOUT: any = B.struct([
     U.addVariant(21, B.struct([]), "tokenGovernanceV2");
     U.addVariant(22, B.struct([]), "signatoryRecordV2");
     U.addVariant(23, B.struct([]), "proposalDeposit");
-    U.addVariant(24, B.struct([]), "requiredSignatory");
     return U;
   })("accountType"),
   B.publicKey("realm"),
@@ -603,7 +580,6 @@ const GOVERNANCE_V1_LAYOUT: any = B.struct([
     U.addVariant(21, B.struct([]), "tokenGovernanceV2");
     U.addVariant(22, B.struct([]), "signatoryRecordV2");
     U.addVariant(23, B.struct([]), "proposalDeposit");
-    U.addVariant(24, B.struct([]), "requiredSignatory");
     return U;
   })("accountType"),
   B.publicKey("realm"),
@@ -691,7 +667,6 @@ const PROPOSAL_V1_LAYOUT: any = B.struct([
     U.addVariant(21, B.struct([]), "tokenGovernanceV2");
     U.addVariant(22, B.struct([]), "signatoryRecordV2");
     U.addVariant(23, B.struct([]), "proposalDeposit");
-    U.addVariant(24, B.struct([]), "requiredSignatory");
     return U;
   })("accountType"),
   B.publicKey("governance"),
@@ -774,7 +749,6 @@ const SIGNATORY_RECORD_V1_LAYOUT: any = B.struct([
     U.addVariant(21, B.struct([]), "tokenGovernanceV2");
     U.addVariant(22, B.struct([]), "signatoryRecordV2");
     U.addVariant(23, B.struct([]), "proposalDeposit");
-    U.addVariant(24, B.struct([]), "requiredSignatory");
     return U;
   })("accountType"),
   B.publicKey("proposal"),
@@ -809,7 +783,6 @@ const VOTE_RECORD_V1_LAYOUT: any = B.struct([
     U.addVariant(21, B.struct([]), "tokenGovernanceV2");
     U.addVariant(22, B.struct([]), "signatoryRecordV2");
     U.addVariant(23, B.struct([]), "proposalDeposit");
-    U.addVariant(24, B.struct([]), "requiredSignatory");
     return U;
   })("accountType"),
   B.publicKey("proposal"),
@@ -852,7 +825,6 @@ const PROGRAM_METADATA_LAYOUT: any = B.struct([
     U.addVariant(21, B.struct([]), "tokenGovernanceV2");
     U.addVariant(22, B.struct([]), "signatoryRecordV2");
     U.addVariant(23, B.struct([]), "proposalDeposit");
-    U.addVariant(24, B.struct([]), "requiredSignatory");
     return U;
   })("accountType"),
   B.u64("updatedAt"),
@@ -887,7 +859,6 @@ const PROPOSAL_V2_LAYOUT: any = B.struct([
     U.addVariant(21, B.struct([]), "tokenGovernanceV2");
     U.addVariant(22, B.struct([]), "signatoryRecordV2");
     U.addVariant(23, B.struct([]), "proposalDeposit");
-    U.addVariant(24, B.struct([]), "requiredSignatory");
     return U;
   })("accountType"),
   B.publicKey("governance"),
@@ -1009,7 +980,6 @@ const PROPOSAL_DEPOSIT_LAYOUT: any = B.struct([
     U.addVariant(21, B.struct([]), "tokenGovernanceV2");
     U.addVariant(22, B.struct([]), "signatoryRecordV2");
     U.addVariant(23, B.struct([]), "proposalDeposit");
-    U.addVariant(24, B.struct([]), "requiredSignatory");
     return U;
   })("accountType"),
   B.publicKey("proposal"),
@@ -1044,7 +1014,6 @@ const PROPOSAL_TRANSACTION_V2_LAYOUT: any = B.struct([
     U.addVariant(21, B.struct([]), "tokenGovernanceV2");
     U.addVariant(22, B.struct([]), "signatoryRecordV2");
     U.addVariant(23, B.struct([]), "proposalDeposit");
-    U.addVariant(24, B.struct([]), "requiredSignatory");
     return U;
   })("accountType"),
   B.publicKey("proposal"),
@@ -1104,7 +1073,6 @@ const REALM_V2_LAYOUT: any = B.struct([
     U.addVariant(21, B.struct([]), "tokenGovernanceV2");
     U.addVariant(22, B.struct([]), "signatoryRecordV2");
     U.addVariant(23, B.struct([]), "proposalDeposit");
-    U.addVariant(24, B.struct([]), "requiredSignatory");
     return U;
   })("accountType"),
   B.publicKey("communityMint"),
@@ -1158,7 +1126,6 @@ const REALM_CONFIG_ACCOUNT_LAYOUT: any = B.struct([
     U.addVariant(21, B.struct([]), "tokenGovernanceV2");
     U.addVariant(22, B.struct([]), "signatoryRecordV2");
     U.addVariant(23, B.struct([]), "proposalDeposit");
-    U.addVariant(24, B.struct([]), "requiredSignatory");
     return U;
   })("accountType"),
   B.publicKey("realm"),
@@ -1195,41 +1162,6 @@ const REALM_CONFIG_ACCOUNT_LAYOUT: any = B.struct([
   B.u8("reserved"),
 ]);
 
-const REQUIRED_SIGNATORY_LAYOUT: any = B.struct([
-  ((p: string) => {
-    const U = B.union(B.u8("discriminator"), null, p);
-    U.addVariant(0, B.struct([]), "uninitialized");
-    U.addVariant(1, B.struct([]), "realmV1");
-    U.addVariant(2, B.struct([]), "tokenOwnerRecordV1");
-    U.addVariant(3, B.struct([]), "governanceV1");
-    U.addVariant(4, B.struct([]), "programGovernanceV1");
-    U.addVariant(5, B.struct([]), "proposalV1");
-    U.addVariant(6, B.struct([]), "signatoryRecordV1");
-    U.addVariant(7, B.struct([]), "voteRecordV1");
-    U.addVariant(8, B.struct([]), "proposalInstructionV1");
-    U.addVariant(9, B.struct([]), "mintGovernanceV1");
-    U.addVariant(10, B.struct([]), "tokenGovernanceV1");
-    U.addVariant(11, B.struct([]), "realmConfig");
-    U.addVariant(12, B.struct([]), "voteRecordV2");
-    U.addVariant(13, B.struct([]), "proposalTransactionV2");
-    U.addVariant(14, B.struct([]), "proposalV2");
-    U.addVariant(15, B.struct([]), "programMetadata");
-    U.addVariant(16, B.struct([]), "realmV2");
-    U.addVariant(17, B.struct([]), "tokenOwnerRecordV2");
-    U.addVariant(18, B.struct([]), "governanceV2");
-    U.addVariant(19, B.struct([]), "programGovernanceV2");
-    U.addVariant(20, B.struct([]), "mintGovernanceV2");
-    U.addVariant(21, B.struct([]), "tokenGovernanceV2");
-    U.addVariant(22, B.struct([]), "signatoryRecordV2");
-    U.addVariant(23, B.struct([]), "proposalDeposit");
-    U.addVariant(24, B.struct([]), "requiredSignatory");
-    return U;
-  })("accountType"),
-  B.u8("accountVersion"),
-  B.publicKey("governance"),
-  B.publicKey("signatory"),
-]);
-
 const SIGNATORY_RECORD_V2_LAYOUT: any = B.struct([
   ((p: string) => {
     const U = B.union(B.u8("discriminator"), null, p);
@@ -1257,7 +1189,6 @@ const SIGNATORY_RECORD_V2_LAYOUT: any = B.struct([
     U.addVariant(21, B.struct([]), "tokenGovernanceV2");
     U.addVariant(22, B.struct([]), "signatoryRecordV2");
     U.addVariant(23, B.struct([]), "proposalDeposit");
-    U.addVariant(24, B.struct([]), "requiredSignatory");
     return U;
   })("accountType"),
   B.publicKey("proposal"),
@@ -1293,7 +1224,6 @@ const TOKEN_OWNER_RECORD_V2_LAYOUT: any = B.struct([
     U.addVariant(21, B.struct([]), "tokenGovernanceV2");
     U.addVariant(22, B.struct([]), "signatoryRecordV2");
     U.addVariant(23, B.struct([]), "proposalDeposit");
-    U.addVariant(24, B.struct([]), "requiredSignatory");
     return U;
   })("accountType"),
   B.publicKey("realm"),
@@ -1335,7 +1265,6 @@ const VOTE_RECORD_V2_LAYOUT: any = B.struct([
     U.addVariant(21, B.struct([]), "tokenGovernanceV2");
     U.addVariant(22, B.struct([]), "signatoryRecordV2");
     U.addVariant(23, B.struct([]), "proposalDeposit");
-    U.addVariant(24, B.struct([]), "requiredSignatory");
     return U;
   })("accountType"),
   B.publicKey("proposal"),

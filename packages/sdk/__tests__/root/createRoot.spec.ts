@@ -14,7 +14,7 @@ describe('create_root instruction', () => {
       const realmTester = new RealmTester(realm);
       const sdk = new VoteAggregatorSdk();
       expect(
-        sdk.root.createRootInstruction({
+        sdk.root.createRootInstructions({
           splGovernanceId: realmTester.splGovernanceId,
           realmAddress: realmTester.realmAddress,
           realmData: realmTester.splRealmData(),
@@ -32,7 +32,7 @@ describe('create_root instruction', () => {
     const realmTester = new RealmTester(realm);
     const sdk = new VoteAggregatorSdk();
     expect(
-      sdk.root.createRootInstruction({
+      sdk.root.createRootInstructions({
         splGovernanceId: realmTester.splGovernanceId,
         realmAddress: realmTester.realmAddress,
         realmData: realmTester.splRealmData(),

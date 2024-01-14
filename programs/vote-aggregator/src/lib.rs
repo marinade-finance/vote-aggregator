@@ -13,10 +13,8 @@ declare_id!("VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT");
 pub mod vote_aggregator {
     use super::*;
 
-    pub fn create_root<'a, 'b, 'c, 'info>(
-        ctx: Context<'a, 'b, 'c, 'info, CreateRoot<'info>>,
-    ) -> Result<()> {
-        ctx.accounts.process(ctx.remaining_accounts, ctx.bumps)
+    pub fn create_root(ctx: Context<CreateRoot>) -> Result<()> {
+        ctx.accounts.process(ctx.bumps)
     }
 
     pub fn create_clan(ctx: Context<CreateClan>, owner: Pubkey) -> Result<()> {
