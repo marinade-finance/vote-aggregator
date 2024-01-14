@@ -19,7 +19,7 @@
     "@coral-xyz/spl-token": "^0.29.0",
     "@solana/spl-governance": "^0.3.28",
     "@solana/spl-token": "^0.3.9",
-    "@solana/web3.js": "^1.87.6",
+    "@solana/web3.js": "=1.87.6",
     "solana-bankrun": "^0.2.0"
   }
 }
