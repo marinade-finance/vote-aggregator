@@ -78,39 +78,55 @@ export class MemberSdk {
     root: RootAccount;
     member: MemberAccount;
   }) {
-    const voterWeightAccounts = await this.sdk.connection.getProgramAccounts(
-      root.votingWeightPlugin,
-      {
-        filters: [
+    let voterWeightAccounts = [];
+
+    for (const discriminators of ['8riZd8mYDQk', '9RuW8iaNj6Z']) {
+      voterWeightAccounts.push(
+        ...(await this.sdk.connection.getProgramAccounts(
+          root.votingWeightPlugin,
           {
-            memcmp: {
-              offset: 0,
-              bytes: '8riZd8mYDQk', // Discriminator
-            },
-          },
-          {
-            memcmp: {
-              offset: 8,
-              bytes: root.realm.toBase58(),
-            },
-          },
-          {
-            memcmp: {
-              offset: 8 + 32,
-              bytes: root.governingTokenMint.toBase58(),
-            },
-          },
-          {
-            memcmp: {
-              offset: 8 + 32 + 32,
-              bytes: member.owner.toBase58(),
-            },
-          },
-        ],
-      }
-    );
+            filters: [
+              {
+                memcmp: {
+                  offset: 0,
+                  bytes: discriminators,
+                },
+              },
+              {
+                memcmp: {
+                  offset: 8,
+                  bytes: root.realm.toBase58(),
+                },
+              },
+              {
+                memcmp: {
+                  offset: 8 + 32,
+                  bytes: root.governingTokenMint.toBase58(),
+                },
+              },
+              {
+                memcmp: {
+                  offset: 8 + 32 + 32,
+                  bytes: member.owner.toBase58(),
+                },
+              },
+            ],
+          }
+        ))
+      );
+    }
 
     const voterWeightRecords = voterWeightAccounts.map(({account, pubkey}) => {
+      // For legasy VWR format rewrite the discriminator
+      // because the parser is accepting only the modern anchor-compatible format
+      account.data.writeUInt8(46, 0);
+      account.data.writeUInt8(249, 1);
+      account.data.writeUInt8(155, 2);
+      account.data.writeUInt8(75, 3);
+      account.data.writeUInt8(153, 4);
+      account.data.writeUInt8(248, 5);
+      account.data.writeUInt8(116, 6);
+      account.data.writeUInt8(9, 7);
       const record = this.sdk.program.coder.accounts.decode<VoterWeightAccount>(
         'voterWeightRecord',
         account.data
@@ -121,7 +137,7 @@ export class MemberSdk {
       };
     });
 
-    let maxExpiry: BN | null = null;
+    let maxExpiry: BN | null = new BN(0); // already expired
     let maxPower = new BN(0);
     let bestIndex = null;
     for (let i = 0; i < voterWeightRecords.length; i++) {

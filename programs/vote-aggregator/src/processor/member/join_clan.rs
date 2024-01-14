@@ -98,10 +98,12 @@ impl<'info> JoinClan<'info> {
         .map_err(|e| {
             ProgramErrorWithOrigin::from(e).with_account_name("member_voter_weight_record")
         })?;
+        /* TODO
         require!(
             vwr.voter_weight_expiry.is_none(),
             Error::VoterWeightExpiryIsNotImplemented
         );
+        */
         require!(vwr.weight_action.is_none(), Error::UnexpectedWeightAction);
         require!(
             vwr.weight_action_target.is_none(),
