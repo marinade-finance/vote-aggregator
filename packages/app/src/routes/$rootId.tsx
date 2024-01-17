@@ -1,7 +1,6 @@
 import {
   Box,
   Paper,
-  SxProps,
   Table,
   TableBody,
   TableCell,
@@ -9,19 +8,16 @@ import {
   TableHead,
   TablePagination,
   TableRow,
-  Theme,
-  Toolbar,
 } from '@mui/material';
-import React from 'react';
-import {FC} from 'react';
-import CheckBoxIcon from '@mui/icons-material/CheckBox';
-import {ClanInfo, useClanList} from '../hooks/useClanList';
-import {useMember} from '../hooks/useMember';
+import {FileRoute} from '@tanstack/react-router';
+import {useMemo, useState} from 'react';
+import {clanListQueryOptions, memberQueryOptions} from '../queryOptions';
+import {PublicKey} from '@solana/web3.js';
+import {ClanInfo} from '../fetchers/fetchClanList';
+import {useQuery, useSuspenseQuery} from '@tanstack/react-query';
 import CoPresentIcon from '@mui/icons-material/CoPresent';
-
-const ClanListHeader: FC = () => {
-  return <Toolbar></Toolbar>;
-};
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import {useWallet} from '@solana/wallet-adapter-react';
 
 type Order = 'asc' | 'desc';
 
@@ -49,18 +45,23 @@ const getComparator =
     }
   };
 
-export type ClanListProps = {
-  sx?: SxProps<Theme>;
-};
-
-const ClanList: FC<ClanListProps> = ({sx}: ClanListProps) => {
-  const {data: clans} = useClanList();
-  const {data: member} = useMember();
-
-  const [order, setOrder] = React.useState<Order>('asc');
-  const [orderBy, setOrderBy] = React.useState<keyof ClanInfo>('address');
-  const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
+const ClanListComponent = () => {
+  const {network} = Route.useSearch();
+  const {rootId} = Route.useParams();
+  const root = new PublicKey(rootId);
+  const {data: clans} = useSuspenseQuery(clanListQueryOptions({network, root}));
+  const {publicKey} = useWallet();
+  const member = useQuery(
+    memberQueryOptions({
+      network,
+      root,
+      owner: publicKey || undefined,
+    })
+  );
+  const [order /*setOrder*/] = useState<Order>('asc');
+  const [orderBy /*setOrderBy*/] = useState<keyof ClanInfo>('address');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -75,10 +76,10 @@ const ClanList: FC<ClanListProps> = ({sx}: ClanListProps) => {
 
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - (clans?.length || 0)) : 0;
+    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - clans.length) : 0;
 
   const visibleRows =
-    React.useMemo(
+    useMemo(
       () =>
         clans &&
         clans
@@ -89,9 +90,8 @@ const ClanList: FC<ClanListProps> = ({sx}: ClanListProps) => {
     ) || [];
 
   return (
-    <Box sx={{...sx}}>
+    <Box>
       <Paper sx={{width: '100%', mb: 2}}>
-        <ClanListHeader />
         <TableContainer component={Paper}>
           <Table sx={{minWidth: 650}} size="small" aria-label="a clan table">
             <TableHead>
@@ -100,12 +100,12 @@ const ClanList: FC<ClanListProps> = ({sx}: ClanListProps) => {
                 <TableCell align="right">Name</TableCell>
                 <TableCell align="right">Description</TableCell>
                 <TableCell align="right">Owner</TableCell>
-                {member && <TableCell align="right">Rights</TableCell>}
+                {member.data && <TableCell align="right">Rights</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
               {visibleRows.map(clan => {
-                const isMember = member?.clan?.equals(clan.address);
+                const isMember = member.data?.clan?.equals(clan.address);
                 return (
                   <TableRow
                     hover
@@ -122,10 +122,12 @@ const ClanList: FC<ClanListProps> = ({sx}: ClanListProps) => {
                     <TableCell align="right">{clan.name}</TableCell>
                     <TableCell align="right">{clan.description}</TableCell>
                     <TableCell align="right">{clan.owner.toBase58()}</TableCell>
-                    {member && (
+                    {member.data && (
                       <TableCell align="right">
                         {isMember && <CheckBoxIcon />}
-                        {clan.owner.equals(member.owner) && <CoPresentIcon/>}
+                        {clan.owner.equals(member.data.owner) && (
+                          <CoPresentIcon />
+                        )}
                       </TableCell>
                     )}
                   </TableRow>
@@ -157,4 +159,17 @@ const ClanList: FC<ClanListProps> = ({sx}: ClanListProps) => {
   );
 };
 
-export default ClanList;
+export const Route = new FileRoute('/$rootId').createRoute({
+  component: ClanListComponent,
+  loaderDeps: ({search: {network}}) => ({network}),
+  loader: ({deps: {network}, params: {rootId}, context: {queryClient}}) =>
+    queryClient.ensureQueryData(
+      clanListQueryOptions({network, root: new PublicKey(rootId)})
+    ),
+  wrapInSuspense: true,
+  beforeLoad: ({params: {rootId}}) => {
+    return {
+      title: rootId,
+    }
+  }
+});

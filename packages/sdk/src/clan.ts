@@ -1,6 +1,10 @@
-import {PublicKey, SystemProgram} from '@solana/web3.js';
+import {
+  GetProgramAccountsFilter,
+  PublicKey,
+  SystemProgram,
+} from '@solana/web3.js';
 import {VoteAggregatorSdk} from './sdk';
-import {IdlAccounts} from '@coral-xyz/anchor';
+import {IdlAccounts, ProgramAccount} from '@coral-xyz/anchor';
 import {VoteAggregator} from './vote_aggregator';
 import {RootAccount} from './root';
 import {TokenOwnerRecord, getTokenOwnerRecord} from '@solana/spl-governance';
@@ -58,6 +62,98 @@ export class ClanSdk {
 
   fetchClan(clanAddress: PublicKey): Promise<ClanAccount> {
     return this.sdk.program.account.clan.fetch(clanAddress);
+  }
+
+  fetchClans({
+    root,
+    owner,
+    delegate,
+    voterAuthority,
+    tokenOwnerRecord,
+    voterWeightRecord,
+  }: {
+    root?: PublicKey;
+    owner?: PublicKey;
+    delegate?: PublicKey;
+    voterAuthority?: PublicKey;
+    tokenOwnerRecord?: PublicKey;
+    voterWeightRecord?: PublicKey;
+  }): Promise<ProgramAccount<ClanAccount>[]> {
+    let filter: GetProgramAccountsFilter[] | undefined;
+
+    if (root) {
+      if (!filter) {
+        filter = [];
+      }
+      filter.push({
+        memcmp: {
+          offset: 8,
+          bytes: root.toBase58(),
+        },
+      });
+    }
+
+    if (owner) {
+      if (!filter) {
+        filter = [];
+      }
+      filter.push({
+        memcmp: {
+          offset: 40,
+          bytes: owner.toBase58(),
+        },
+      });
+    }
+
+    if (delegate) {
+      if (!filter) {
+        filter = [];
+      }
+      filter.push({
+        memcmp: {
+          offset: 72,
+          bytes: delegate.toBase58(),
+        },
+      });
+    }
+
+    if (voterAuthority) {
+      if (!filter) {
+        filter = [];
+      }
+      filter.push({
+        memcmp: {
+          offset: 104,
+          bytes: voterAuthority.toBase58(),
+        },
+      });
+    }
+
+    if (tokenOwnerRecord) {
+      if (!filter) {
+        filter = [];
+      }
+      filter.push({
+        memcmp: {
+          offset: 136,
+          bytes: tokenOwnerRecord.toBase58(),
+        },
+      });
+    }
+
+    if (voterWeightRecord) {
+      if (!filter) {
+        filter = [];
+      }
+      filter.push({
+        memcmp: {
+          offset: 168,
+          bytes: voterWeightRecord.toBase58(),
+        },
+      });
+    }
+
+    return this.sdk.program.account.clan.all(filter);
   }
 
   fetchVoterWeight({

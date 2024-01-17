@@ -58,7 +58,7 @@ export class MemberSdk {
     memberAddress?: PublicKey;
     rootAddress?: PublicKey;
     owner?: PublicKey;
-  }): Promise<MemberAccount> {
+  }): Promise<MemberAccount | null> {
     if (!memberAddress) {
       if (!owner) {
         throw new Error('owner is required');
@@ -68,7 +68,7 @@ export class MemberSdk {
       }
       memberAddress = this.memberAddress({rootAddress, owner})[0];
     }
-    return this.sdk.program.account.member.fetch(memberAddress);
+    return this.sdk.program.account.member.fetchNullable(memberAddress);
   }
 
   async findVoterWeightRecord({
@@ -78,7 +78,7 @@ export class MemberSdk {
     root: RootAccount;
     member: MemberAccount;
   }) {
-    let voterWeightAccounts = [];
+    const voterWeightAccounts = [];
 
     for (const discriminators of ['8riZd8mYDQk', '9RuW8iaNj6Z']) {
       voterWeightAccounts.push(

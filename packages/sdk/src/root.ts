@@ -1,4 +1,5 @@
 import {
+  GetProgramAccountsFilter,
   PublicKey,
   SystemProgram,
   TransactionInstruction,
@@ -12,7 +13,7 @@ import {
   getRealmConfig,
   getRealmConfigAddress,
 } from '@solana/spl-governance';
-import {IdlAccounts} from '@coral-xyz/anchor';
+import {IdlAccounts, ProgramAccount} from '@coral-xyz/anchor';
 import {VoteAggregator} from './vote_aggregator';
 
 export type RootAccount = IdlAccounts<VoteAggregator>['root'];
@@ -52,6 +53,70 @@ export class RootSdk {
 
   fetchRoot(rootAddress: PublicKey): Promise<RootAccount> {
     return this.sdk.program.account.root.fetch(rootAddress);
+  }
+
+  fetchRoots({
+    governanceProgram,
+    realm,
+    governingTokenMint,
+    votingWeightPlugin,
+  }: {
+    governanceProgram?: PublicKey;
+    realm?: PublicKey;
+    governingTokenMint?: PublicKey;
+    votingWeightPlugin?: PublicKey;
+  }): Promise<ProgramAccount<RootAccount>[]> {
+    let filter: GetProgramAccountsFilter[] | undefined;
+
+    if (governanceProgram) {
+      if (!filter) {
+        filter = [];
+      }
+      filter.push({
+        memcmp: {
+          offset: 8,
+          bytes: governanceProgram.toBase58(),
+        },
+      });
+    }
+
+    if (realm) {
+      if (!filter) {
+        filter = [];
+      }
+      filter.push({
+        memcmp: {
+          offset: 40,
+          bytes: realm.toBase58(),
+        },
+      });
+    }
+
+    if (governingTokenMint) {
+      if (!filter) {
+        filter = [];
+      }
+      filter.push({
+        memcmp: {
+          offset: 72,
+          bytes: governingTokenMint.toBase58(),
+        },
+      });
+    }
+
+    if (votingWeightPlugin) {
+      if (!filter) {
+        filter = [];
+      }
+      filter.push({
+        memcmp: {
+          offset: 104,
+          bytes: votingWeightPlugin.toBase58(),
+        },
+      });
+    }
+
+    return this.sdk.program.account.root.all(filter);
   }
 
   fetchMaxVoterWeight({
