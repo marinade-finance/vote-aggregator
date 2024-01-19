@@ -4,7 +4,6 @@ import {
   SetVotingDelegateTestData,
   RealmTester,
   parseLogsEvent,
-  resizeBN,
   setVotingDelegateTestData,
   buildSplGovernanceProgram,
 } from '../../src';
@@ -40,24 +39,22 @@ describe('set_voting_delegate instruction', () => {
         connection: program.provider.connection,
       });
 
-      const [voterAuthority, voterAuthorityBump] =
-        PublicKey.findProgramAddressSync(
-          [
-            Buffer.from('voter-authority', 'utf-8'),
-            clanTester.clanAddress.toBuffer(),
-          ],
-          program.programId
-        );
-      const [tokenOwnerRecord, tokenOwnerRecordBump] =
-        PublicKey.findProgramAddressSync(
-          [
-            Buffer.from('governance', 'utf-8'),
-            rootTester.realm.realmAddress.toBuffer(),
-            rootTester.governingTokenMint.toBuffer(),
-            voterAuthority.toBuffer(),
-          ],
-          rootTester.splGovernanceId
-        );
+      const [voterAuthority] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from('voter-authority', 'utf-8'),
+          clanTester.clanAddress.toBuffer(),
+        ],
+        program.programId
+      );
+      const [tokenOwnerRecord] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from('governance', 'utf-8'),
+          rootTester.realm.realmAddress.toBuffer(),
+          rootTester.governingTokenMint.toBuffer(),
+          voterAuthority.toBuffer(),
+        ],
+        rootTester.splGovernanceId
+      );
 
       if (clanAuthority === 'owner') {
         if (!(clanTester.owner instanceof Keypair)) {

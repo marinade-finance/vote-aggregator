@@ -12,7 +12,6 @@ import {
   SetVotingDelegateTestData,
   RealmTester,
   RootTester,
-  resizeBN,
   setVotingDelegateTestData,
   ClanTester,
 } from 'vote-aggregator-tests';
@@ -21,8 +20,8 @@ import {cli} from '../../src/cli';
 import {Keypair} from '@solana/web3.js';
 import {getTokenOwnerRecord} from '@solana/spl-governance';
 
-describe('join-clan command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+describe('set-voting-delegate command', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
   let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
 
   beforeEach(() => {

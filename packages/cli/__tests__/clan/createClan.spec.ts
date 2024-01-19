@@ -25,7 +25,7 @@ import {
 } from '@solana/spl-governance';
 
 describe('create-clan command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
   let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
 
   beforeEach(() => {

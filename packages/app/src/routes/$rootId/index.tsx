@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   Paper,
   Table,
   TableBody,
@@ -9,11 +10,11 @@ import {
   TablePagination,
   TableRow,
 } from '@mui/material';
-import {FileRoute} from '@tanstack/react-router';
+import {FileRoute, Link, useNavigate} from '@tanstack/react-router';
 import {useMemo, useState} from 'react';
-import {clanListQueryOptions, memberQueryOptions} from '../queryOptions';
+import {clanListQueryOptions, memberQueryOptions} from '../../queryOptions';
 import {PublicKey} from '@solana/web3.js';
-import {ClanInfo} from '../fetchers/fetchClanList';
+import {ClanInfo} from '../../fetchers/fetchClanList';
 import {useQuery, useSuspenseQuery} from '@tanstack/react-query';
 import CoPresentIcon from '@mui/icons-material/CoPresent';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
@@ -46,6 +47,7 @@ const getComparator =
   };
 
 const ClanListComponent = () => {
+  const navigate = useNavigate();
   const {network} = Route.useSearch();
   const {rootId} = Route.useParams();
   const root = new PublicKey(rootId);
@@ -89,6 +91,16 @@ const ClanListComponent = () => {
       [order, orderBy, page, rowsPerPage, clans]
     ) || [];
 
+  const openClan = (clan: PublicKey) => {
+    navigate({
+      to: '/$rootId/clan/$clanId',
+      params: {
+        rootId: root.toBase58(),
+        clanId: clan.toBase58(),
+      },
+    });
+  }
+
   return (
     <Box>
       <Paper sx={{width: '100%', mb: 2}}>
@@ -109,14 +121,14 @@ const ClanListComponent = () => {
                 return (
                   <TableRow
                     hover
-                    // onClick={(event) => handleClick(event, row.id)}
+                    onClick={() => openClan(clan.address)}
                     // aria-checked={isItemSelected}
                     tabIndex={-1}
                     key={clan.address.toBase58()}
                     // selected={isItemSelected}
                     sx={{cursor: 'pointer'}}
                   >
-                    <TableCell component="th" scope="row" padding="none">
+                    <TableCell component="th" scope="row" sx={{ml: 1}}>
                       {clan.address.toBase58()}
                     </TableCell>
                     <TableCell align="right">{clan.name}</TableCell>
@@ -148,18 +160,23 @@ const ClanListComponent = () => {
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={clans?.length || 0}
+          count={clans.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </Paper>
+      <Box>
+        <Button component={Link} to="/$rootId/createClan" params={{rootId}}>
+          Create
+        </Button>
+      </Box>
     </Box>
   );
 };
 
-export const Route = new FileRoute('/$rootId').createRoute({
+export const Route = new FileRoute('/$rootId/').createRoute({
   component: ClanListComponent,
   loaderDeps: ({search: {network}}) => ({network}),
   loader: ({deps: {network}, params: {rootId}, context: {queryClient}}) =>
@@ -167,9 +184,4 @@ export const Route = new FileRoute('/$rootId').createRoute({
       clanListQueryOptions({network, root: new PublicKey(rootId)})
     ),
   wrapInSuspense: true,
-  beforeLoad: ({params: {rootId}}) => {
-    return {
-      title: rootId,
-    }
-  }
 });

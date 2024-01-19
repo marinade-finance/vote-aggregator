@@ -23,10 +23,11 @@ const Header: FC<{
     setNetwork(event.target.value as Cluster);
   };
   const matches = useMatches();
-  const breadcrumbs = matches.map(({pathname, routeContext}) => {
+  const breadcrumbs = matches.map(({pathname, routeContext, params}) => {
     return {
       title: (routeContext as {title: string | undefined}).title,
       path: pathname,
+      params,
     };
   }).filter(({title}) => title);
 
@@ -34,13 +35,13 @@ const Header: FC<{
     <AppBar position="fixed">
       <Toolbar>
         <Breadcrumbs aria-label="breadcrumb">
-          {breadcrumbs.map(({title, path}, index) =>
+          {breadcrumbs.map(({title, path, params}, index) =>
             index === breadcrumbs.length - 1 ? (
               <Typography color="text.primary" key={path}>
                 {title}
               </Typography>
             ) : (
-              <Link key={path} to={path}>
+              <Link key={path} to={path} params={params}>
                 {title}
               </Link>
             )
@@ -62,7 +63,6 @@ const Header: FC<{
             >
               <MenuItem value="devnet">Devnet</MenuItem>
               <MenuItem value="testnet">Testnet</MenuItem>
-              <MenuItem value="mainnet-beta">Mainnet</MenuItem>
             </Select>
           </FormControl>
           <WalletMultiButton color="secondary" sx={{marginLeft: 'auto'}} />

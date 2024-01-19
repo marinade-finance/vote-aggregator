@@ -12,6 +12,7 @@ import {
 
 export type ClanTestData = {
   address: PublicKey;
+  size?: number;
   owner: PublicKey | Keypair;
   delegate?: PublicKey | Keypair;
   minVotingWeightToJoin?: BN;
@@ -33,6 +34,7 @@ export class ClanTester {
   public root: RootTester;
   public clanAddress: PublicKey;
   public clan: ClanAccount;
+  public clanSize?: number;
   public tokenOwnerRecord: TokenOwnerRecordAccount;
   public voterWeightRecord: VoterWeightAccount;
 
@@ -62,8 +64,86 @@ export class ClanTester {
     );
   }
 
+  static async encodeClanAccount({
+    clan,
+    address,
+    size,
+    voteAggregatorId,
+  }: {
+    clan: ClanAccount;
+    address: PublicKey;
+    size?: number;
+    voteAggregatorId: PublicKey;
+  }) {
+    const program = buildVoteAggregatorProgram({
+      voteAggregatorId,
+    });
+
+    let clanData = await program.coder.accounts.encode<ClanAccount>(
+      'clan',
+      clan
+    );
+    if (size !== undefined) {
+      if (size < clanData.length) {
+        throw new Error(
+          `Clan size ${size} is too small for ${clanData.length} bytes of data`
+        );
+      }
+      clanData = Buffer.concat([
+        clanData,
+        Buffer.alloc(size - clanData.length),
+      ]);
+    }
+    return {
+      address,
+      info: {
+        executable: false,
+        owner: voteAggregatorId,
+        lamports: getMinimumBalanceForRentExemption(clanData.length),
+        data: clanData,
+      },
+    };
+  }
+
+  static clanAccount({
+    owner,
+    delegate,
+    root,
+    minVotingWeightToJoin = new BN(0),
+    activeMembers = new BN(0),
+    leavingMembers = new BN(0),
+    name,
+    description = '',
+    voterWeight = new BN(0),
+    potentialVoterWeight = voterWeight,
+  }: ClanTestData & {root: PublicKey}): ClanAccount {
+    return {
+      root,
+      owner: owner instanceof Keypair ? owner.publicKey : owner,
+      delegate:
+        delegate instanceof Keypair
+          ? delegate.publicKey
+          : delegate || PublicKey.default,
+      voterAuthority: PublicKey.default,
+      tokenOwnerRecord: PublicKey.default,
+      voterWeightRecord: PublicKey.default,
+      minVotingWeightToJoin: resizeBN(minVotingWeightToJoin),
+      bumps: {
+        voterAuthority: 0,
+        tokenOwnerRecord: 0,
+        voterWeightRecord: 0,
+      },
+      activeMembers: resizeBN(activeMembers),
+      leavingMembers: resizeBN(leavingMembers),
+      potentialVoterWeight: resizeBN(potentialVoterWeight),
+      name,
+      description,
+    };
+  }
+
   constructor({
     address,
+    size,
     owner,
     delegate,
     root,
@@ -80,6 +160,7 @@ export class ClanTester {
     governanceDelegate = null,
   }: ClanTestData & {root: RootTester}) {
     this.clanAddress = address;
+    this.clanSize = size;
     if (owner instanceof Keypair) {
       this.owner = owner;
       owner = owner.publicKey;
@@ -169,19 +250,14 @@ export class ClanTester {
       splGovernanceId: this.root.splGovernanceId,
     });
     {
-      const clanData = await program.coder.accounts.encode<ClanAccount>(
-        'clan',
-        this.clan
+      accounts.push(
+        await ClanTester.encodeClanAccount({
+          clan: this.clan,
+          address: this.clanAddress,
+          size: this.clanSize,
+          voteAggregatorId: this.root.voteAggregatorId,
+        })
       );
-      accounts.push({
-        address: this.clanAddress,
-        info: {
-          executable: false,
-          owner: this.root.voteAggregatorId,
-          lamports: getMinimumBalanceForRentExemption(clanData.length),
-          data: clanData,
-        },
-      });
     }
 
     {

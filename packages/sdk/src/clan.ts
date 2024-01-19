@@ -7,7 +7,11 @@ import {VoteAggregatorSdk} from './sdk';
 import {IdlAccounts, ProgramAccount} from '@coral-xyz/anchor';
 import {VoteAggregator} from './vote_aggregator';
 import {RootAccount} from './root';
-import {TokenOwnerRecord, getTokenOwnerRecord} from '@solana/spl-governance';
+import {
+  SYSTEM_PROGRAM_ID,
+  TokenOwnerRecord,
+  getTokenOwnerRecord,
+} from '@solana/spl-governance';
 
 export type ClanAccount = IdlAccounts<VoteAggregator>['clan'];
 export type VoterWeightAccount =
@@ -222,6 +226,82 @@ export class ClanSdk {
         voterAuthority,
         tokenOwnerRecord,
         voterWeightRecord,
+      })
+      .instruction();
+  }
+
+  async setClanOwnerInstruction({
+    clanAddress,
+    owner,
+    newOwner,
+  }: {
+    clanAddress: PublicKey;
+    owner: PublicKey;
+    newOwner: PublicKey;
+  }) {
+    return await this.sdk.program.methods
+      .setClanOwner(newOwner)
+      .accountsStrict({
+        clan: clanAddress,
+        owner,
+      })
+      .instruction();
+  }
+
+  async resizeClanInstruction({
+    clanAddress,
+    clanAuthority,
+    payer,
+    size,
+  }: {
+    clanAddress: PublicKey;
+    clanAuthority: PublicKey;
+    payer: PublicKey;
+    size: number;
+  }) {
+    return await this.sdk.program.methods
+      .resizeClan(size)
+      .accountsStrict({
+        clan: clanAddress,
+        payer,
+        systemProgram: SYSTEM_PROGRAM_ID,
+        clanAuthority,
+      })
+      .instruction();
+  }
+
+  async setClanNameInstruction({
+    clanAddress,
+    clanAuthority,
+    name,
+  }: {
+    clanAddress: PublicKey;
+    clanAuthority: PublicKey;
+    name: string;
+  }) {
+    return await this.sdk.program.methods
+      .setClanName(name)
+      .accountsStrict({
+        clan: clanAddress,
+        clanAuthority,
+      })
+      .instruction();
+  }
+
+  async setClanDescriptionInstruction({
+    clanAddress,
+    clanAuthority,
+    description,
+  }: {
+    clanAddress: PublicKey;
+    clanAuthority: PublicKey;
+    description: string;
+  }) {
+    return await this.sdk.program.methods
+      .setClanDescription(description)
+      .accountsStrict({
+        clan: clanAddress,
+        clanAuthority,
       })
       .instruction();
   }

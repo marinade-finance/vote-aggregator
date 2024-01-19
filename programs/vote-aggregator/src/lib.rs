@@ -21,6 +21,22 @@ pub mod vote_aggregator {
         ctx.accounts.process(owner, ctx.bumps)
     }
 
+    pub fn set_clan_owner(ctx: Context<SetClanOwner>, owner: Pubkey) -> Result<()> {
+        ctx.accounts.process(owner)
+    }
+
+    pub fn resize_clan(ctx: Context<ResizeClan>, size: u32) -> Result<()> {
+        ctx.accounts.process(size)
+    }
+
+    pub fn set_clan_name(ctx: Context<ConfigureClan>, name: String) -> Result<()> {
+        ctx.accounts.set_name(name)
+    }
+
+    pub fn set_clan_description(ctx: Context<ConfigureClan>, description: String) -> Result<()> {
+        ctx.accounts.set_description(description)
+    }
+
     pub fn create_member(ctx: Context<CreateMember>) -> Result<()> {
         ctx.accounts.process(ctx.bumps)
     }
