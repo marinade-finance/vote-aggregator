@@ -1,18 +1,8 @@
 import {Cluster, PublicKey} from '@solana/web3.js';
 import voteAggregtorSdk from './voteAggregatorSdk';
-import BN from 'bn.js';
+import { MemberAccount } from 'vote-aggregator-sdk';
 
-export type MemberInfo = {
-  root: PublicKey;
-  owner: PublicKey;
-  delegate: PublicKey;
-  clan: PublicKey;
-  clanLeavingTime: BN;
-  tokenOwnerRecord: PublicKey;
-  voterWeightRecord: PublicKey;
-  voterWeight: BN;
-  voterWeightExpiry: BN | null;
-};
+export type MemberInfo = MemberAccount;
 
 const fetchMember = async ({
   network,
@@ -33,15 +23,7 @@ const fetchMember = async ({
   }
 
   return {
-    root: member.root,
-    owner: member.owner,
-    delegate: member.delegate,
-    clan: member.clan,
-    clanLeavingTime: member.clanLeavingTime,
-    tokenOwnerRecord: member.tokenOwnerRecord,
-    voterWeightRecord: member.voterWeightRecord,
-    voterWeight: member.voterWeight,
-    voterWeightExpiry: member.voterWeightExpiry,
+    ...member,
   };
 };
 

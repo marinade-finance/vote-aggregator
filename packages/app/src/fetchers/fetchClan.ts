@@ -1,7 +1,12 @@
 import {Cluster, PublicKey} from '@solana/web3.js';
 import voteAggregtorSdk from './voteAggregatorSdk';
-import { ClanInfo } from './fetchClanList';
+import BN from 'bn.js';
+import {ClanInfo} from './fetchClanList';
 
+export type DetailedClanInfo = ClanInfo & {
+  voterWeight: BN;
+  voterWeightExpiry: BN | null;
+};
 
 const fetchClan = async ({
   network,
@@ -9,9 +14,10 @@ const fetchClan = async ({
 }: {
   network: Cluster;
   clan: PublicKey;
-}): Promise<ClanInfo> => {
+}): Promise<DetailedClanInfo> => {
   const sdk = voteAggregtorSdk(network);
   const clanData = await sdk.clan.fetchClan(clan);
+  const vwr = await sdk.clan.fetchVoterWeight({clanAddress: clan});
 
   return {
     address: clan,
@@ -27,6 +33,8 @@ const fetchClan = async ({
     potentialVoterWeight: clanData.potentialVoterWeight,
     name: clanData.name,
     description: clanData.description,
+    voterWeight: vwr.voterWeight,
+    voterWeightExpiry: vwr.voterWeightExpiry,
   };
 };
 

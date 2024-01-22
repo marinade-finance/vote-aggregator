@@ -4,6 +4,7 @@ import fetchVoteAggregatorList from './fetchers/fetchVoteAggregatorList';
 import fetchClanList from './fetchers/fetchClanList';
 import fetchMember from './fetchers/fetchMember';
 import fetchClan from './fetchers/fetchClan';
+import fetchVoteAggregator from './fetchers/fetchVoteAggregator';
 
 export const voteAggregatorListQueryOptions = ({
   network,
@@ -18,6 +19,24 @@ export const voteAggregatorListQueryOptions = ({
   });
 };
 
+export const voteAggregatorQueryOptions = ({
+  network,
+  root,
+}: {
+  network: Cluster;
+  root: PublicKey;
+}) => {
+  return queryOptions({
+    queryKey: [network, root.toBase58(), 'voteAggregator'],
+    queryFn: ({queryKey}) => {
+      return fetchVoteAggregator({
+        network: queryKey[0] as Cluster,
+        root: new PublicKey(queryKey[1]),
+      });
+    },
+  });
+};
+
 export const clanListQueryOptions = ({
   network,
   root,
@@ -26,7 +45,7 @@ export const clanListQueryOptions = ({
   root: PublicKey;
 }) => {
   return queryOptions({
-    queryKey: [network, root.toString(), 'clanList'],
+    queryKey: [network, root.toBase58(), 'clanList'],
     queryFn: ({queryKey}) =>
       fetchClanList({
         network: queryKey[0] as Cluster,
@@ -45,12 +64,13 @@ export const clanQueryOptions = ({
   clan: PublicKey;
 }) => {
   return queryOptions({
-    queryKey: [network, root.toString(), 'clan', clan.toString()],
-    queryFn: ({queryKey}) =>
-      fetchClan({
+    queryKey: [network, root.toBase58(), 'clan', clan.toBase58()],
+    queryFn: ({queryKey}) => {
+      return fetchClan({
         network: queryKey[0] as Cluster,
         clan: new PublicKey(queryKey[3]),
-      }),
+      });
+    },
   });
 };
 
@@ -61,10 +81,10 @@ export const memberQueryOptions = ({
 }: {
   network: Cluster;
   root: PublicKey;
-  owner?: PublicKey;
+  owner: PublicKey;
 }) => {
   return queryOptions({
-    queryKey: [network, root.toString(), 'member', owner?.toString() || ''],
+    queryKey: [network, root.toBase58(), 'member', owner.toBase58()],
     queryFn: ({queryKey}) => {
       return fetchMember({
         network: queryKey[0] as Cluster,
@@ -72,6 +92,5 @@ export const memberQueryOptions = ({
         owner: new PublicKey(queryKey[3]),
       });
     },
-    enabled: Boolean(owner),
   });
 };

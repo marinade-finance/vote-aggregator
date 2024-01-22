@@ -41,6 +41,9 @@ const startLeavingClan = async ({
     owner: ownerAddress,
   })[0];
   const memberData = await sdk.member.fetchMember({memberAddress});
+  if (!memberData) {
+    throw new Error(`Member ${memberAddress} does not exist`);
+  }
 
   const signers = [];
   if (ownerKp) {
@@ -49,7 +52,8 @@ const startLeavingClan = async ({
   await execute({
     instructions: [
       await sdk.member.startLeavingClanInstruction({
-        member: memberData,
+        memberAddress,
+        memberData,
       }),
     ],
     signers,

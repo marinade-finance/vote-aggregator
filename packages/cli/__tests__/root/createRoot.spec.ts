@@ -20,8 +20,8 @@ import {context} from '../../src/context';
 import {cli} from '../../src/cli';
 
 describe('create-root command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+  let stdout: Mock<(_message?: any, ..._optionalParams: any[]) => void>;
 
   beforeEach(() => {
     stdout = spyOn(console, 'log').mockImplementation(() => {});

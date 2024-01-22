@@ -3,6 +3,8 @@ import {FileRoute, useNavigate} from '@tanstack/react-router';
 import {useState} from 'react';
 import useCreateClan from '../../hooks/useCreateClan';
 import {PublicKey} from '@solana/web3.js';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { voteAggregatorQueryOptions } from '../../queryOptions';
 
 const CreateClanComponent = () => {
   const {network} = Route.useSearch();
@@ -10,6 +12,10 @@ const CreateClanComponent = () => {
   const [description, setDescription] = useState('');
   const {rootId} = Route.useParams();
   const root = new PublicKey(rootId);
+  const {data: rootData} = useSuspenseQuery(voteAggregatorQueryOptions({
+    network,
+    root,
+  }));
 
   const navigate = useNavigate();
 
@@ -18,7 +24,7 @@ const CreateClanComponent = () => {
   const handleSubmit: React.FormEventHandler<HTMLFormElement> = event => {
     event.preventDefault();
     mutation.mutate(
-      {network, root, name, description},
+      {network, rootAddress: root, rootData, name, description},
       {
         onSuccess: ({clan}) => {
           navigate({

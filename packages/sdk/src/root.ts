@@ -6,14 +6,14 @@ import {
 } from '@solana/web3.js';
 import {RealmSide, VoteAggregatorSdk} from './sdk';
 import {
-  Realm,
-  RealmConfigAccount,
+  GoverningTokenConfig,
+  MintMaxVoteWeightSource,
   createSetRealmConfig,
   getRealm,
   getRealmConfig,
   getRealmConfigAddress,
 } from '@solana/spl-governance';
-import {IdlAccounts, ProgramAccount} from '@coral-xyz/anchor';
+import {BN, IdlAccounts, ProgramAccount} from '@coral-xyz/anchor';
 import {VoteAggregator} from './vote_aggregator';
 
 export type RootAccount = IdlAccounts<VoteAggregator>['root'];
@@ -147,8 +147,19 @@ export class RootSdk {
   }: {
     splGovernanceId?: PublicKey;
     realmAddress: PublicKey;
-    realmData?: Realm;
-    realmConfigData?: RealmConfigAccount;
+    realmData?: {
+      communityMint: PublicKey;
+      config: {
+        councilMint: PublicKey | undefined;
+        communityMintMaxVoteWeightSource: MintMaxVoteWeightSource;
+        minCommunityTokensToCreateGovernance: BN;
+      };
+      authority: PublicKey | undefined;
+    };
+    realmConfigData?: {
+      communityTokenConfig: GoverningTokenConfig;
+      councilTokenConfig: GoverningTokenConfig;
+    };
     side: RealmSide;
     payer: PublicKey;
   }): Promise<TransactionInstruction[]> {
@@ -168,6 +179,10 @@ export class RootSdk {
     if (!splGovernanceId) {
       throw new Error('splGovernanceId is required');
     }
+    if (!realmData.authority) {
+      throw new Error(`Realm ${realmAddress} does not have an authority`);
+    }
+
     if (!realmConfigData) {
       const {account} = await getRealmConfig(
         this.sdk.connection,
@@ -194,7 +209,7 @@ export class RootSdk {
         realm: realmAddress,
         realmConfig: await getRealmConfigAddress(splGovernanceId, realmAddress),
         governingTokenMint,
-        realmAuthority: realmData.authority!,
+        realmAuthority: realmData.authority,
         maxVoterWeight: maxVoterWeightAddress,
         payer,
         governanceProgram: splGovernanceId,

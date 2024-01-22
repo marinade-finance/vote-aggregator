@@ -28,11 +28,6 @@ const joinClan = async ({
   const clanAddress = await parsePubkey(clan);
   const clanData = await sdk.clan.fetchClan(clanAddress);
   const rootData = await sdk.root.fetchRoot(clanData.root);
-  const memberAddress = sdk.member.memberAddress({
-    rootAddress: clanData.root,
-    owner: ownerAddress,
-  })[0];
-  const memberData = await sdk.member.fetchMember({memberAddress});
 
   let memberVoterWeightAddress: PublicKey;
   if (memberVoterWeight) {
@@ -40,8 +35,8 @@ const joinClan = async ({
   } else {
     memberVoterWeightAddress = (
       await sdk.member.findVoterWeightRecord({
-        root: rootData,
-        member: memberData,
+        rootData,
+        owner: ownerAddress,
       })
     ).pubkey;
   }
@@ -50,15 +45,25 @@ const joinClan = async ({
   if (ownerKp) {
     signers.push(ownerKp);
   }
+  const instructions = await sdk.member.createMemberInstructionIfNeeded({
+    rootAddress: clanData.root,
+    rootData,
+    owner: ownerAddress,
+    payer: provider.publicKey!,
+  });
+  instructions.push(
+    await sdk.member.joinClanInstruction({
+      rootData,
+      memberData: {
+        root: clanData.root,
+        owner: ownerAddress,
+      },
+      clanAddress,
+      memberVoterWeightAddress,
+    })
+  );
   await execute({
-    instructions: [
-      await sdk.member.joinClanInstruction({
-        root: rootData,
-        member: memberData,
-        clanAddress: clanAddress,
-        memberVoterWeightAddress,
-      }),
-    ],
+    instructions,
     signers,
   });
 };

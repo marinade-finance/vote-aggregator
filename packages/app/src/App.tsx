@@ -7,8 +7,8 @@ import {NetworkProvider} from './contexts/NetworkContext';
 
 function App() {
   return (
-    <AppQueryClientProvider>
-      <SnackbarProvider maxSnack={3}>
+    <SnackbarProvider maxSnack={3}>
+      <AppQueryClientProvider>
         <NetworkProvider>
           <AppConnectionProvider>
             <AppWalletProvider>
@@ -16,8 +16,8 @@ function App() {
             </AppWalletProvider>
           </AppConnectionProvider>
         </NetworkProvider>
-      </SnackbarProvider>
-    </AppQueryClientProvider>
+      </AppQueryClientProvider>
+    </SnackbarProvider>
   );
 }
 

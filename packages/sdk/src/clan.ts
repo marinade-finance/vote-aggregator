@@ -177,40 +177,48 @@ export class ClanSdk {
   }
 
   async fetchTokenOwnerRecord({
-    root,
+    rootData,
     clanAddress,
   }: {
-    root: RootAccount;
+    rootData: {
+      governanceProgram: PublicKey;
+      realm: PublicKey;
+      governingTokenMint: PublicKey;
+    };
     clanAddress: PublicKey;
   }): Promise<TokenOwnerRecord> {
     const [address] = this.tokenOwnerRecordAddress({
-      realmAddress: root.realm,
-      governingTokenMint: root.governingTokenMint,
+      realmAddress: rootData.realm,
+      governingTokenMint: rootData.governingTokenMint,
       clanAddress,
-      splGovernanceId: root.governanceProgram,
+      splGovernanceId: rootData.governanceProgram,
     });
     return (await getTokenOwnerRecord(this.sdk.connection, address)).account;
   }
 
   async createClanInstruction({
     rootAddress,
-    root,
+    rootData,
     clanAddress,
     owner,
-    payer,
+    payer = owner,
   }: {
     rootAddress: PublicKey;
-    root: RootAccount;
+    rootData: {
+      governanceProgram: PublicKey;
+      realm: PublicKey;
+      governingTokenMint: PublicKey;
+    };
     clanAddress: PublicKey;
     owner: PublicKey;
-    payer: PublicKey;
+    payer?: PublicKey;
   }) {
     const [voterAuthority] = this.voterAuthority({clanAddress});
     const [tokenOwnerRecord] = this.tokenOwnerRecordAddress({
-      realmAddress: root.realm,
-      governingTokenMint: root.governingTokenMint,
+      realmAddress: rootData.realm,
+      governingTokenMint: rootData.governingTokenMint,
       clanAddress,
-      splGovernanceId: root.governanceProgram,
+      splGovernanceId: rootData.governanceProgram,
     });
     const [voterWeightRecord] = this.voterWeightAddress(clanAddress);
     return await this.sdk.program.methods
@@ -218,10 +226,10 @@ export class ClanSdk {
       .accountsStrict({
         root: rootAddress,
         clan: clanAddress,
-        realm: root.realm,
-        governingTokenMint: root.governingTokenMint,
+        realm: rootData.realm,
+        governingTokenMint: rootData.governingTokenMint,
         payer,
-        governanceProgram: root.governanceProgram,
+        governanceProgram: rootData.governanceProgram,
         systemProgram: SystemProgram.programId,
         voterAuthority,
         tokenOwnerRecord,

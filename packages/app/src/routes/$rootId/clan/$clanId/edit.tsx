@@ -15,8 +15,8 @@ const EditClanComponent = () => {
     clanQueryOptions({network, root, clan})
   );
 
-  const [name, setName] = useState(clanData.name);
-  const [description, setDescription] = useState(clanData.description);
+  const [name, setName] = useState(clanData!.name);
+  const [description, setDescription] = useState(clanData!.description);
 
   const navigate = useNavigate();
 

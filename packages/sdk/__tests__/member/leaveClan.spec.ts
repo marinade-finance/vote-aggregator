@@ -28,7 +28,7 @@ describe('start_leaving_clan instruction', () => {
       const sdk = new VoteAggregatorSdk();
       expect(
         sdk.member.leaveClanInstruction({
-          member: memberTester.member,
+          memberData: memberTester.member,
         })
       ).resolves.toMatchSnapshot();
     }

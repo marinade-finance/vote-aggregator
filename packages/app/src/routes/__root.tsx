@@ -8,9 +8,9 @@ import {TanStackRouterDevtools} from '@tanstack/router-devtools';
 import {ReactQueryDevtools} from '@tanstack/react-query-devtools';
 import {QueryClient} from '@tanstack/react-query';
 import {Cluster} from '@solana/web3.js';
-import {Box, CssBaseline} from '@mui/material';
+import {Container, CssBaseline} from '@mui/material';
 import {z} from 'zod';
-import {useCallback, useContext, useEffect} from 'react';
+import {Suspense, useCallback, useContext, useEffect} from 'react';
 import {NetworkContext} from '../contexts/NetworkContext';
 
 const RootComponent = () => {
@@ -40,9 +40,11 @@ const RootComponent = () => {
     <>
       <CssBaseline />
       <Header network={network} setNetwork={handleSetNetwork} />
-      <Box sx={{width: '100%', ml: 10}}>
-        <Outlet />
-      </Box>
+      <Container sx={{width: '100%', ml: 10}}>
+        <Suspense>
+          <Outlet />
+        </Suspense>
+      </Container>
       <TanStackRouterDevtools position="bottom-left" />
       <ReactQueryDevtools buttonPosition="bottom-right" />
     </>
@@ -64,8 +66,8 @@ export const Route = rootRouteWithContext<{
   beforeLoad: () => {
     return {
       title: 'Vote Aggregator',
-    }
-  }
+    };
+  },
 });
 
 //

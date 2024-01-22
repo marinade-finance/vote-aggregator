@@ -63,7 +63,7 @@ const createClan = async ({
   instructions.push(
     await sdk.clan.createClanInstruction({
       rootAddress,
-      root: rootData,
+      rootData,
       clanAddress: clanAddress.publicKey,
       owner: temporalOwner,
       payer: provider.publicKey!,

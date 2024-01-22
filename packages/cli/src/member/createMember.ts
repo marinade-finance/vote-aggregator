@@ -35,7 +35,7 @@ const createMember = async ({
     realmAddress,
     governingTokenMint,
   });
-  const rootData = await sdk.root.fetchRoot(rootAddress);
+
   const signers = [];
   if (ownerKp) {
     signers.push(ownerKp);
@@ -44,7 +44,11 @@ const createMember = async ({
     instructions: [
       await sdk.member.createMemberInstruction({
         rootAddress,
-        root: rootData,
+        rootData: {
+          governanceProgram: realmData.owner,
+          realm: realmAddress,
+          governingTokenMint,
+        },
         owner: ownerKp?.publicKey || provider.publicKey!,
         payer: provider.publicKey!,
       }),

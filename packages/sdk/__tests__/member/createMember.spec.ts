@@ -21,7 +21,7 @@ describe('create_member instruction', () => {
       expect(
         sdk.member.createMemberInstruction({
           rootAddress: rootTester.rootAddress[0],
-          root: rootTester.root,
+          rootData: rootTester.root,
           owner: member.owner.publicKey,
           payer: PublicKey.default,
         })

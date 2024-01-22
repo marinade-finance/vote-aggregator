@@ -1,7 +1,7 @@
 import {FileRoute} from '@tanstack/react-router';
 import {voteAggregatorListQueryOptions} from '../queryOptions';
 import {useSuspenseQuery} from '@tanstack/react-query';
-import VoteAggregatorItem from '../components/VoteAggregatorItem';
+import VoteAggregatorItem from '../components/root/VoteAggregatorItem';
 
 const VoteAggregatorListComponent = () => {
   const {network} = Route.useSearch();
@@ -22,5 +22,5 @@ export const Route = new FileRoute('/').createRoute({
   loaderDeps: ({search: {network}}) => ({network}),
   loader: ({deps: {network}, context: {queryClient}}) =>
     queryClient.ensureQueryData(voteAggregatorListQueryOptions({network})),
-  wrapInSuspense: true,
+  // wrapInSuspense: true,
 });

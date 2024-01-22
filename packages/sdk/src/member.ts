@@ -1,8 +1,7 @@
-import {PublicKey} from '@solana/web3.js';
+import {PublicKey, TransactionInstruction} from '@solana/web3.js';
 import {VoteAggregatorSdk} from './sdk';
 import {BN, IdlAccounts} from '@coral-xyz/anchor';
 import {VoteAggregator} from './vote_aggregator';
-import {RootAccount} from './root';
 import {SYSTEM_PROGRAM_ID} from '@solana/spl-governance';
 import {VoterWeightAccount} from './clan';
 
@@ -72,18 +71,22 @@ export class MemberSdk {
   }
 
   async findVoterWeightRecord({
-    root,
-    member,
+    rootData,
+    owner,
   }: {
-    root: RootAccount;
-    member: MemberAccount;
+    rootData: {
+      realm: PublicKey;
+      governingTokenMint: PublicKey;
+      votingWeightPlugin: PublicKey;
+    };
+    owner: PublicKey;
   }) {
     const voterWeightAccounts = [];
 
     for (const discriminators of ['8riZd8mYDQk', '9RuW8iaNj6Z']) {
       voterWeightAccounts.push(
         ...(await this.sdk.connection.getProgramAccounts(
-          root.votingWeightPlugin,
+          rootData.votingWeightPlugin,
           {
             filters: [
               {
@@ -95,19 +98,19 @@ export class MemberSdk {
               {
                 memcmp: {
                   offset: 8,
-                  bytes: root.realm.toBase58(),
+                  bytes: rootData.realm.toBase58(),
                 },
               },
               {
                 memcmp: {
                   offset: 8 + 32,
-                  bytes: root.governingTokenMint.toBase58(),
+                  bytes: rootData.governingTokenMint.toBase58(),
                 },
               },
               {
                 memcmp: {
                   offset: 8 + 32 + 32,
-                  bytes: member.owner.toBase58(),
+                  bytes: owner.toBase58(),
                 },
               },
             ],
@@ -165,7 +168,7 @@ export class MemberSdk {
 
     if (bestIndex === null) {
       throw new Error(
-        `Can not find VWR for ${member.owner.toBase58()} in plugin ${root.votingWeightPlugin.toBase58()}`
+        `Can not find VWR for ${owner.toBase58()} in the plugin ${rootData.votingWeightPlugin.toBase58()}`
       );
     }
 
@@ -174,20 +177,24 @@ export class MemberSdk {
 
   async createMemberInstruction({
     rootAddress,
-    root,
+    rootData,
     owner,
-    payer,
+    payer = owner,
   }: {
     rootAddress: PublicKey;
-    root: RootAccount;
+    rootData: {
+      governanceProgram: PublicKey;
+      realm: PublicKey;
+      governingTokenMint: PublicKey;
+    };
     owner: PublicKey;
-    payer: PublicKey;
+    payer?: PublicKey;
   }) {
     const [tokenOwnerRecord] = this.tokenOwnerRecordAddress({
-      realmAddress: root.realm,
-      governingTokenMint: root.governingTokenMint,
+      realmAddress: rootData.realm,
+      governingTokenMint: rootData.governingTokenMint,
       owner,
-      splGovernanceId: root.governanceProgram,
+      splGovernanceId: rootData.governanceProgram,
     });
     const [member] = this.memberAddress({rootAddress, owner});
     return await this.sdk.program.methods
@@ -203,72 +210,157 @@ export class MemberSdk {
       .instruction();
   }
 
+  async createMemberInstructionIfNeeded({
+    rootAddress,
+    rootData,
+    owner,
+    payer = owner,
+  }: {
+    rootAddress: PublicKey;
+    rootData: {
+      governanceProgram: PublicKey;
+      realm: PublicKey;
+      governingTokenMint: PublicKey;
+    };
+    owner: PublicKey;
+    payer?: PublicKey;
+  }): Promise<TransactionInstruction[]> {
+    const [member] = this.memberAddress({rootAddress, owner});
+    if (await this.sdk.connection.getAccountInfo(member)) {
+      return [];
+    }
+    return [
+      await this.createMemberInstruction({rootAddress, rootData, owner, payer}),
+    ];
+  }
+
   async joinClanInstruction({
-    root,
-    member,
+    rootData = {},
+    memberAddress,
+    memberData,
     clanAddress,
     memberVoterWeightAddress,
+    memberAuthority = memberData.owner,
   }: {
-    root: RootAccount;
-    member: MemberAccount;
+    rootData?: {
+      governanceProgram?: PublicKey;
+      realm?: PublicKey;
+      governingTokenMint?: PublicKey;
+    };
+    memberAddress?: PublicKey;
+    memberData: {
+      root: PublicKey;
+      owner: PublicKey;
+      tokenOwnerRecord?: PublicKey;
+    };
     clanAddress: PublicKey;
     memberVoterWeightAddress: PublicKey;
+    memberAuthority?: PublicKey;
   }) {
-    const [memberAddress] = this.memberAddress({
-      rootAddress: member.root,
-      owner: member.owner,
-    });
+    if (!memberAddress) {
+      [memberAddress] = this.memberAddress({
+        rootAddress: memberData.root,
+        owner: memberData.owner,
+      });
+    }
+
+    let memberTokenOwnerRecord = memberData.tokenOwnerRecord;
+    if (!memberTokenOwnerRecord) {
+      if (!rootData.realm) {
+        throw new Error('rootData.realm is required');
+      }
+      if (!rootData.governingTokenMint) {
+        throw new Error('rootData.governingTokenMint is required');
+      }
+      if (!rootData.governanceProgram) {
+        throw new Error('rootData.governanceProgram is required');
+      }
+
+      [memberTokenOwnerRecord] = this.tokenOwnerRecordAddress({
+        realmAddress: rootData.realm,
+        governingTokenMint: rootData.governingTokenMint,
+        owner: memberData.owner,
+        splGovernanceId: rootData.governanceProgram,
+      });
+    }
     return await this.sdk.program.methods
       .joinClan()
       .accountsStrict({
-        root: member.root,
+        root: memberData.root,
         member: memberAddress,
         clan: clanAddress,
-        memberAuthority: member.owner, // TODO delegate
+        memberAuthority,
         clanVoterWeightRecord: this.sdk.clan.voterWeightAddress(clanAddress)[0],
-        memberTokenOwnerRecord: this.tokenOwnerRecordAddress({
-          realmAddress: root.realm,
-          governingTokenMint: root.governingTokenMint,
-          owner: member.owner,
-          splGovernanceId: root.governanceProgram,
-        })[0],
+        memberTokenOwnerRecord,
         memberVoterWeightRecord: memberVoterWeightAddress,
         maxVoterWeightRecord: this.sdk.root.maxVoterWieghtAddress({
-          rootAddress: member.root,
+          rootAddress: memberData.root,
         })[0],
       })
       .instruction();
   }
 
-  async startLeavingClanInstruction({member}: {member: MemberAccount}) {
-    const [memberAddress] = this.memberAddress({
-      rootAddress: member.root,
-      owner: member.owner,
-    });
+  async startLeavingClanInstruction({
+    memberData,
+    memberAddress,
+    memberAuthority = memberData.owner,
+  }: {
+    memberData: {
+      root: PublicKey;
+      owner: PublicKey;
+      // delegate: PublicKey;
+      clan: PublicKey;
+    };
+    memberAddress?: PublicKey;
+    memberAuthority?: PublicKey;
+  }) {
+    if (!memberAddress) {
+      [memberAddress] = this.memberAddress({
+        rootAddress: memberData.root,
+        owner: memberData.owner,
+      });
+    }
+    const [clanVoterWeightRecord] = this.sdk.clan.voterWeightAddress(
+      memberData.clan
+    );
     return await this.sdk.program.methods
       .startLeavingClan()
       .accountsStrict({
-        root: member.root,
+        root: memberData.root,
         member: memberAddress,
-        clan: member.clan,
-        memberAuthority: member.owner, // TODO delegate
-        clanVoterWeightRecord: this.sdk.clan.voterWeightAddress(member.clan)[0],
+        clan: memberData.clan,
+        memberAuthority,
+        clanVoterWeightRecord,
       })
       .instruction();
   }
 
-  async leaveClanInstruction({member}: {member: MemberAccount}) {
-    const [memberAddress] = this.memberAddress({
-      rootAddress: member.root,
-      owner: member.owner,
-    });
+  async leaveClanInstruction({
+    memberData,
+    memberAddress,
+    memberAuthority = memberData.owner,
+  }: {
+    memberData: {
+      root: PublicKey;
+      owner: PublicKey;
+      clan: PublicKey;
+    };
+    memberAddress?: PublicKey;
+    memberAuthority?: PublicKey;
+  }) {
+    if (!memberAddress) {
+      [memberAddress] = this.memberAddress({
+        rootAddress: memberData.root,
+        owner: memberData.owner,
+      });
+    }
     return await this.sdk.program.methods
       .leaveClan()
       .accountsStrict({
-        root: member.root,
+        root: memberData.root,
         member: memberAddress,
-        clan: member.clan,
-        memberAuthority: member.owner, // TODO delegate
+        clan: memberData.clan,
+        memberAuthority,
       })
       .instruction();
   }

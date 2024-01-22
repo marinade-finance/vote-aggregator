@@ -22,7 +22,7 @@ describe('create_clan instruction', () => {
       expect(
         sdk.clan.createClanInstruction({
           rootAddress: rootTester.rootAddress[0],
-          root: rootTester.root,
+          rootData: rootTester.root,
           clanAddress: clan.address.publicKey,
           owner: clan.owner,
           payer: PublicKey.default,

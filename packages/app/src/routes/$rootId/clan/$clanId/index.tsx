@@ -1,9 +1,11 @@
-import {FileRoute, Link} from '@tanstack/react-router';
+import {FileRoute} from '@tanstack/react-router';
 import {clanQueryOptions} from '../../../../queryOptions';
-import {PublicKey} from '@solana/web3.js';
+import {LAMPORTS_PER_SOL, PublicKey} from '@solana/web3.js';
 import {useSuspenseQuery} from '@tanstack/react-query';
 import {useWallet} from '@solana/wallet-adapter-react';
 import {Box} from '@mui/material';
+import ClanManagement from '../../../../components/clan/ClanManagement';
+import ClanMembership from '../../../../components/clan/ClanMembership';
 
 const ClanComponent = () => {
   const {network} = Route.useSearch();
@@ -17,37 +19,24 @@ const ClanComponent = () => {
   return (
     <Box>
       <Box>
-        Clan: {clanData.name} ({clanId})
+        Clan: {clanData!.name} ({clanId}){' '}
+        {publicKey && (
+          <ClanMembership network={network} root={root} clan={clan} />
+        )}
       </Box>
       <Box>Description: {clanData.description}</Box>
       <Box>
         Owner:{' '}
-        {clanData.owner.toBase58() === publicKey?.toBase58()
+        {publicKey && clanData.owner.equals(publicKey)
           ? 'You'
-          : clanData?.owner.toBase58()}
+          : clanData.owner.toBase58()}
       </Box>
-      {clanData.owner.toBase58() === publicKey?.toBase58() && (
-        <Box>
-          <Link
-            to="/$rootId/clan/$clanId/edit"
-            params={{
-              rootId,
-              clanId,
-            }}
-          >
-            Edit
-          </Link>
-          &nbsp;
-          <Link
-            to="/$rootId/clan/$clanId/transfer"
-            params={{
-              rootId,
-              clanId,
-            }}
-          >
-            Transfer
-          </Link>
-        </Box>
+      <Box>
+        Total power:{' '}
+        {parseFloat(clanData.voterWeight.toString()) / LAMPORTS_PER_SOL}
+      </Box>
+      {publicKey && clanData.owner.equals(publicKey) && (
+        <ClanManagement root={root} clan={clan} />
       )}
     </Box>
   );

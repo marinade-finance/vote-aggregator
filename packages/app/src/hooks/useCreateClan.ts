@@ -11,12 +11,18 @@ const useCreateClan = () => {
 
   return useMutation({
     mutationFn: async ({
-      root,
+      rootAddress,
+      rootData,
       name,
       description,
     }: {
       network: Cluster;
-      root: PublicKey;
+      rootAddress: PublicKey;
+      rootData: {
+        governanceProgram: PublicKey;
+        realm: PublicKey;
+        governingTokenMint: PublicKey;
+      };
       name: string;
       description: string;
     }) => {
@@ -28,12 +34,11 @@ const useCreateClan = () => {
         blockhash,
         lastValidBlockHeight,
       });
-      const rootData = await sdk.root.fetchRoot(root);
       const clanAddress = Keypair.generate();
       tx.add(
         await sdk.clan.createClanInstruction({
-          root: rootData,
-          rootAddress: root,
+          rootData,
+          rootAddress,
           clanAddress: clanAddress.publicKey,
           owner: publicKey!,
           payer: publicKey!,
@@ -68,22 +73,6 @@ const useCreateClan = () => {
         }
       }
 
-      // TODO: autojoin
-      if (
-        !(await sdk.connection.getAccountInfo(
-          sdk.member.memberAddress({rootAddress: root, owner: publicKey!})[0]
-        ))
-      ) {
-        tx.add(
-          await sdk.member.createMemberInstruction({
-            rootAddress: root,
-            root: rootData,
-            owner: publicKey!,
-            payer: publicKey!,
-          })
-        );
-      }
-
       tx.partialSign(clanAddress);
       const signature = await sendTransaction(tx, connection);
       const result = await connection.confirmTransaction({
@@ -96,8 +85,10 @@ const useCreateClan = () => {
       }
       return {clan: clanAddress.publicKey};
     },
-    onSuccess: (_, {network, root}) => {
-      queryClient.invalidateQueries(clanListQueryOptions({network, root}));
+    onSuccess: (_, {network, rootAddress}) => {
+      queryClient.invalidateQueries(
+        clanListQueryOptions({network, root: rootAddress})
+      );
     },
   });
 };

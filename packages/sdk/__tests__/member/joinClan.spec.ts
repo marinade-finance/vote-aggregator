@@ -29,8 +29,8 @@ describe('join_clan instruction', () => {
       const sdk = new VoteAggregatorSdk();
       expect(
         sdk.member.joinClanInstruction({
-          root: rootTester.root,
-          member: memberTester.member,
+          rootData: rootTester.root,
+          memberData: memberTester.member,
           clanAddress: clanTester.clanAddress,
           memberVoterWeightAddress: memberVoterWeight.address,
         })
