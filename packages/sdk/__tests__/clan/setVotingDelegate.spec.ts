@@ -40,7 +40,7 @@ describe('set_voting_delegate instruction', () => {
       expect(
         sdk.clan.setVotingDelegateInstruction({
           rootAddress: rootTester.rootAddress[0],
-          root: rootTester.root,
+          rootData: rootTester.root,
           clanAddress: clan.address,
           clanAuthority: clanAuthority.publicKey,
           newVotingDelegate,

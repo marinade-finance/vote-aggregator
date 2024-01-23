@@ -2,7 +2,7 @@ import {Box, Button, TextField} from '@mui/material';
 import {FileRoute, useNavigate} from '@tanstack/react-router';
 import {useState} from 'react';
 import {PublicKey} from '@solana/web3.js';
-import {useSuspenseQuery} from '@tanstack/react-query';
+import {useQueryClient, useSuspenseQuery} from '@tanstack/react-query';
 import {clanQueryOptions} from '../../../../queryOptions';
 import useSetClanOwner from '../../../../hooks/useSetClanOwner';
 
@@ -11,8 +11,9 @@ const TransferClanComponent = () => {
   const {rootId, clanId} = Route.useParams();
   const root = new PublicKey(rootId);
   const clan = new PublicKey(clanId);
+  const queryClient = useQueryClient();
   const {data: clanData} = useSuspenseQuery(
-    clanQueryOptions({network, root, clan})
+    clanQueryOptions({network, root, clan, queryClient})
   );
 
   const [newOwner, setNewOwner] = useState(clanData.owner.toBase58());

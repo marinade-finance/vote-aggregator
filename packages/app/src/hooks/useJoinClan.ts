@@ -87,7 +87,12 @@ const useJoinClan = () => {
         })
       );
       queryClient.invalidateQueries(
-        clanQueryOptions({network, root: rootAddress, clan: clanAddress})
+        clanQueryOptions({
+          network,
+          root: rootAddress,
+          clan: clanAddress,
+          queryClient,
+        })
       );
     },
   });

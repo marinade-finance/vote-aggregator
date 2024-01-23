@@ -72,6 +72,15 @@ const useCreateClan = () => {
           );
         }
       }
+      tx.add(
+        await sdk.clan.setVotingDelegateInstruction({
+          rootAddress,
+          rootData,
+          clanAddress: clanAddress.publicKey,
+          clanAuthority: publicKey!,
+          newVotingDelegate: publicKey!,
+        })
+      );
 
       tx.partialSign(clanAddress);
       const signature = await sendTransaction(tx, connection);

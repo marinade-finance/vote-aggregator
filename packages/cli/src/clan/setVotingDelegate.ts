@@ -40,7 +40,7 @@ const setVotingDelegate = async ({
     instructions: [
       await sdk.clan.setVotingDelegateInstruction({
         rootAddress: clanData.root,
-        root,
+        rootData: root,
         clanAddress,
         clanAuthority: authorityKp
           ? authorityKp.publicKey

@@ -1,6 +1,6 @@
 import {Box, Paper} from '@mui/material';
 import {Cluster, PublicKey} from '@solana/web3.js';
-import {useSuspenseQuery} from '@tanstack/react-query';
+import {useQueryClient, useSuspenseQuery} from '@tanstack/react-query';
 import {memberQueryOptions, vsrVoterQueryOptions} from '../../queryOptions';
 import {useWallet} from '@solana/wallet-adapter-react';
 import MemberClanInfo from './MemberClanInfo';
@@ -17,13 +17,14 @@ const MemberManagement = ({
   if (!publicKey) {
     throw new Error('Wallet not connected');
   }
+  const queryClient = useQueryClient();
 
   const {data: memberData} = useSuspenseQuery(
     memberQueryOptions({network, owner: publicKey!, root})
   );
 
   const {data: vsrVoterData} = useSuspenseQuery(
-    vsrVoterQueryOptions({network, owner: publicKey!, root})
+    vsrVoterQueryOptions({network, owner: publicKey!, root, queryClient})
   );
 
   return (

@@ -3,30 +3,40 @@ import {FileRoute, useNavigate} from '@tanstack/react-router';
 import {useState} from 'react';
 import {PublicKey} from '@solana/web3.js';
 import {useQueryClient, useSuspenseQuery} from '@tanstack/react-query';
-import {clanQueryOptions} from '../../../../queryOptions';
-import useConfigureClan from '../../../../hooks/useConfigureClan';
+import {clanQueryOptions, voteAggregatorQueryOptions} from '../../../../queryOptions';
+import useSetVotingDelegate from '../../../../hooks/useSetVotingDelegate';
 
-const EditClanComponent = () => {
+const SetVotingDelegateComponent = () => {
   const {network} = Route.useSearch();
   const {rootId, clanId} = Route.useParams();
   const root = new PublicKey(rootId);
   const clan = new PublicKey(clanId);
   const queryClient = useQueryClient();
+  const {data: rootData} = useSuspenseQuery(
+    voteAggregatorQueryOptions({network, root})
+  );
   const {data: clanData} = useSuspenseQuery(
     clanQueryOptions({network, root, clan, queryClient})
   );
 
-  const [name, setName] = useState(clanData!.name);
-  const [description, setDescription] = useState(clanData!.description);
+  const [newVotingDelegate, setNewVotingDelegate] = useState(
+    clanData.governanceDelegate?.toBase58() || ''
+  );
 
   const navigate = useNavigate();
 
-  const mutation = useConfigureClan();
+  const mutation = useSetVotingDelegate();
 
   const handleSubmit: React.FormEventHandler<HTMLFormElement> = event => {
     event.preventDefault();
     mutation.mutate(
-      {network, root, clan, name, description},
+      {
+        network,
+        rootAddress: root,
+        rootData,
+        clan,
+        newVotingDelegate: newVotingDelegate ? new PublicKey(newVotingDelegate) : null,
+      },
       {
         onSuccess: () => {
           navigate({
@@ -46,27 +56,21 @@ const EditClanComponent = () => {
       <TextField
         name="name"
         label="Name"
-        value={name}
-        onChange={event => setName(event.target.value)}
+        value={newVotingDelegate}
+        onChange={event => setNewVotingDelegate(event.target.value)}
       />
-      <TextField
-        name="description"
-        label="Description"
-        fullWidth
-        sx={{mt: 1}}
-        value={description}
-        onChange={event => setDescription(event.target.value)}
-      />
-      <Button type="submit">Edit</Button>
+      <Button type="submit">Delegate</Button>
     </Box>
   );
 };
 
-export const Route = new FileRoute('/$rootId/clan/$clanId/edit').createRoute({
-  component: EditClanComponent,
+export const Route = new FileRoute(
+  '/$rootId/clan/$clanId/setVotingDelegate'
+).createRoute({
+  component: SetVotingDelegateComponent,
   beforeLoad: () => {
     return {
-      title: 'edit',
+      title: 'Delegate voting',
     };
   },
 });

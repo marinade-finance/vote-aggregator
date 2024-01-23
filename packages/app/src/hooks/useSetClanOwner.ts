@@ -51,6 +51,7 @@ const useSetClanOwner = () => {
           network,
           root,
           clan,
+          queryClient,
         })
       );
       queryClient.invalidateQueries(clanListQueryOptions({network, root}));

@@ -2,7 +2,7 @@ import {Box} from '@mui/material';
 import {MemberInfo} from '../../fetchers/fetchMember';
 import BN from 'bn.js';
 import {Cluster, LAMPORTS_PER_SOL, PublicKey} from '@solana/web3.js';
-import {useSuspenseQuery} from '@tanstack/react-query';
+import {useQueryClient, useSuspenseQuery} from '@tanstack/react-query';
 import {clanQueryOptions} from '../../queryOptions';
 import {Link} from '@tanstack/react-router';
 
@@ -16,9 +16,15 @@ const MemberClanInfo = ({
   if (memberData.clan.equals(PublicKey.default)) {
     throw new Error('Member not in clan');
   }
+  const queryClient = useQueryClient();
 
   const {data: clanData} = useSuspenseQuery(
-    clanQueryOptions({network, root: memberData.root, clan: memberData.clan})
+    clanQueryOptions({
+      network,
+      root: memberData.root,
+      clan: memberData.clan,
+      queryClient,
+    })
   );
   return (
     <>

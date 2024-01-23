@@ -169,6 +169,7 @@ const useDepositToVsr = () => {
           network,
           root: rootAddress,
           owner: publicKey!,
+          queryClient,
         })
       );
     },

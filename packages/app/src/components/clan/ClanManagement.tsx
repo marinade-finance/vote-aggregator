@@ -32,6 +32,16 @@ const ClanManagement = ({root, clan}: {root: PublicKey; clan: PublicKey}) => {
       >
         Transfer
       </Button>
+      <Button
+        component={Link}
+        to="/$rootId/clan/$clanId/setVotingDelegate"
+        params={{
+          rootId: root.toBase58(),
+          clanId: clan.toBase58(),
+        }}
+      >
+        Delegate voting
+      </Button>
     </Box>
   );
 };

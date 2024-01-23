@@ -2,24 +2,29 @@ import {useConnection, useWallet} from '@solana/wallet-adapter-react';
 import {Cluster, PublicKey, Transaction} from '@solana/web3.js';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {VoteAggregatorSdk} from 'vote-aggregator-sdk';
-import {clanListQueryOptions, clanQueryOptions} from '../queryOptions';
+import {clanQueryOptions} from '../queryOptions';
 
-const useConfigureClan = () => {
+const useSetVotingDelegate = () => {
   const {connection} = useConnection();
   const {publicKey, sendTransaction} = useWallet();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({
+      rootAddress,
+      rootData,
       clan,
-      name,
-      description,
+      newVotingDelegate,
     }: {
       network: Cluster;
-      root: PublicKey;
+      rootAddress: PublicKey;
+      rootData: {
+        governanceProgram: PublicKey;
+        realm: PublicKey;
+        governingTokenMint: PublicKey;
+      };
       clan: PublicKey;
-      name: string;
-      description: string;
+      newVotingDelegate: PublicKey | null;
     }) => {
       const sdk = new VoteAggregatorSdk(connection);
       const {blockhash, lastValidBlockHeight} =
@@ -29,34 +34,15 @@ const useConfigureClan = () => {
         blockhash,
         lastValidBlockHeight,
       });
-      if (name !== undefined || description !== undefined) {
-        tx.add(
-          await sdk.clan.resizeClanInstruction({
-            clanAddress: clan,
-            clanAuthority: publicKey!,
-            payer: publicKey!,
-            size: 288 + name.length + description.length,
-          })
-        );
-        if (name !== undefined) {
-          tx.add(
-            await sdk.clan.setClanNameInstruction({
-              clanAddress: clan,
-              clanAuthority: publicKey!,
-              name,
-            })
-          );
-        }
-        if (description !== undefined) {
-          tx.add(
-            await sdk.clan.setClanDescriptionInstruction({
-              clanAddress: clan,
-              clanAuthority: publicKey!,
-              description,
-            })
-          );
-        }
-      }
+      tx.add(
+        await sdk.clan.setVotingDelegateInstruction({
+          rootAddress,
+          rootData,
+          clanAddress: clan,
+          clanAuthority: publicKey!,
+          newVotingDelegate,
+        })
+      );
 
       const signature = await sendTransaction(tx, connection);
       const result = await connection.confirmTransaction({
@@ -68,18 +54,17 @@ const useConfigureClan = () => {
         throw new Error(result.value.err.toString());
       }
     },
-    onSuccess: (_, {network, root, clan}) => {
+    onSuccess: (_, {network, rootAddress, clan}) => {
       queryClient.invalidateQueries(
         clanQueryOptions({
           network,
-          root,
+          root: rootAddress,
           clan,
           queryClient,
         })
       );
-      queryClient.invalidateQueries(clanListQueryOptions({network, root}));
     },
   });
 };
 
-export default useConfigureClan;
+export default useSetVotingDelegate;

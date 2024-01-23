@@ -1,5 +1,5 @@
 import {Cluster, PublicKey} from '@solana/web3.js';
-import {queryOptions} from '@tanstack/react-query';
+import {QueryClient, queryOptions} from '@tanstack/react-query';
 import fetchVoteAggregatorList from './fetchers/fetchVoteAggregatorList';
 import fetchClanList from './fetchers/fetchClanList';
 import fetchMember from './fetchers/fetchMember';
@@ -59,17 +59,26 @@ export const clanQueryOptions = ({
   network,
   root,
   clan,
+  queryClient,
 }: {
   network: Cluster;
   root: PublicKey;
   clan: PublicKey;
+  queryClient: QueryClient;
 }) => {
   return queryOptions({
     queryKey: [network, root.toBase58(), 'clan', clan.toBase58()],
-    queryFn: ({queryKey}) => {
-      return fetchClan({
+    queryFn: async ({queryKey}) => {
+      const rootData = await queryClient.ensureQueryData(
+        voteAggregatorQueryOptions({
+          network: queryKey[0] as Cluster,
+          root: new PublicKey(queryKey[1]),
+        })
+      );
+      return await fetchClan({
         network: queryKey[0] as Cluster,
         clan: new PublicKey(queryKey[3]),
+        rootData,
       });
     },
   });
@@ -100,22 +109,27 @@ export const vsrVoterQueryOptions = ({
   network,
   root,
   owner,
+  queryClient,
 }: {
   network: Cluster;
   root: PublicKey;
   owner: PublicKey;
+  queryClient: QueryClient;
 }) => {
   return queryOptions({
     queryKey: [network, root.toBase58(), 'vsrVoter', owner.toBase58()],
     queryFn: async ({queryKey}) => {
-      const network = queryKey[0] as Cluster
-      const root = new PublicKey(queryKey[1]);
-      const rootData = await fetchVoteAggregator({network, root}); // TODO: memoize
-      return fetchVsrVoter({
-        network,
+      const rootData = await queryClient.ensureQueryData(
+        voteAggregatorQueryOptions({
+          network: queryKey[0] as Cluster,
+          root: new PublicKey(queryKey[1]),
+        })
+      );
+      return await fetchVsrVoter({
+        network: queryKey[0] as Cluster,
         rootData,
         owner: new PublicKey(queryKey[3]),
       });
     },
   });
-}
+};

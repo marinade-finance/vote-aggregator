@@ -6,18 +6,29 @@ import {ClanInfo} from './fetchClanList';
 export type DetailedClanInfo = ClanInfo & {
   voterWeight: BN;
   voterWeightExpiry: BN | null;
+  governanceDelegate: PublicKey | null;
 };
 
 const fetchClan = async ({
   network,
+  rootData,
   clan,
 }: {
   network: Cluster;
+  rootData: {
+    governanceProgram: PublicKey;
+    realm: PublicKey;
+    governingTokenMint: PublicKey;
+  };
   clan: PublicKey;
 }): Promise<DetailedClanInfo> => {
   const sdk = voteAggregtorSdk(network);
   const clanData = await sdk.clan.fetchClan(clan);
   const vwr = await sdk.clan.fetchVoterWeight({clanAddress: clan});
+  const tor = await sdk.clan.fetchTokenOwnerRecord({
+    rootData,
+    clanAddress: clan,
+  });
 
   return {
     address: clan,
@@ -35,6 +46,7 @@ const fetchClan = async ({
     description: clanData.description,
     voterWeight: vwr.voterWeight,
     voterWeightExpiry: vwr.voterWeightExpiry,
+    governanceDelegate: tor.governanceDelegate || null,
   };
 };
 

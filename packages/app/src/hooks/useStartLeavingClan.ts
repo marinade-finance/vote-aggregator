@@ -62,6 +62,7 @@ const useStartLeavingClan = () => {
           network,
           root: memberData.root,
           clan: memberData.clan,
+          queryClient,
         })
       );
       queryClient.invalidateQueries(

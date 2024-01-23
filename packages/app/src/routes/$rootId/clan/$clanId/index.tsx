@@ -1,7 +1,7 @@
 import {FileRoute} from '@tanstack/react-router';
 import {clanQueryOptions} from '../../../../queryOptions';
 import {LAMPORTS_PER_SOL, PublicKey} from '@solana/web3.js';
-import {useSuspenseQuery} from '@tanstack/react-query';
+import {useQueryClient, useSuspenseQuery} from '@tanstack/react-query';
 import {useWallet} from '@solana/wallet-adapter-react';
 import {Box} from '@mui/material';
 import ClanManagement from '../../../../components/clan/ClanManagement';
@@ -11,9 +11,10 @@ const ClanComponent = () => {
   const {network} = Route.useSearch();
   const {rootId, clanId} = Route.useParams();
   const root = new PublicKey(rootId);
+  const queryClient = useQueryClient();
   const clan = new PublicKey(clanId);
   const {data: clanData} = useSuspenseQuery(
-    clanQueryOptions({network, root, clan})
+    clanQueryOptions({network, root, clan, queryClient})
   );
   const {publicKey} = useWallet();
   return (
@@ -31,6 +32,15 @@ const ClanComponent = () => {
           ? 'You'
           : clanData.owner.toBase58()}
       </Box>
+      {clanData.governanceDelegate && (
+        <Box>
+          Voter:{' '}
+          {publicKey && clanData.governanceDelegate.equals(publicKey)
+            ? 'You'
+            : clanData.governanceDelegate.toBase58()}
+        </Box>
+      )}
+      <Box>Voting actor PDA: {clanData.voterAuthority.toBase58()}</Box>
       <Box>
         Total power:{' '}
         {parseFloat(clanData.voterWeight.toString()) / LAMPORTS_PER_SOL}
@@ -55,6 +65,7 @@ export const Route = new FileRoute('/$rootId/clan/$clanId/').createRoute({
         network,
         root: new PublicKey(rootId),
         clan: new PublicKey(clanId),
+        queryClient,
       })
     ),
   wrapInSuspense: true,

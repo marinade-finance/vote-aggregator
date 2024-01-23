@@ -6,7 +6,6 @@ import {
 import {VoteAggregatorSdk} from './sdk';
 import {IdlAccounts, ProgramAccount} from '@coral-xyz/anchor';
 import {VoteAggregator} from './vote_aggregator';
-import {RootAccount} from './root';
 import {
   SYSTEM_PROGRAM_ID,
   TokenOwnerRecord,
@@ -316,30 +315,34 @@ export class ClanSdk {
 
   async setVotingDelegateInstruction({
     rootAddress,
-    root,
+    rootData,
     clanAddress,
     clanAuthority,
     newVotingDelegate,
   }: {
     rootAddress: PublicKey;
-    root: RootAccount;
+    rootData: {
+      governanceProgram: PublicKey;
+      realm: PublicKey;
+      governingTokenMint: PublicKey;
+    };
     clanAddress: PublicKey;
     clanAuthority: PublicKey;
     newVotingDelegate: PublicKey | null;
   }) {
     const [voterAuthority] = this.voterAuthority({clanAddress});
     const [tokenOwnerRecord] = this.tokenOwnerRecordAddress({
-      realmAddress: root.realm,
-      governingTokenMint: root.governingTokenMint,
+      realmAddress: rootData.realm,
+      governingTokenMint: rootData.governingTokenMint,
       clanAddress,
-      splGovernanceId: root.governanceProgram,
+      splGovernanceId: rootData.governanceProgram,
     });
     return await this.sdk.program.methods
       .setVotingDelegate(newVotingDelegate || PublicKey.default)
       .accountsStrict({
         root: rootAddress,
         clan: clanAddress,
-        governanceProgram: root.governanceProgram,
+        governanceProgram: rootData.governanceProgram,
         voterAuthority,
         tokenOwnerRecord,
         clanAuthority,
