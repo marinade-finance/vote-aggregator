@@ -6,9 +6,10 @@ import useStartLeavingClan from '../../hooks/useStartLeavingClan';
 import {
   memberQueryOptions,
   voteAggregatorQueryOptions,
+  vsrVoterQueryOptions,
 } from '../../queryOptions';
 import {Cluster, PublicKey} from '@solana/web3.js';
-import {useSuspenseQuery} from '@tanstack/react-query';
+import {useQueryClient, useSuspenseQuery} from '@tanstack/react-query';
 import {useWallet} from '@solana/wallet-adapter-react';
 
 const ClanMembership = ({
@@ -24,11 +25,15 @@ const ClanMembership = ({
   if (!publicKey) {
     throw new Error('Wallet not connected');
   }
+  const queryClient = useQueryClient();
   const {data: rootData} = useSuspenseQuery(
     voteAggregatorQueryOptions({network, root})
   );
   const {data: memberData} = useSuspenseQuery(
     memberQueryOptions({network, owner: publicKey, root})
+  );
+  const {data: vsrVoterData} = useSuspenseQuery(
+    vsrVoterQueryOptions({network, owner: publicKey, root, queryClient})
   );
   const currentTime = new BN(Math.floor(Date.now() / 1000));
 
@@ -68,9 +73,8 @@ const ClanMembership = ({
   };
   return (
     <Box>
-      {(!memberData || memberData.clan.equals(PublicKey.default)) && (
-        <Button onClick={handleJoin}>Join</Button>
-      )}
+      {(!memberData || memberData.clan.equals(PublicKey.default)) &&
+        vsrVoterData.voter && <Button onClick={handleJoin}>Join</Button>}
       {memberData &&
         memberData.clan.equals(clan) &&
         (memberData.clanLeavingTime.eq(new BN('9223372036854775807')) ? (
