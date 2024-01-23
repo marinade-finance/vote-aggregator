@@ -17,6 +17,7 @@
     "@mui/material": "^5.15.4",
     "@rollup/plugin-inject": "^5.0.5",
     "@solana/spl-governance": "^0.3.28",
+    "@solana/spl-token": "^0.3.11",
     "@solana/wallet-adapter-base": "^0.9.23",
     "@solana/wallet-adapter-material-ui": "^0.16.33",
     "@solana/wallet-adapter-react": "^0.15.35",

@@ -5,6 +5,7 @@ import fetchClanList from './fetchers/fetchClanList';
 import fetchMember from './fetchers/fetchMember';
 import fetchClan from './fetchers/fetchClan';
 import fetchVoteAggregator from './fetchers/fetchVoteAggregator';
+import fetchVsrVoter from './fetchers/fetchVsrVoter';
 
 export const voteAggregatorListQueryOptions = ({
   network,
@@ -94,3 +95,27 @@ export const memberQueryOptions = ({
     },
   });
 };
+
+export const vsrVoterQueryOptions = ({
+  network,
+  root,
+  owner,
+}: {
+  network: Cluster;
+  root: PublicKey;
+  owner: PublicKey;
+}) => {
+  return queryOptions({
+    queryKey: [network, root.toBase58(), 'vsrVoter', owner.toBase58()],
+    queryFn: async ({queryKey}) => {
+      const network = queryKey[0] as Cluster
+      const root = new PublicKey(queryKey[1]);
+      const rootData = await fetchVoteAggregator({network, root}); // TODO: memoize
+      return fetchVsrVoter({
+        network,
+        rootData,
+        owner: new PublicKey(queryKey[3]),
+      });
+    },
+  });
+}
