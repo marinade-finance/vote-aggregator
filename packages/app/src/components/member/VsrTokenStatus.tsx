@@ -5,6 +5,7 @@ import {VsrVoterInfo} from '../../fetchers/fetchVsrVoter';
 import useDepositToVsr from '../../hooks/useDepositToVsr';
 import {useSuspenseQuery} from '@tanstack/react-query';
 import {voteAggregatorQueryOptions} from '../../queryOptions';
+import useWithdrawFromVsr from '../../hooks/useWithdrawFromVsr';
 
 const VsrTokenStatus = ({
   network,
@@ -30,6 +31,7 @@ const VsrTokenStatus = ({
     })
   );
   const depositMutation = useDepositToVsr();
+  const withdrawMutation = useWithdrawFromVsr();
 
   const handleDeposit = () => {
     depositMutation.mutate({
@@ -37,8 +39,21 @@ const VsrTokenStatus = ({
       rootAddress,
       rootData,
       vsrVoterData,
+      depositIndex,
       configIndex,
       balance,
+    });
+  };
+
+  const handleWithdraw = () => {
+    withdrawMutation.mutate({
+      network,
+      rootAddress,
+      rootData,
+      configIndex,
+      depositIndex: depositIndex || 0,
+      balance:
+        vsrVoterData.voter!.deposits[depositIndex || 0].amountDepositedNative,
     });
   };
 
@@ -46,14 +61,24 @@ const VsrTokenStatus = ({
     <Card>
       <Typography>{mint.toBase58()}</Typography>
       {depositIndex !== undefined && (
-        <Typography>
-          Deposited:{' '}
-          {parseFloat(
-            vsrVoterData.voter!.deposits[
+        <Box>
+          <Typography>
+            Deposited:{' '}
+            {parseFloat(
+              vsrVoterData.voter!.deposits[
+                depositIndex
+              ].amountDepositedNative.toString()
+            ) / LAMPORTS_PER_SOL}
+          </Typography>
+          <Button
+            disabled={vsrVoterData.voter!.deposits[
               depositIndex
-            ].amountDepositedNative.toString()
-          ) / LAMPORTS_PER_SOL}
-        </Typography>
+            ].amountDepositedNative.eqn(0)}
+            onClick={handleWithdraw}
+          >
+            Withdraw
+          </Button>
+        </Box>
       )}
       {balance.gtn(0) && (
         <Box>

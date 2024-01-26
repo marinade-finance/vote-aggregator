@@ -62,7 +62,10 @@ const fetchVsrVoter = async ({
       let depositIndex: number | undefined;
       if (voterData) {
         for (let i = 0; i < voterData.deposits.length; i++) {
-          if (voterData.deposits[i].votingMintConfigIdx === configIndex) {
+          if (
+            voterData.deposits[i].isUsed &&
+            voterData.deposits[i].votingMintConfigIdx === configIndex
+          ) {
             depositIndex = i;
             break;
           }
@@ -78,7 +81,9 @@ const fetchVsrVoter = async ({
           ).value.amount
         );
       } catch (e) {
-        if (!((e as Error).message as string).endsWith('could not find account')) {
+        if (
+          !((e as Error).message as string).endsWith('could not find account')
+        ) {
           throw e;
         }
       }
