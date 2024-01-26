@@ -8,6 +8,7 @@ import {
   joinClanTestData,
 } from '../../src';
 import {ClanTester, MemberTester, RootTester} from '../../src/VoteAggregator';
+import {Keypair} from '@solana/web3.js';
 
 describe('join_clan instruction', () => {
   it.each(joinClanTestData.filter(({error}) => !error))(
@@ -36,7 +37,10 @@ describe('join_clan instruction', () => {
           await realmTester.voterWeightRecord({
             ...memberVoterWeight,
             side: root.side,
-            owner: member.owner.publicKey,
+            owner:
+              member.owner instanceof Keypair
+                ? member.owner.publicKey
+                : member.owner,
           }),
         ],
       });
@@ -47,7 +51,7 @@ describe('join_clan instruction', () => {
           root: rootTester.rootAddress[0],
           member: memberTester.memberAddress[0],
           clan: clan.address,
-          memberAuthority: memberTester.owner.publicKey,
+          memberAuthority: memberTester.ownerAddress,
           clanVoterWeightRecord: clanTester.voterWeightAddress[0],
           memberTokenOwnerRecord: memberTester.tokenOwnerRecordAddress[0],
           memberVoterWeightRecord: memberVoterWeight.address,
@@ -56,7 +60,7 @@ describe('join_clan instruction', () => {
         .transaction();
       tx.recentBlockhash = testContext.lastBlockhash;
       tx.feePayer = testContext.payer.publicKey;
-      tx.sign(testContext.payer, member.owner);
+      tx.sign(testContext.payer, member.owner as Keypair);
 
       expect(
         testContext.banksClient
@@ -68,7 +72,7 @@ describe('join_clan instruction', () => {
           data: {
             clan: clanTester.clanAddress,
             member: memberTester.memberAddress[0],
-            owner: memberTester.owner.publicKey,
+            owner: memberTester.ownerAddress,
             root: rootTester.rootAddress[0],
           },
         },

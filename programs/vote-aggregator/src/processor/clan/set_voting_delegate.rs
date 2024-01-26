@@ -18,17 +18,17 @@ pub struct SetVotingDelegate<'info> {
         has_one = root,
         has_one = token_owner_record,
     )]
-    pub clan: Account<'info, Clan>,
+    clan: Account<'info, Clan>,
     #[account(
         constraint = clan_authority.key() == clan.owner ||
             clan_authority.key() == clan.delegate
         @ Error::WrongClanAuthority,
     )]
-    pub clan_authority: Signer<'info>,
+    clan_authority: Signer<'info>,
     #[account(
         has_one = governance_program,
     )]
-    pub root: Account<'info, Root>,
+    root: Account<'info, Root>,
     /// CHECK: PDA
     #[account(
         seeds = [
@@ -37,7 +37,7 @@ pub struct SetVotingDelegate<'info> {
         ],
         bump = clan.bumps.voter_authority,
     )]
-    pub voter_authority: UncheckedAccount<'info>,
+    voter_authority: UncheckedAccount<'info>,
     /// CHECK: dynamic owner
     #[account(
         mut,
@@ -51,11 +51,11 @@ pub struct SetVotingDelegate<'info> {
         bump = clan.bumps.token_owner_record,
         seeds::program = root.governance_program,
     )]
-    pub token_owner_record: UncheckedAccount<'info>,
+    token_owner_record: UncheckedAccount<'info>,
 
     /// CHECK: program
     #[account(executable)]
-    pub governance_program: UncheckedAccount<'info>,
+    governance_program: UncheckedAccount<'info>,
 }
 
 impl<'info> SetVotingDelegate<'info> {

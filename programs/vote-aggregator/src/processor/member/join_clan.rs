@@ -22,21 +22,21 @@ pub struct JoinClan<'info> {
         has_one = root,
         constraint = member.clan == Pubkey::default() @ Error::AlreadyJoinedClan
     )]
-    pub member: Account<'info, Member>,
+    member: Account<'info, Member>,
     #[account(
         constraint = member_authority.key() == member.owner ||
             member_authority.key() == member.delegate
         @ Error::WrongMemberAuthority
     )]
-    pub member_authority: Signer<'info>,
+    member_authority: Signer<'info>,
 
     #[account(
         mut,
         has_one = root,
     )]
-    pub clan: Account<'info, Clan>,
+    clan: Account<'info, Clan>,
 
-    pub root: Account<'info, Root>,
+    root: Account<'info, Root>,
 
     #[account(
         mut,
@@ -46,7 +46,7 @@ pub struct JoinClan<'info> {
         ],
         bump = clan.bumps.voter_weight_record,
     )]
-    pub clan_voter_weight_record: Box<Account<'info, VoterWeightRecord>>,
+    clan_voter_weight_record: Box<Account<'info, VoterWeightRecord>>,
 
     /// CHECK: dynamic owner
     #[account(

@@ -12,7 +12,7 @@ import {
 } from '../splGovernance';
 
 export type MemberTestData = {
-  owner: Keypair;
+  owner: PublicKey | Keypair;
   delegate?: PublicKey | Keypair;
   clan?: PublicKey;
   clanLeavingTime?: BN;
@@ -26,19 +26,23 @@ export type MemberTestData = {
 };
 
 export class MemberTester {
-  public owner: Keypair;
+  public owner: PublicKey | Keypair;
   public delegate?: Keypair;
   public root: RootTester;
   public member: MemberAccount;
   public clan?: ClanTester | PublicKey;
   public tokenOwnerRecord: TokenOwnerRecordAccount;
 
+  get ownerAddress(): PublicKey {
+    return this.owner instanceof Keypair ? this.owner.publicKey : this.owner;
+  }
+
   get memberAddress(): [PublicKey, number] {
     return PublicKey.findProgramAddressSync(
       [
         Buffer.from('member', 'utf-8'),
         this.root.rootAddress[0].toBuffer(),
-        this.owner.publicKey.toBuffer(),
+        this.ownerAddress.toBuffer(),
       ],
       this.root.voteAggregatorId
     );
@@ -50,7 +54,7 @@ export class MemberTester {
         Buffer.from('governance', 'utf-8'),
         this.root.realm.realmAddress.toBuffer(),
         this.root.governingTokenMint.toBuffer(),
-        this.owner.publicKey.toBuffer(),
+        this.ownerAddress.toBuffer(),
       ],
       this.root.splGovernanceId
     );
@@ -88,7 +92,7 @@ export class MemberTester {
       [
         Buffer.from('member', 'utf-8'),
         root.rootAddress[0].toBuffer(),
-        owner.publicKey.toBuffer(),
+        this.ownerAddress.toBuffer(),
       ],
       root.voteAggregatorId
     );
@@ -99,13 +103,13 @@ export class MemberTester {
           Buffer.from('governance', 'utf-8'),
           root.realm.realmAddress.toBuffer(),
           root.governingTokenMint.toBuffer(),
-          owner.publicKey.toBuffer(),
+          this.ownerAddress.toBuffer(),
         ],
         root.splGovernanceId
       );
 
     this.member = {
-      owner: owner.publicKey,
+      owner: this.ownerAddress,
       delegate: delegate || PublicKey.default,
       root: root.rootAddress[0],
       clan: clan || PublicKey.default,
@@ -124,7 +128,7 @@ export class MemberTester {
       accountType: {tokenOwnerRecordV2: {}},
       realm: root.realm.realmAddress,
       governingTokenMint: root.governingTokenMint,
-      governingTokenOwner: owner.publicKey,
+      governingTokenOwner: this.ownerAddress,
       governingTokenDepositAmount: resizeBN(governingTokenDepositAmount),
       unrelinquishedVotesCount: resizeBN(unrelinquishedVotesCount),
       outstandingProposalCount,

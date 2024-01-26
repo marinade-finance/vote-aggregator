@@ -55,7 +55,7 @@ describe('create-clan command', () => {
 
       expect(
         cli()
-          .exitOverride(err => {
+          .exitOverride((err: Error) => {
             throw err;
           })
           .parseAsync(

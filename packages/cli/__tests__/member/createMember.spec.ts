@@ -21,7 +21,7 @@ import {context} from '../../src/context';
 import {cli} from '../../src/cli';
 
 describe('create-member command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
   let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
 
   beforeEach(() => {
@@ -55,7 +55,7 @@ describe('create-member command', () => {
 
       expect(
         cli()
-          .exitOverride(err => {
+          .exitOverride((err: Error) => {
             throw err;
           })
           .parseAsync(

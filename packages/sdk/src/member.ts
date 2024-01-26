@@ -364,4 +364,91 @@ export class MemberSdk {
       })
       .instruction();
   }
+
+  async updateVoterWeightInstruction({
+    memberData,
+    memberAddress,
+  }: {
+    memberData: {
+      root: PublicKey;
+      owner: PublicKey;
+      clan: PublicKey;
+      voterWeightRecord: PublicKey;
+      clanLeavingTime: BN;
+    };
+    memberAddress?: PublicKey;
+  }) {
+    if (!memberAddress) {
+      [memberAddress] = this.memberAddress({
+        rootAddress: memberData.root,
+        owner: memberData.owner,
+      });
+    }
+
+    return await this.sdk.program.methods
+      .updateVoterWeight()
+      .accountsStrict({
+        root: memberData.root,
+        member: memberAddress,
+        clan: !memberData.clan.equals(PublicKey.default)
+          ? memberData.clan
+          : null,
+        clanVoterWeightRecord:
+          !memberData.clan.equals(PublicKey.default) &&
+          memberData.clanLeavingTime.eq(new BN('9223372036854775807'))
+            ? this.sdk.clan.voterWeightAddress(memberData.clan)[0]
+            : null,
+        memberVoterWeightRecord: memberData.voterWeightRecord,
+        maxVoterWeightRecord: this.sdk.root.maxVoterWieghtAddress({
+          rootAddress: memberData.root,
+        })[0],
+      })
+      .instruction();
+  }
+
+  async setVoterWeightRecordInstruction({
+    memberData,
+    memberAddress,
+    memberAuthority = memberData.owner,
+    voterWeightRecord,
+  }: {
+    memberData: {
+      root: PublicKey;
+      owner: PublicKey;
+      clan: PublicKey;
+      voterWeightRecord: PublicKey;
+      clanLeavingTime: BN;
+    };
+    memberAddress?: PublicKey;
+    memberAuthority?: PublicKey;
+    voterWeightRecord: PublicKey;
+  }) {
+    if (!memberAddress) {
+      [memberAddress] = this.memberAddress({
+        rootAddress: memberData.root,
+        owner: memberData.owner,
+      });
+    }
+
+    return await this.sdk.program.methods
+      .setVoterWeightRecord()
+      .accountsStrict({
+        root: memberData.root,
+        member: memberAddress,
+        memberAuthority,
+        clan: !memberData.clan.equals(PublicKey.default)
+          ? memberData.clan
+          : null,
+        clanVoterWeightRecord:
+          !memberData.clan.equals(PublicKey.default) &&
+          memberData.clanLeavingTime.eq(new BN('9223372036854775807'))
+            ? this.sdk.clan.voterWeightAddress(memberData.clan)[0]
+            : null,
+        memberVoterWeightRecord: voterWeightRecord,
+        maxVoterWeightRecord: this.sdk.root.maxVoterWieghtAddress({
+          rootAddress: memberData.root,
+        })[0],
+      })
+      .instruction();
+  }
 }

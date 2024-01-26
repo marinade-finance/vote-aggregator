@@ -42,6 +42,7 @@ export const leaveClanTestData: LeaveClanTestData[] = [
     root: {
       side: 'community',
       maxProposalLifetime: new BN(172800),
+      maxVoterWeight: new BN('107428734639842'),
     },
     member: {
       owner: buildKeypair(

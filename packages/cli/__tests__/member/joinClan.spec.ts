@@ -19,9 +19,10 @@ import {
 } from 'vote-aggregator-tests';
 import {context} from '../../src/context';
 import {cli} from '../../src/cli';
+import {Keypair} from '@solana/web3.js';
 
 describe('join-clan command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
   let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
 
   beforeEach(() => {
@@ -58,7 +59,7 @@ describe('join-clan command', () => {
           await realmTester.voterWeightRecord({
             ...memberVoterWeight,
             side: root.side,
-            owner: member.owner.publicKey,
+            owner: memberTester.ownerAddress,
           }),
         ],
       });
@@ -66,14 +67,14 @@ describe('join-clan command', () => {
 
       expect(
         cli()
-          .exitOverride(err => {
+          .exitOverride((err: Error) => {
             throw err;
           })
           .parseAsync(
             [
               'join-clan',
               '--owner',
-              '[' + member.owner.secretKey.toString() + ']',
+              '[' + (memberTester.owner as Keypair).secretKey.toString() + ']',
               '--member-voter-weight',
               memberVoterWeight.address.toBase58(),
               '--clan',

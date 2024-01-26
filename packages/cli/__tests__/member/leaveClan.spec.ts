@@ -20,10 +20,10 @@ import {
 import {context} from '../../src/context';
 import {cli} from '../../src/cli';
 import {BN} from '@coral-xyz/anchor';
-import {PublicKey} from '@solana/web3.js';
+import {Keypair, PublicKey} from '@solana/web3.js';
 
 describe('start-leaving-clan command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
   let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
 
   beforeEach(() => {
@@ -50,7 +50,7 @@ describe('start-leaving-clan command', () => {
         clan: member.clan!.address,
       });
       const clanTester = new ClanTester({...member.clan!, root: rootTester});
-      const {testContext} = await startTest({
+      await startTest({
         splGovernanceId: rootTester.splGovernanceId,
         accounts: [
           ...(await realmTester.accounts()),
@@ -63,7 +63,7 @@ describe('start-leaving-clan command', () => {
 
       expect(
         cli()
-          .exitOverride(err => {
+          .exitOverride((err: Error) => {
             throw err;
           })
           .parseAsync(
@@ -74,7 +74,7 @@ describe('start-leaving-clan command', () => {
               '--side',
               rootTester.side,
               '--owner',
-              '[' + member.owner.secretKey.toString() + ']',
+              '[' + (memberTester.owner as Keypair).secretKey.toString() + ']',
             ],
             {from: 'user'}
           )

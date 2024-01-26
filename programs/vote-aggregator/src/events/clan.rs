@@ -65,3 +65,17 @@ pub struct ClanVotingDelegateChanged {
     pub new_voting_delegate: Option<Pubkey>,
     pub old_voting_delegate: Option<Pubkey>,
 }
+
+#[event]
+pub struct ProposalVoteUpdated {
+    pub clan: Pubkey,
+    pub proposal: Pubkey,
+    pub old_voting_weight: u64,
+    pub new_voting_weight: u64,
+}
+
+#[event]
+pub struct ProposalCanceled {
+    pub clan: Pubkey,
+    pub proposal: Pubkey,
+}

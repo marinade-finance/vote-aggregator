@@ -15,20 +15,19 @@ pub struct LeaveClan<'info> {
         constraint = member.clan_leaving_time != Member::NOT_LEAVING_CLAN
             @ Error::UnexpectedLeavingClan
     )]
-    pub member: Account<'info, Member>,
-    /// CHECK: in code
+    member: Account<'info, Member>,
     #[account(
         mut,
         has_one = root,
     )]
-    pub clan: Account<'info, Clan>,
+    clan: Account<'info, Clan>,
     #[account(
         constraint = member_authority.key() == member.owner ||
             member_authority.key() == member.delegate
         @ Error::WrongMemberAuthority
     )]
-    pub member_authority: Signer<'info>,
-    pub root: Account<'info, Root>,
+    member_authority: Signer<'info>,
+    root: Account<'info, Root>,
 }
 
 impl<'info> LeaveClan<'info> {

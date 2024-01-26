@@ -70,7 +70,7 @@ describe('set-voting-delegate command', () => {
 
       expect(
         cli()
-          .exitOverride(err => {
+          .exitOverride((err: Error) => {
             throw err;
           })
           .parseAsync(
@@ -137,7 +137,7 @@ describe('set-voting-delegate command', () => {
 
       expect(
         cli()
-          .exitOverride(err => {
+          .exitOverride((err: Error) => {
             throw err;
           })
           .parseAsync(
@@ -195,7 +195,7 @@ describe('set-voting-delegate command', () => {
 
       expect(
         cli()
-          .exitOverride(err => {
+          .exitOverride((err: Error) => {
             throw err;
           })
           .parseAsync(

@@ -9,7 +9,7 @@ import {
 } from '../../src';
 import {ClanTester, MemberTester, RootTester} from '../../src/VoteAggregator';
 import {BN} from '@coral-xyz/anchor';
-import {PublicKey} from '@solana/web3.js';
+import {Keypair, PublicKey} from '@solana/web3.js';
 
 describe('start_leaving_clan instruction', () => {
   it.each(leaveClanTestData.filter(({error}) => !error))(
@@ -44,12 +44,12 @@ describe('start_leaving_clan instruction', () => {
           root: rootTester.rootAddress[0],
           member: memberTester.memberAddress[0],
           clan: memberTester.member.clan,
-          memberAuthority: memberTester.owner.publicKey,
+          memberAuthority: memberTester.ownerAddress,
         })
         .transaction();
       tx.recentBlockhash = testContext.lastBlockhash;
       tx.feePayer = testContext.payer.publicKey;
-      tx.sign(testContext.payer, member.owner);
+      tx.sign(testContext.payer, member.owner as Keypair);
 
       expect(
         testContext.banksClient
@@ -61,7 +61,7 @@ describe('start_leaving_clan instruction', () => {
           data: {
             clan: clanTester.clanAddress,
             member: memberTester.memberAddress[0],
-            owner: memberTester.owner.publicKey,
+            owner: memberTester.ownerAddress,
             root: rootTester.rootAddress[0],
           },
         },

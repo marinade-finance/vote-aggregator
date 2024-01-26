@@ -38,6 +38,7 @@ pub enum Error {
     ChangingVoteDelegatedClanOwner,
     #[msg("Must provide clan account")]
     ClanIsRequired,
+    ClanVoterWeightRecordIsRequired,
     #[msg("Must provide voting weight record account")]
     VotingWeightRecordIsRequired,
     #[msg("Must provide max voter weight")]

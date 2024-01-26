@@ -37,6 +37,14 @@ pub mod vote_aggregator {
         ctx.accounts.set_description(description)
     }
 
+    pub fn update_proposal_vote(ctx: Context<UpdateProposalVote>) -> Result<()> {
+        ctx.accounts.process()
+    }
+
+    pub fn forced_cancel_proposal(ctx: Context<ForcedCancelProposal>) -> Result<()> {
+        ctx.accounts.process()
+    }
+
     pub fn create_member(ctx: Context<CreateMember>) -> Result<()> {
         ctx.accounts.process(ctx.bumps)
     }
@@ -58,5 +66,13 @@ pub mod vote_aggregator {
         new_voting_delegate: Pubkey,
     ) -> Result<()> {
         ctx.accounts.process(new_voting_delegate)
+    }
+
+    pub fn update_voter_weight(ctx: Context<UpdateVoterWeight>) -> Result<()> {
+        ctx.accounts.process()
+    }
+
+    pub fn set_voter_weight_record(ctx: Context<SetVoterWeightRecord>) -> Result<()> {
+        ctx.accounts.process()
     }
 }

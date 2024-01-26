@@ -14,13 +14,13 @@ pub struct StartLeavingClan<'info> {
         constraint = member.clan_leaving_time == Member::NOT_LEAVING_CLAN
             @ Error::RerequestingLeavingClan,
     )]
-    pub member: Account<'info, Member>,
+    member: Account<'info, Member>,
     #[account(
         mut,
         has_one = root,
     )]
-    pub clan: Account<'info, Clan>,
-    pub root: Account<'info, Root>,
+    clan: Account<'info, Clan>,
+    root: Account<'info, Root>,
     #[account(
         mut,
         seeds = [
@@ -29,13 +29,13 @@ pub struct StartLeavingClan<'info> {
         ],
         bump = clan.bumps.voter_weight_record,
     )]
-    pub clan_voter_weight_record: Box<Account<'info, VoterWeightRecord>>,
+    clan_voter_weight_record: Box<Account<'info, VoterWeightRecord>>,
     #[account(
         constraint = member_authority.key() == member.owner ||
             member_authority.key() == member.delegate
         @ Error::WrongMemberAuthority
     )]
-    pub member_authority: Signer<'info>,
+    member_authority: Signer<'info>,
 }
 
 impl<'info> StartLeavingClan<'info> {
