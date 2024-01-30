@@ -1,6 +1,6 @@
 import {Keypair, PublicKey} from '@solana/web3.js';
 import {ClanTestData, buildKeypair} from '../..';
-import {RealmTestData} from '../../realm';
+import {RealmTestData} from '../../SplGovernance/realm';
 import {RootTestData} from '../../VoteAggregator/root';
 import {BN} from '@coral-xyz/anchor';
 

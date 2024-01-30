@@ -2,7 +2,7 @@ import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {Keypair, SystemProgram} from '@solana/web3.js';
 import {PublicKey} from '@solana/web3.js';
-import {buildSplGovernanceProgram} from '../../src/splGovernance';
+import {buildSplGovernanceProgram} from '../../src/SplGovernance/program';
 import {
   CreateRootTestData,
   RealmTester,

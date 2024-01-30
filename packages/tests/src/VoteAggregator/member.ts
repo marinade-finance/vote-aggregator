@@ -4,12 +4,12 @@ import {BN} from '@coral-xyz/anchor';
 import {MemberAccount} from './accounts';
 import {RootTester} from './root';
 import {AddedAccount} from 'solana-bankrun';
-import {buildVoteAggregatorProgram} from './voteAggregator';
+import {buildVoteAggregatorProgram} from './program';
 import {ClanTester} from './clan';
 import {
   TokenOwnerRecordAccount,
   buildSplGovernanceProgram,
-} from '../splGovernance';
+} from '../SplGovernance/program';
 
 export type MemberTestData = {
   owner: PublicKey | Keypair;

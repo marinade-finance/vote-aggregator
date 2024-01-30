@@ -26,7 +26,6 @@ pub struct UpdateProposalVote<'info> {
     root: Box<Account<'info, Root>>,
     /// CHECK: dynamic owner
     #[account(
-        mut,
         owner = governance_program.key(),
     )]
     realm: UncheckedAccount<'info>,
@@ -92,7 +91,7 @@ pub struct UpdateProposalVote<'info> {
     )]
     clan_voter_weight_record: Box<Account<'info, VoterWeightRecord>>,
     /// CHECK: CPI
-    max_voter_weight: UncheckedAccount<'info>,
+    max_voter_weight: Option<UncheckedAccount<'info>>,
     /// CHECK: dynamic owner
     #[account(
         mut,
@@ -162,6 +161,24 @@ impl<'info> UpdateProposalVote<'info> {
                 &[self.clan.bumps.voter_authority],
             ]],
         )?;
+        let mut cast_vote_accounts = vec![
+            self.governance_program.to_account_info(),
+            self.realm.to_account_info(),
+            self.governance.to_account_info(),
+            self.proposal.to_account_info(),
+            self.proposal_owner_record.to_account_info(),
+            self.token_owner_record.to_account_info(),
+            self.voter_authority.to_account_info(),
+            self.vote_record.to_account_info(),
+            self.governing_token_mint.to_account_info(),
+            self.payer.to_account_info(),
+            self.system_program.to_account_info(),
+            self.realm_config.to_account_info(),
+            self.clan_voter_weight_record.to_account_info(),
+        ];
+        if let Some(max_voter_weight) = self.max_voter_weight.as_ref() {
+            cast_vote_accounts.push(max_voter_weight.to_account_info());
+        }
         invoke_signed(
             &cast_vote(
                 self.governance_program.key,
@@ -174,25 +191,10 @@ impl<'info> UpdateProposalVote<'info> {
                 &self.governing_token_mint.key(),
                 self.payer.key,
                 Some(self.clan_voter_weight_record.key()),
-                Some(self.max_voter_weight.key()),
+                self.max_voter_weight.as_ref().map(UncheckedAccount::key),
                 vote,
             ),
-            &[
-                self.governance_program.to_account_info(),
-                self.realm.to_account_info(),
-                self.governance.to_account_info(),
-                self.proposal.to_account_info(),
-                self.proposal_owner_record.to_account_info(),
-                self.token_owner_record.to_account_info(),
-                self.voter_authority.to_account_info(),
-                self.vote_record.to_account_info(),
-                self.governing_token_mint.to_account_info(),
-                self.payer.to_account_info(),
-                self.system_program.to_account_info(),
-                self.realm_config.to_account_info(),
-                self.clan_voter_weight_record.to_account_info(),
-                self.max_voter_weight.to_account_info(),
-            ],
+            &cast_vote_accounts,
             &[&[
                 Clan::VOTER_AUTHORITY_SEED,
                 &self.clan.key().to_bytes(),

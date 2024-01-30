@@ -1,16 +1,18 @@
-use anchor_lang::{prelude::*, solana_program::program::invoke_signed, system_program};
+use anchor_lang::{prelude::*, solana_program::program::invoke_signed};
 
 use anchor_spl::token::Mint;
 use spl_governance::{
-    instruction::{cancel_proposal, cast_vote, relinquish_vote},
+    instruction::cancel_proposal,
     state::{
-        governance::get_governance_data_for_realm, realm::get_realm_data_for_governing_token_mint,
-        vote_record::get_vote_record_data,
+        governance::get_governance_data_for_realm,
+        proposal::get_proposal_data_for_governance_and_governing_mint,
+        realm::get_realm_data_for_governing_token_mint,
+        token_owner_record::get_token_owner_record_data,
     },
     PROGRAM_AUTHORITY_SEED,
 };
 
-use crate::events::clan::ProposalVoteUpdated;
+use crate::events::clan::ProposalCanceled;
 use crate::state::{Clan, Root, VoterWeightRecord};
 
 #[derive(Accounts)]
@@ -29,7 +31,6 @@ pub struct ForcedCancelProposal<'info> {
     root: Box<Account<'info, Root>>,
     /// CHECK: dynamic owner
     #[account(
-        mut,
         owner = governance_program.key(),
     )]
     realm: UncheckedAccount<'info>,
@@ -57,12 +58,6 @@ pub struct ForcedCancelProposal<'info> {
         owner = governance_program.key(),
     )]
     proposal: UncheckedAccount<'info>,
-    /// CHECK: dynamic owner
-    #[account(
-        mut,
-        owner = governance_program.key(),
-    )]
-    proposal_owner_record: UncheckedAccount<'info>,
     /// CHECK: PDA
     #[account(
         seeds = [
@@ -94,13 +89,6 @@ pub struct ForcedCancelProposal<'info> {
         bump = clan.bumps.voter_weight_record,
     )]
     clan_voter_weight_record: Box<Account<'info, VoterWeightRecord>>,
-    /// CHECK: CPI
-    max_voter_weight: UncheckedAccount<'info>,
-    #[account(
-        mut,
-        owner = system_program::ID,
-    )]
-    payer: Signer<'info>,
 
     system_program: Program<'info, System>,
     /// CHECK: program
@@ -142,13 +130,27 @@ impl<'info> ForcedCancelProposal<'info> {
             min_weight_to_create_proposal,
             self.clan_voter_weight_record.voter_weight
         );
+        let proposal = get_proposal_data_for_governance_and_governing_mint(
+            self.governance_program.key,
+            &self.proposal,
+            self.governance.key,
+            &self.governing_token_mint.key(),
+        )
+        .map_err(|e| {
+            ProgramErrorWithOrigin::from(e)
+                .with_source(source!())
+                .with_account_name("governance")
+        })?;
+        require_keys_eq!(self.token_owner_record.key(), proposal.token_owner_record,);
+
+        get_token_owner_record_data(self.governance_program.key, &self.token_owner_record)?;
         invoke_signed(
             &cancel_proposal(
                 self.governance_program.key,
                 self.realm.key,
                 self.governance.key,
                 self.proposal.key,
-                self.proposal_owner_record.key,
+                self.token_owner_record.key,
                 self.voter_authority.key,
             ),
             &[
@@ -156,10 +158,9 @@ impl<'info> ForcedCancelProposal<'info> {
                 self.realm.to_account_info(),
                 self.governance.to_account_info(),
                 self.proposal.to_account_info(),
-                self.proposal_owner_record.to_account_info(),
+                self.token_owner_record.to_account_info(),
                 self.governing_token_mint.to_account_info(),
                 self.voter_authority.to_account_info(),
-                self.payer.to_account_info(),
             ],
             &[&[
                 Clan::VOTER_AUTHORITY_SEED,
@@ -167,6 +168,11 @@ impl<'info> ForcedCancelProposal<'info> {
                 &[self.clan.bumps.voter_authority],
             ]],
         )?;
+
+        emit!(ProposalCanceled {
+            clan: self.clan.key(),
+            proposal: self.proposal.key()
+        });
         Ok(())
     }
 }

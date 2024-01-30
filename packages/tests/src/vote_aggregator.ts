@@ -1,1 +1,0 @@
-../../../target/types/vote_aggregator.ts

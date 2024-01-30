@@ -1,4 +1,4 @@
-import {BN, Program} from '@coral-xyz/anchor';
+import {BN} from '@coral-xyz/anchor';
 import {
   MintMaxVoteWeightSource,
   MintMaxVoteWeightSourceType,
@@ -9,23 +9,25 @@ import {
 import {Keypair, PublicKey} from '@solana/web3.js';
 import {AddedAccount} from 'solana-bankrun';
 import {TOKEN_PROGRAM_ID} from '@solana/spl-token';
-import {MintAccount, buildSplTokenProgram} from './splToken';
+import {MintAccount, buildSplTokenProgram} from '../splToken';
 import {
   GoverningTokenType,
   RealmAccount,
   RealmConfigAccount,
-  SplGovernanceIdl,
   TokenOwnerRecordAccount,
-  buildSplGovernanceProgram,
-} from './splGovernance';
-import {getMinimumBalanceForRentExemption, resizeBN} from './utils';
+} from './accounts';
+import {buildSplGovernanceProgram} from './program';
+import {getMinimumBalanceForRentExemption, resizeBN} from '../utils';
 import {
   Realm as SplRealm,
   RealmConfig as SplRealmConfig,
   RealmConfigAccount as SplRealmConfigAccount,
   GoverningTokenType as SplGoverningTokenType,
 } from '@solana/spl-governance';
-import {VoterWeightAccount, buildVoteAggregatorProgram} from './VoteAggregator';
+import {
+  VoterWeightAccount,
+  buildVoteAggregatorProgram,
+} from '../VoteAggregator';
 
 const splToken = buildSplTokenProgram();
 
@@ -317,14 +319,21 @@ export class RealmTester {
   async tokenOwnerRecord({
     owner,
     side,
+    governingTokenMint,
   }: {
     owner: PublicKey;
-    side: 'council' | 'community';
+    side?: 'council' | 'community';
+    governingTokenMint?: PublicKey;
   }): Promise<AddedAccount> {
-    const governingTokenMint =
-      side === 'community'
-        ? this.realm.communityMint
-        : this.realm.config.councilMint!;
+    if (!governingTokenMint) {
+      if (!side) {
+        throw new Error('Either side or governingTokenMint must be provided');
+      }
+      governingTokenMint =
+        side === 'community'
+          ? this.realm.communityMint
+          : this.realm.config.councilMint!;
+    }
 
     const record: TokenOwnerRecordAccount = {
       accountType: {tokenOwnerRecordV2: {}},

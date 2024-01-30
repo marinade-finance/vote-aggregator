@@ -4,11 +4,11 @@ import {BN} from '@coral-xyz/anchor';
 import {ClanAccount, VoterWeightAccount} from './accounts';
 import {RootTester} from './root';
 import {AddedAccount} from 'solana-bankrun';
-import {buildVoteAggregatorProgram} from './voteAggregator';
+import {buildVoteAggregatorProgram} from './program';
 import {
   TokenOwnerRecordAccount,
   buildSplGovernanceProgram,
-} from '../splGovernance';
+} from '../SplGovernance/program';
 
 export type ClanTestData = {
   address: PublicKey;

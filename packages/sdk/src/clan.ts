@@ -9,7 +9,9 @@ import {VoteAggregator} from './vote_aggregator';
 import {
   SYSTEM_PROGRAM_ID,
   TokenOwnerRecord,
+  getRealmConfigAddress,
   getTokenOwnerRecord,
+  getVoteRecordAddress,
 } from '@solana/spl-governance';
 
 export type ClanAccount = IdlAccounts<VoteAggregator>['clan'];
@@ -185,14 +187,18 @@ export class ClanSdk {
       governingTokenMint: PublicKey;
     };
     clanAddress: PublicKey;
-  }): Promise<TokenOwnerRecord> {
-    const [address] = this.tokenOwnerRecordAddress({
+  }): Promise<ProgramAccount<TokenOwnerRecord>> {
+    const [publicKey] = this.tokenOwnerRecordAddress({
       realmAddress: rootData.realm,
       governingTokenMint: rootData.governingTokenMint,
       clanAddress,
       splGovernanceId: rootData.governanceProgram,
     });
-    return (await getTokenOwnerRecord(this.sdk.connection, address)).account;
+    const {account} = await getTokenOwnerRecord(this.sdk.connection, publicKey);
+    return {
+      publicKey,
+      account,
+    };
   }
 
   async createClanInstruction({
@@ -346,6 +352,117 @@ export class ClanSdk {
         voterAuthority,
         tokenOwnerRecord,
         clanAuthority,
+      })
+      .instruction();
+  }
+
+  async forcedCancelProposalInstruction({
+    rootAddress,
+    rootData,
+    governance,
+    proposal,
+    clanAddress,
+  }: {
+    rootAddress: PublicKey;
+    rootData: {
+      governanceProgram: PublicKey;
+      realm: PublicKey;
+      governingTokenMint: PublicKey;
+    };
+    governance: PublicKey;
+    proposal: PublicKey;
+    clanAddress: PublicKey;
+  }) {
+    const [voterAuthority] = this.voterAuthority({clanAddress});
+    const [tokenOwnerRecord] = this.tokenOwnerRecordAddress({
+      realmAddress: rootData.realm,
+      governingTokenMint: rootData.governingTokenMint,
+      clanAddress,
+      splGovernanceId: rootData.governanceProgram,
+    });
+    return await this.sdk.program.methods
+      .forcedCancelProposal()
+      .accountsStrict({
+        root: rootAddress,
+        clan: clanAddress,
+        governanceProgram: rootData.governanceProgram,
+        voterAuthority,
+        tokenOwnerRecord,
+        realm: rootData.realm,
+        realmConfig: await getRealmConfigAddress(
+          rootData.governanceProgram,
+          rootData.realm
+        ),
+        governingTokenMint: rootData.governingTokenMint,
+        systemProgram: SYSTEM_PROGRAM_ID,
+        governance,
+        proposal,
+        clanVoterWeightRecord: this.sdk.clan.voterWeightAddress(clanAddress)[0],
+      })
+      .instruction();
+  }
+
+  async udpateProposalVote({
+    rootAddress,
+    rootData,
+    governance,
+    proposal,
+    proposalOwnerRecord,
+    maxVoterWeight = null,
+    clanAddress,
+    payer,
+  }: {
+    rootAddress: PublicKey;
+    rootData: {
+      governanceProgram: PublicKey;
+      realm: PublicKey;
+      governingTokenMint: PublicKey;
+    };
+    governance: PublicKey;
+    proposal: PublicKey;
+    proposalOwnerRecord: PublicKey;
+    maxVoterWeight?: PublicKey | null;
+    clanAddress: PublicKey;
+    payer: PublicKey;
+  }) {
+    const [voterAuthority] = this.voterAuthority({clanAddress});
+    const [tokenOwnerRecord] = this.tokenOwnerRecordAddress({
+      realmAddress: rootData.realm,
+      governingTokenMint: rootData.governingTokenMint,
+      clanAddress,
+      splGovernanceId: rootData.governanceProgram,
+    });
+    return await this.sdk.program.methods
+      .updateProposalVote()
+      .accountsStrict({
+        root: rootAddress,
+        clan: clanAddress,
+        governanceProgram: rootData.governanceProgram,
+        voterAuthority,
+        tokenOwnerRecord,
+        realm: rootData.realm,
+        realmConfig: await getRealmConfigAddress(
+          rootData.governanceProgram,
+          rootData.realm
+        ),
+        governingTokenMint: rootData.governingTokenMint,
+        systemProgram: SYSTEM_PROGRAM_ID,
+        governance,
+        proposal,
+        clanVoterWeightRecord: this.sdk.clan.voterWeightAddress(clanAddress)[0],
+        maxVoterWeight,
+        proposalOwnerRecord,
+        voteRecord: await getVoteRecordAddress(
+          rootData.governanceProgram,
+          proposal,
+          this.sdk.clan.tokenOwnerRecordAddress({
+            realmAddress: rootData.realm,
+            governingTokenMint: rootData.governingTokenMint,
+            clanAddress,
+            splGovernanceId: rootData.governanceProgram,
+          })[0]
+        ),
+        payer,
       })
       .instruction();
   }

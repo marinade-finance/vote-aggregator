@@ -1,7 +1,7 @@
 import {Program} from '@coral-xyz/anchor';
 import {BankrunProvider} from 'anchor-bankrun';
 import {AddedAccount, startAnchor} from 'solana-bankrun';
-import {VoteAggregator, IDL} from '../src/vote_aggregator';
+import {VoteAggregator, IDL} from '../src/VoteAggregator/vote_aggregator';
 import {PublicKey} from '@solana/web3.js';
 
 export const startTest = async ({

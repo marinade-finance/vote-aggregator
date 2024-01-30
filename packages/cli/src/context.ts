@@ -2,13 +2,7 @@ import {AnchorProvider, Provider, Wallet} from '@coral-xyz/anchor';
 import expandTilde from 'expand-tilde';
 import * as YAML from 'yaml';
 import {fs} from 'mz';
-import {
-  Cluster,
-  Commitment,
-  Connection,
-  Keypair,
-  clusterApiUrl,
-} from '@solana/web3.js';
+import {Cluster, Commitment, Connection, clusterApiUrl} from '@solana/web3.js';
 import {VoteAggregatorSdk} from 'vote-aggregator-sdk';
 import {parseKeypair} from './keyParser';
 

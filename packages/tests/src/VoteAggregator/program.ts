@@ -1,6 +1,6 @@
 import {AnchorProvider, Program} from '@coral-xyz/anchor';
 import {Connection, PublicKey} from '@solana/web3.js';
-import {VoteAggregator, IDL} from '../vote_aggregator';
+import {VoteAggregator, IDL} from './vote_aggregator';
 
 export const buildVoteAggregatorProgram = ({
   voteAggregatorId = new PublicKey(

@@ -1,10 +1,10 @@
 import {PublicKey} from '@solana/web3.js';
 import {MaxVoterWeightAccount, RootAccount} from './accounts';
-import {RealmTester} from '../realm';
+import {RealmTester} from '../SplGovernance/realm';
 import {BN} from '@coral-xyz/anchor';
 import {getMinimumBalanceForRentExemption, resizeBN} from '../utils';
 import {AddedAccount} from 'solana-bankrun';
-import {buildVoteAggregatorProgram} from './voteAggregator';
+import {buildVoteAggregatorProgram} from './program';
 
 export type RootTestData = {
   side: 'community' | 'council';

@@ -1,6 +1,6 @@
 import {PublicKey} from '@solana/web3.js';
 import {buildKeypair} from '../..';
-import {RealmTestData} from '../../realm';
+import {RealmTestData} from '../../SplGovernance/realm';
 import {BN} from '@coral-xyz/anchor';
 
 export type CreateRootTestData = {
