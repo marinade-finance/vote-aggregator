@@ -131,7 +131,8 @@ describe('create_clan instruction', () => {
         version: 1,
         reserved: [0, 0, 0, 0, 0, 0],
         governanceDelegate: null,
-        reservedV2: Array(128).fill(0),
+        reservedV2: Array(124).fill(0),
+        locks: [],
       });
 
       expect(

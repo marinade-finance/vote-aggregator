@@ -133,13 +133,15 @@ export class RealmTester {
         voterWeightAddin: communityTokenConfig.voterWeightAddin || null,
         maxVoterWeightAddin: communityTokenConfig.maxVoterWeightAddin || null,
         tokenType: communityTokenConfig.tokenType || {liquid: {}},
-        reserved: new Array(8).fill(0),
+        reserved: new Array(4).fill(0),
+        lockAuthorities: [],
       },
       councilTokenConfig: {
         voterWeightAddin: councilTokenConfig.voterWeightAddin || null,
         maxVoterWeightAddin: councilTokenConfig.maxVoterWeightAddin || null,
         tokenType: councilTokenConfig.tokenType || {liquid: {}},
-        reserved: new Array(8).fill(0),
+        reserved: new Array(4).fill(0),
+        lockAuthorities: [],
       },
       reserved: 0, // Dummy value for undefined schema type
     };
@@ -346,7 +348,8 @@ export class RealmTester {
       outstandingProposalCount: 0,
       reserved: [0, 0, 0, 0, 0, 0],
       governanceDelegate: null,
-      reservedV2: Array(128).fill(0),
+      reservedV2: Array(124).fill(0),
+      locks: [],
     };
     const program = buildSplGovernanceProgram({
       splGovernanceId: this.splGovernanceId,

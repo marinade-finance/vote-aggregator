@@ -6,10 +6,8 @@ import {RootTester} from './root';
 import {AddedAccount} from 'solana-bankrun';
 import {buildVoteAggregatorProgram} from './program';
 import {ClanTester} from './clan';
-import {
-  TokenOwnerRecordAccount,
-  buildSplGovernanceProgram,
-} from '../SplGovernance/program';
+import {buildSplGovernanceProgram} from '../SplGovernance/program';
+import {TokenOwnerRecordAccount} from '../SplGovernance/accounts';
 
 export type MemberTestData = {
   owner: PublicKey | Keypair;
@@ -135,7 +133,8 @@ export class MemberTester {
       version: 1,
       reserved: [0, 0, 0, 0, 0, 0],
       governanceDelegate,
-      reservedV2: Array(128).fill(0),
+      reservedV2: Array(124).fill(0),
+      locks: [],
     };
   }
 
