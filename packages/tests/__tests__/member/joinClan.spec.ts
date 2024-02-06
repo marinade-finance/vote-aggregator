@@ -6,9 +6,11 @@ import {
   parseLogsEvent,
   resizeBN,
   joinClanTestData,
+  buildSplGovernanceProgram,
 } from '../../src';
 import {ClanTester, MemberTester, RootTester} from '../../src/VoteAggregator';
-import {Keypair} from '@solana/web3.js';
+import {Keypair, PublicKey, SystemProgram} from '@solana/web3.js';
+import {BN} from 'bn.js';
 
 describe('join_clan instruction', () => {
   it.each(joinClanTestData.filter(({error}) => !error))(
@@ -20,6 +22,36 @@ describe('join_clan instruction', () => {
       memberVoterWeight,
       clan,
     }: JoinClanTestData) => {
+      const tokenConfig =
+        (root.side === 'community'
+          ? realm.communityTokenConfig
+          : realm.councilTokenConfig) || {};
+      const voteAggregatorId =
+        root.voteAggregatorId ||
+        new PublicKey('VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT');
+      const [rootAddress] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from('root', 'utf-8'),
+          realm.realmAddress.toBuffer(),
+          root.side === 'community'
+            ? realm.communityMint.toBuffer()
+            : realm.councilMint!.toBuffer(),
+        ],
+        voteAggregatorId
+      );
+      const lockAuthority = PublicKey.findProgramAddressSync(
+        [Buffer.from('lock-authority', 'utf8'), rootAddress.toBuffer()],
+        voteAggregatorId
+      )[0];
+      if (tokenConfig.lockAuthorities === undefined) {
+        tokenConfig.lockAuthorities = [lockAuthority];
+      }
+      if (root.side === 'community') {
+        realm.communityTokenConfig = tokenConfig;
+      } else {
+        realm.councilTokenConfig = tokenConfig;
+      }
+
       const realmTester = new RealmTester(realm);
       const rootTester = new RootTester({
         ...root,
@@ -44,6 +76,10 @@ describe('join_clan instruction', () => {
           }),
         ],
       });
+      const splGovernance = buildSplGovernanceProgram({
+        splGovernanceId: rootTester.splGovernanceId,
+        connection: program.provider.connection,
+      });
 
       const tx = await program.methods
         .joinClan()
@@ -56,6 +92,12 @@ describe('join_clan instruction', () => {
           memberTokenOwnerRecord: memberTester.tokenOwnerRecordAddress[0],
           memberVoterWeightRecord: memberVoterWeight.address,
           maxVoterWeightRecord: rootTester.maxVoterWeightAddress[0],
+          realm: realmTester.realmAddress,
+          realmConfig: await realmTester.realmConfigId(),
+          lockAuthority: rootTester.lockAuthority[0],
+          payer: program.provider.publicKey!,
+          governanceProgram: rootTester.splGovernanceId,
+          systemProgram: SystemProgram.programId,
         })
         .transaction();
       tx.recentBlockhash = testContext.lastBlockhash;
@@ -163,6 +205,21 @@ describe('join_clan instruction', () => {
             memberVoterWeight.voterWeight
           )
         ),
+      });
+
+      expect(
+        splGovernance.account.tokenOwnerRecordV2.fetch(
+          memberTester.tokenOwnerRecordAddress[0]
+        )
+      ).resolves.toStrictEqual({
+        ...memberTester.tokenOwnerRecord,
+        locks: [
+          {
+            lockType: 0,
+            expiry: new BN('9223372036854775807'),
+            authority: lockAuthority,
+          },
+        ],
       });
     }
   );

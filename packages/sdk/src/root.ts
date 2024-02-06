@@ -13,8 +13,14 @@ import {
   getRealmConfig,
   getRealmConfigAddress,
 } from '@solana/spl-governance';
-import {BN, IdlAccounts, ProgramAccount} from '@coral-xyz/anchor';
+import {
+  AnchorProvider,
+  BN,
+  IdlAccounts,
+  ProgramAccount,
+} from '@coral-xyz/anchor';
 import {VoteAggregator} from './vote_aggregator';
+import {splGovernanceProgram} from '@coral-xyz/spl-governance';
 
 export type RootAccount = IdlAccounts<VoteAggregator>['root'];
 export type MaxVoterWeightAccount =
@@ -47,6 +53,13 @@ export class RootSdk {
   }): [PublicKey, number] {
     return PublicKey.findProgramAddressSync(
       [Buffer.from('max-voter-weight', 'utf-8'), rootAddress.toBuffer()],
+      this.sdk.programId
+    );
+  }
+
+  lockAuthority({rootAddress}: {rootAddress: PublicKey}): [PublicKey, number] {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from('lock-authority', 'utf-8'), rootAddress.toBuffer()],
       this.sdk.programId
     );
   }
@@ -263,6 +276,43 @@ export class RootSdk {
       councilTokenConfigArgs,
       payer
     );
-    return [createRootIx, setRealmConfigIx];
+
+    // TODO: use official JS SDK
+    const splGovernance = splGovernanceProgram({
+      programId: splGovernanceId,
+      provider: new AnchorProvider(
+        this.sdk.connection,
+        {
+          signTransaction: t => Promise.resolve(t),
+          signAllTransactions: ts => Promise.resolve(ts),
+          publicKey: PublicKey.default,
+        },
+        {}
+      ),
+    });
+    const [lockAuthority] = this.lockAuthority({rootAddress});
+    const setLockAuthorityIx = await splGovernance.methods
+      .setRealmConfigItem({
+        tokenOwnerRecordLockAuthority: {
+          action: {
+            add: {},
+          },
+          governingTokenMint,
+          authority: lockAuthority,
+        },
+      })
+      .accountsStrict({
+        realm: realmAddress,
+        realmAuthority: realmData.authority!,
+        payer,
+        systemProgram: SystemProgram.programId,
+        realmConfigAddress: await getRealmConfigAddress(
+          splGovernanceId,
+          realmAddress
+        ),
+      })
+      .instruction();
+
+    return [createRootIx, setRealmConfigIx, setLockAuthorityIx];
   }
 }

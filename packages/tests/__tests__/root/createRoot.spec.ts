@@ -84,6 +84,12 @@ describe('create_root instruction', () => {
           }
         : undefined;
 
+      const [lockAuthority, lockAuthorityBump] =
+        PublicKey.findProgramAddressSync(
+          [Buffer.from('lock-authority', 'utf8'), rootAddress.toBuffer()],
+          program.programId
+        );
+
       const tx = await program.methods
         .createRoot()
         .accountsStrict({
@@ -120,6 +126,24 @@ describe('create_root instruction', () => {
             councilTokenConfigArgs,
             program.provider.publicKey!
           ),
+          await splGovernance.methods
+            .setRealmConfigItem({
+              tokenOwnerRecordLockAuthority: {
+                action: {
+                  add: {},
+                },
+                governingTokenMint: realmTester.realm.communityMint,
+                authority: lockAuthority,
+              },
+            })
+            .accountsStrict({
+              realm: realmTester.realmAddress,
+              realmAuthority: realmTester.realm.authority!,
+              payer: program.provider.publicKey!,
+              systemProgram: SystemProgram.programId,
+              realmConfigAddress: await realmTester.realmConfigId(),
+            })
+            .instruction(),
         ])
         .transaction();
       tx.recentBlockhash = testContext.lastBlockhash;
@@ -155,6 +179,7 @@ describe('create_root instruction', () => {
         bumps: {
           root: rootBump,
           maxVoterWeight: maxVoterWeightBump,
+          lockAuthority: lockAuthorityBump,
         },
         clanCount: resizeBN(new BN(0)),
         memberCount: resizeBN(new BN(0)),
@@ -171,6 +196,7 @@ describe('create_root instruction', () => {
         communityTokenConfig: {
           ...realmTester.config.communityTokenConfig,
           voterWeightAddin: program.programId,
+          lockAuthorities: [lockAuthority],
         },
       });
 
@@ -247,6 +273,11 @@ describe('create_root instruction', () => {
       ),
     };
 
+    const [lockAuthority, lockAuthorityBump] = PublicKey.findProgramAddressSync(
+      [Buffer.from('lock-authority', 'utf8'), rootAddress.toBuffer()],
+      program.programId
+    );
+
     const tx = await program.methods
       .createRoot()
       .accountsStrict({
@@ -283,6 +314,24 @@ describe('create_root instruction', () => {
           councilTokenConfigArgs,
           program.provider.publicKey!
         ),
+        await splGovernance.methods
+          .setRealmConfigItem({
+            tokenOwnerRecordLockAuthority: {
+              action: {
+                add: {},
+              },
+              governingTokenMint: realmTester.realm.config.councilMint!,
+              authority: lockAuthority,
+            },
+          })
+          .accountsStrict({
+            realm: realmTester.realmAddress,
+            realmAuthority: realmTester.realm.authority!,
+            payer: program.provider.publicKey!,
+            systemProgram: SystemProgram.programId,
+            realmConfigAddress: await realmTester.realmConfigId(),
+          })
+          .instruction(),
       ])
       .transaction();
     tx.recentBlockhash = testContext.lastBlockhash;
@@ -318,6 +367,7 @@ describe('create_root instruction', () => {
       bumps: {
         root: rootBump,
         maxVoterWeight: maxVoterWeightBump,
+        lockAuthority: lockAuthorityBump,
       },
       clanCount: resizeBN(new BN(0)),
       memberCount: resizeBN(new BN(0)),
@@ -334,6 +384,7 @@ describe('create_root instruction', () => {
       councilTokenConfig: {
         ...realmTester.config.councilTokenConfig,
         voterWeightAddin: program.programId,
+        lockAuthorities: [lockAuthority],
       },
     });
 

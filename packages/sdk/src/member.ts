@@ -1,8 +1,12 @@
-import {PublicKey, TransactionInstruction} from '@solana/web3.js';
+import {
+  PublicKey,
+  SystemProgram,
+  TransactionInstruction,
+} from '@solana/web3.js';
 import {VoteAggregatorSdk} from './sdk';
 import {BN, IdlAccounts} from '@coral-xyz/anchor';
 import {VoteAggregator} from './vote_aggregator';
-import {SYSTEM_PROGRAM_ID} from '@solana/spl-governance';
+import {SYSTEM_PROGRAM_ID, getRealmConfigAddress} from '@solana/spl-governance';
 import {VoterWeightAccount} from './clan';
 
 export type MemberAccount = IdlAccounts<VoteAggregator>['member'];
@@ -235,16 +239,17 @@ export class MemberSdk {
   }
 
   async joinClanInstruction({
-    rootData = {},
+    rootData,
     memberAddress,
     memberData,
     clanAddress,
     memberVoterWeightAddress,
+    payer,
     memberAuthority = memberData.owner,
   }: {
-    rootData?: {
-      governanceProgram?: PublicKey;
-      realm?: PublicKey;
+    rootData: {
+      governanceProgram: PublicKey;
+      realm: PublicKey;
       governingTokenMint?: PublicKey;
     };
     memberAddress?: PublicKey;
@@ -255,6 +260,7 @@ export class MemberSdk {
     };
     clanAddress: PublicKey;
     memberVoterWeightAddress: PublicKey;
+    payer: PublicKey;
     memberAuthority?: PublicKey;
   }) {
     if (!memberAddress) {
@@ -266,14 +272,8 @@ export class MemberSdk {
 
     let memberTokenOwnerRecord = memberData.tokenOwnerRecord;
     if (!memberTokenOwnerRecord) {
-      if (!rootData.realm) {
-        throw new Error('rootData.realm is required');
-      }
       if (!rootData.governingTokenMint) {
         throw new Error('rootData.governingTokenMint is required');
-      }
-      if (!rootData.governanceProgram) {
-        throw new Error('rootData.governanceProgram is required');
       }
 
       [memberTokenOwnerRecord] = this.tokenOwnerRecordAddress({
@@ -283,6 +283,10 @@ export class MemberSdk {
         splGovernanceId: rootData.governanceProgram,
       });
     }
+
+    const [lockAuthority] = this.sdk.root.lockAuthority({
+      rootAddress: memberData.root,
+    });
     return await this.sdk.program.methods
       .joinClan()
       .accountsStrict({
@@ -296,6 +300,15 @@ export class MemberSdk {
         maxVoterWeightRecord: this.sdk.root.maxVoterWieghtAddress({
           rootAddress: memberData.root,
         })[0],
+        payer,
+        realm: rootData.realm,
+        realmConfig: await getRealmConfigAddress(
+          rootData.governanceProgram,
+          rootData.realm
+        ),
+        lockAuthority,
+        governanceProgram: rootData.governanceProgram,
+        systemProgram: SystemProgram.programId,
       })
       .instruction();
   }
@@ -336,14 +349,21 @@ export class MemberSdk {
   }
 
   async leaveClanInstruction({
+    rootData,
     memberData,
     memberAddress,
     memberAuthority = memberData.owner,
   }: {
+    rootData: {
+      governanceProgram: PublicKey;
+      realm?: PublicKey;
+      governingTokenMint?: PublicKey;
+    };
     memberData: {
       root: PublicKey;
       owner: PublicKey;
       clan: PublicKey;
+      tokenOwnerRecord?: PublicKey;
     };
     memberAddress?: PublicKey;
     memberAuthority?: PublicKey;
@@ -354,6 +374,28 @@ export class MemberSdk {
         owner: memberData.owner,
       });
     }
+
+    let memberTokenOwnerRecord = memberData.tokenOwnerRecord;
+    if (!memberTokenOwnerRecord) {
+      if (!rootData.governingTokenMint) {
+        throw new Error('rootData.governingTokenMint is required');
+      }
+      if (!rootData.realm) {
+        throw new Error('rootData.realm is required');
+      }
+
+      [memberTokenOwnerRecord] = this.tokenOwnerRecordAddress({
+        realmAddress: rootData.realm,
+        governingTokenMint: rootData.governingTokenMint,
+        owner: memberData.owner,
+        splGovernanceId: rootData.governanceProgram,
+      });
+    }
+
+    const [lockAuthority] = this.sdk.root.lockAuthority({
+      rootAddress: memberData.root,
+    });
+
     return await this.sdk.program.methods
       .leaveClan()
       .accountsStrict({
@@ -361,6 +403,9 @@ export class MemberSdk {
         member: memberAddress,
         clan: memberData.clan,
         memberAuthority,
+        lockAuthority,
+        memberTokenOwnerRecord,
+        governanceProgram: rootData.governanceProgram,
       })
       .instruction();
   }

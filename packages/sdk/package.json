@@ -9,6 +9,7 @@
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
     "@solana/spl-governance": "^0.3.28",
+    "@coral-xyz/spl-governance": "workspace:*",
     "@solana/web3.js": "=1.87.6"
   },
   "devDependencies": {

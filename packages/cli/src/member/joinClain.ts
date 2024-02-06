@@ -60,6 +60,7 @@ const joinClan = async ({
       },
       clanAddress,
       memberVoterWeightAddress,
+      payer: provider.publicKey!,
     })
   );
   await execute({

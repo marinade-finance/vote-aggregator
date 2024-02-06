@@ -78,6 +78,9 @@ describe('create-root command', () => {
 
       const [maxVoterWeightAddress, maxVoterWeightBump] =
         sdk.root.maxVoterWieghtAddress({rootAddress});
+      const [lockAuthority, lockAuthorityBump] = sdk.root.lockAuthority({
+        rootAddress,
+      });
 
       expect(sdk.root.fetchRoot(rootAddress)).resolves.toStrictEqual({
         realm: realmTester.realmAddress,
@@ -90,6 +93,7 @@ describe('create-root command', () => {
         bumps: {
           root: rootBump,
           maxVoterWeight: maxVoterWeightBump,
+          lockAuthority: lockAuthorityBump,
         },
         clanCount: resizeBN(new BN(0)),
         memberCount: resizeBN(new BN(0)),
@@ -106,6 +110,7 @@ describe('create-root command', () => {
         communityTokenConfig: {
           ...realmTester.config.communityTokenConfig,
           voterWeightAddin: sdk.programId,
+          lockAuthorities: [lockAuthority],
         },
       });
 
@@ -167,6 +172,10 @@ describe('create-root command', () => {
     const [maxVoterWeightAddress, maxVoterWeightBump] =
       sdk.root.maxVoterWieghtAddress({rootAddress});
 
+    const [lockAuthority, lockAuthorityBump] = sdk.root.lockAuthority({
+      rootAddress,
+    });
+
     expect(sdk.root.fetchRoot(rootAddress)).resolves.toStrictEqual({
       realm: realmTester.realmAddress,
       governanceProgram: realmTester.splGovernanceId,
@@ -178,6 +187,7 @@ describe('create-root command', () => {
       bumps: {
         root: rootBump,
         maxVoterWeight: maxVoterWeightBump,
+        lockAuthority: lockAuthorityBump,
       },
       clanCount: resizeBN(new BN(0)),
       memberCount: resizeBN(new BN(0)),
@@ -194,6 +204,7 @@ describe('create-root command', () => {
       councilTokenConfig: {
         ...realmTester.config.councilTokenConfig,
         voterWeightAddin: sdk.programId,
+        lockAuthorities: [lockAuthority],
       },
     });
 

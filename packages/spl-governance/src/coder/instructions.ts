@@ -778,7 +778,7 @@ function encodeSetRealmConfigItem({ args }: any): Buffer {
       (() => {
         switch (Object.keys(args)[0]) {
           case "tokenOwnerRecordLockAuthority":
-            return 1 + 32 + 32;
+            return 2 + 32 + 32;
         }
       })()
   );
@@ -992,7 +992,7 @@ LAYOUT.addVariant(
 );
 LAYOUT.addVariant(7, B.struct([B.publicKey("signatory")]), "addSignatory");
 LAYOUT.addVariant(
-  8,
+  9,
   B.struct([
     B.u8("optionIndex"),
     B.u16("index"),
@@ -1015,11 +1015,11 @@ LAYOUT.addVariant(
   ]),
   "insertTransaction"
 );
-LAYOUT.addVariant(9, B.struct([]), "removeTransaction");
-LAYOUT.addVariant(10, B.struct([]), "cancelProposal");
-LAYOUT.addVariant(11, B.struct([]), "signOffProposal");
+LAYOUT.addVariant(10, B.struct([]), "removeTransaction");
+LAYOUT.addVariant(11, B.struct([]), "cancelProposal");
+LAYOUT.addVariant(12, B.struct([]), "signOffProposal");
 LAYOUT.addVariant(
-  12,
+  13,
   B.struct([
     ((p: string) => {
       const U = B.union(B.u8("discriminator"), null, p);
@@ -1036,11 +1036,11 @@ LAYOUT.addVariant(
   ]),
   "castVote"
 );
-LAYOUT.addVariant(13, B.struct([]), "finalizeVote");
-LAYOUT.addVariant(14, B.struct([]), "relinquishVote");
-LAYOUT.addVariant(15, B.struct([]), "executeTransaction");
+LAYOUT.addVariant(14, B.struct([]), "finalizeVote");
+LAYOUT.addVariant(15, B.struct([]), "relinquishVote");
+LAYOUT.addVariant(16, B.struct([]), "executeTransaction");
 LAYOUT.addVariant(
-  16,
+  17,
   B.struct([
     B.struct(
       [
@@ -1100,7 +1100,7 @@ LAYOUT.addVariant(
   "createMintGovernance"
 );
 LAYOUT.addVariant(
-  17,
+  18,
   B.struct([
     B.struct(
       [
@@ -1160,7 +1160,7 @@ LAYOUT.addVariant(
   "createTokenGovernance"
 );
 LAYOUT.addVariant(
-  18,
+  19,
   B.struct([
     B.struct(
       [
@@ -1218,9 +1218,9 @@ LAYOUT.addVariant(
   ]),
   "setGovernanceConfig"
 );
-LAYOUT.addVariant(19, B.struct([]), "flagTransactionError");
+LAYOUT.addVariant(20, B.struct([]), "flagTransactionError");
 LAYOUT.addVariant(
-  20,
+  21,
   B.struct([
     ((p: string) => {
       const U = B.union(B.u8("discriminator"), null, p);
@@ -1233,7 +1233,7 @@ LAYOUT.addVariant(
   "setRealmAuthority"
 );
 LAYOUT.addVariant(
-  21,
+  22,
   B.struct([
     B.struct(
       [
@@ -1279,29 +1279,30 @@ LAYOUT.addVariant(
   ]),
   "setRealmConfig"
 );
-LAYOUT.addVariant(22, B.struct([]), "createTokenOwnerRecord");
-LAYOUT.addVariant(23, B.struct([]), "createNativeTreasury");
-LAYOUT.addVariant(24, B.struct([B.u64("amount")]), "revokeGoverningTokens");
-LAYOUT.addVariant(25, B.struct([]), "refundProposalDeposit");
-LAYOUT.addVariant(26, B.struct([]), "completeProposal");
+LAYOUT.addVariant(23, B.struct([]), "createTokenOwnerRecord");
+LAYOUT.addVariant(24, B.struct([]), "updateProgramMetadata");
+LAYOUT.addVariant(25, B.struct([]), "createNativeTreasury");
+LAYOUT.addVariant(26, B.struct([B.u64("amount")]), "revokeGoverningTokens");
+LAYOUT.addVariant(27, B.struct([]), "refundProposalDeposit");
+LAYOUT.addVariant(28, B.struct([]), "completeProposal");
 LAYOUT.addVariant(
-  27,
+  29,
   B.struct([B.publicKey("signatory")]),
   "addRequiredSignatory"
 );
-LAYOUT.addVariant(28, B.struct([]), "removeRequiredSignatory");
+LAYOUT.addVariant(30, B.struct([]), "removeRequiredSignatory");
 LAYOUT.addVariant(
-  29,
+  31,
   B.struct([B.u8("lockType"), B.option(B.i64(), "expiry")]),
   "setTokenOwnerRecordLock"
 );
 LAYOUT.addVariant(
-  30,
+  32,
   B.struct([B.u8("lockType")]),
   "removeTokenOwnerRecordLock"
 );
 LAYOUT.addVariant(
-  31,
+  33,
   B.struct([
     ((p: string) => {
       const U = B.union(B.u8("discriminator"), null, p);

@@ -36,6 +36,7 @@ const leaveClan = async ({
     realmAddress,
     governingTokenMint,
   });
+  const rootData = await sdk.root.fetchRoot(rootAddress);
   const memberAddress = sdk.member.memberAddress({
     rootAddress,
     owner: ownerAddress,
@@ -52,6 +53,7 @@ const leaveClan = async ({
   await execute({
     instructions: [
       await sdk.member.leaveClanInstruction({
+        rootData,
         memberAddress,
         memberData,
       }),

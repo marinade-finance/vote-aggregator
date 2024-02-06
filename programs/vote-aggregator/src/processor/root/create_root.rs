@@ -112,6 +112,12 @@ impl<'info> CreateRoot<'info> {
             realm_config.council_token_config.voter_weight_addin
         };
 
+        let (lock_authority, lock_authority_bump) = Pubkey::find_program_address(
+            &[Root::LOCK_AUTHORITY_SEED, &self.root.key().to_bytes()],
+            &crate::ID,
+        );
+        msg!("lock_authority: {:?}", lock_authority);
+
         self.root.set_inner(Root {
             governance_program: self.governance_program.key(),
             realm: self.realm.key(),
@@ -121,6 +127,7 @@ impl<'info> CreateRoot<'info> {
             bumps: RootBumps {
                 root: bumps.root,
                 max_voter_weight: bumps.max_voter_weight,
+                lock_authority: lock_authority_bump,
             },
             clan_count: 0,
             member_count: 0,

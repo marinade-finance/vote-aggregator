@@ -26,3 +26,5 @@ export type InstructionExecutionFlags =
 export type VoteThreshold = IdlTypes<SplGovernanceIdl>['VoteThreshold'];
 export type VoteAccount = IdlAccounts<SplGovernanceIdl>['voteRecordV2'];
 export type Vote = IdlTypes<SplGovernanceIdl>['Vote'];
+export type TokenOwnerRecordLock =
+  IdlTypes<SplGovernanceIdl>['TokenOwnerRecordLock'];

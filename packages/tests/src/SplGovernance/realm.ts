@@ -35,6 +35,7 @@ export type GoverningTokenConfigArgs = {
   voterWeightAddin?: PublicKey | null;
   maxVoterWeightAddin?: PublicKey | null;
   tokenType?: GoverningTokenType;
+  lockAuthorities?: PublicKey[];
 };
 
 export type VoterWeightRecordTestData = {
@@ -134,14 +135,14 @@ export class RealmTester {
         maxVoterWeightAddin: communityTokenConfig.maxVoterWeightAddin || null,
         tokenType: communityTokenConfig.tokenType || {liquid: {}},
         reserved: new Array(4).fill(0),
-        lockAuthorities: [],
+        lockAuthorities: communityTokenConfig.lockAuthorities || [],
       },
       councilTokenConfig: {
         voterWeightAddin: councilTokenConfig.voterWeightAddin || null,
         maxVoterWeightAddin: councilTokenConfig.maxVoterWeightAddin || null,
         tokenType: councilTokenConfig.tokenType || {liquid: {}},
         reserved: new Array(4).fill(0),
-        lockAuthorities: [],
+        lockAuthorities: councilTokenConfig.lockAuthorities || [],
       },
       reserved: 0, // Dummy value for undefined schema type
     };

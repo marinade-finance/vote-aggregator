@@ -7,7 +7,10 @@ import {AddedAccount} from 'solana-bankrun';
 import {buildVoteAggregatorProgram} from './program';
 import {ClanTester} from './clan';
 import {buildSplGovernanceProgram} from '../SplGovernance/program';
-import {TokenOwnerRecordAccount} from '../SplGovernance/accounts';
+import {
+  TokenOwnerRecordAccount,
+  TokenOwnerRecordLock,
+} from '../SplGovernance/accounts';
 
 export type MemberTestData = {
   owner: PublicKey | Keypair;
@@ -21,6 +24,7 @@ export type MemberTestData = {
   unrelinquishedVotesCount?: BN;
   outstandingProposalCount?: number;
   governanceDelegate?: PublicKey | null;
+  locks?: TokenOwnerRecordLock[];
 };
 
 export class MemberTester {
@@ -71,6 +75,7 @@ export class MemberTester {
     unrelinquishedVotesCount = new BN(0),
     outstandingProposalCount = 0,
     governanceDelegate = null,
+    locks = [],
   }: Omit<MemberTestData, 'clan'> & {
     root: RootTester;
     clan?: ClanTester | PublicKey;
@@ -134,7 +139,7 @@ export class MemberTester {
       reserved: [0, 0, 0, 0, 0, 0],
       governanceDelegate,
       reservedV2: Array(124).fill(0),
-      locks: [],
+      locks,
     };
   }
 

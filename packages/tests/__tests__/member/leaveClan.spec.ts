@@ -6,6 +6,7 @@ import {
   parseLogsEvent,
   resizeBN,
   LeaveClanTestData,
+  buildSplGovernanceProgram,
 } from '../../src';
 import {ClanTester, MemberTester, RootTester} from '../../src/VoteAggregator';
 import {BN} from '@coral-xyz/anchor';
@@ -15,11 +16,51 @@ describe('start_leaving_clan instruction', () => {
   it.each(leaveClanTestData.filter(({error}) => !error))(
     'Works',
     async ({realm, root, member}: LeaveClanTestData) => {
+      const tokenConfig =
+        (root.side === 'community'
+          ? realm.communityTokenConfig
+          : realm.councilTokenConfig) || {};
+      const voteAggregatorId =
+        root.voteAggregatorId ||
+        new PublicKey('VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT');
+      const [rootAddress] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from('root', 'utf-8'),
+          realm.realmAddress.toBuffer(),
+          root.side === 'community'
+            ? realm.communityMint.toBuffer()
+            : realm.councilMint!.toBuffer(),
+        ],
+        voteAggregatorId
+      );
+      if (tokenConfig.lockAuthorities === undefined) {
+        tokenConfig.lockAuthorities = [
+          PublicKey.findProgramAddressSync(
+            [Buffer.from('lock-authority', 'utf8'), rootAddress.toBuffer()],
+            voteAggregatorId
+          )[0],
+        ];
+      }
+      if (root.side === 'community') {
+        realm.communityTokenConfig = tokenConfig;
+      } else {
+        realm.councilTokenConfig = tokenConfig;
+      }
+
       const realmTester = new RealmTester(realm);
       const rootTester = new RootTester({
         ...root,
         realm: realmTester,
       });
+      if (member.locks === undefined) {
+        member.locks = [
+          {
+            lockType: 0,
+            authority: rootTester.lockAuthority[0],
+            expiry: new BN('9223372036854775807'),
+          },
+        ];
+      }
       const currentTime = new BN(Math.floor(Date.now() / 1000));
       const memberTester = new MemberTester({
         ...member,
@@ -37,6 +78,10 @@ describe('start_leaving_clan instruction', () => {
           ...(await clanTester.accounts()),
         ],
       });
+      const splGovernance = buildSplGovernanceProgram({
+        splGovernanceId: rootTester.splGovernanceId,
+        connection: program.provider.connection,
+      });
 
       const tx = await program.methods
         .leaveClan()
@@ -45,6 +90,9 @@ describe('start_leaving_clan instruction', () => {
           member: memberTester.memberAddress[0],
           clan: memberTester.member.clan,
           memberAuthority: memberTester.ownerAddress,
+          governanceProgram: rootTester.splGovernanceId,
+          lockAuthority: rootTester.lockAuthority[0],
+          memberTokenOwnerRecord: memberTester.tokenOwnerRecordAddress[0],
         })
         .transaction();
       tx.recentBlockhash = testContext.lastBlockhash;
@@ -85,6 +133,15 @@ describe('start_leaving_clan instruction', () => {
           )
         ),
         leavingMembers: resizeBN(clanTester.clan.leavingMembers.subn(1)),
+      });
+
+      expect(
+        splGovernance.account.tokenOwnerRecordV2.fetch(
+          memberTester.tokenOwnerRecordAddress[0]
+        )
+      ).resolves.toStrictEqual({
+        ...memberTester.tokenOwnerRecord,
+        locks: [],
       });
     }
   );

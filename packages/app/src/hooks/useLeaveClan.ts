@@ -12,8 +12,14 @@ const useLeaveClan = () => {
   return useMutation({
     mutationFn: async ({
       memberData,
+      rootData,
     }: {
       network: Cluster;
+      rootData: {
+        governanceProgram: PublicKey;
+        realm: PublicKey;
+        governingTokenMint: PublicKey;
+      };
       memberData: {
         root: PublicKey;
         owner: PublicKey;
@@ -31,6 +37,7 @@ const useLeaveClan = () => {
 
       tx.add(
         await sdk.member.leaveClanInstruction({
+          rootData,
           memberData,
         })
       );

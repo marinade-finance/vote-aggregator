@@ -56,6 +56,13 @@ export class RootTester {
     }
   }
 
+  get lockAuthority(): [PublicKey, number] {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from('lock-authority', 'utf8'), this.rootAddress[0].toBuffer()],
+      this.voteAggregatorId
+    );
+  }
+
   constructor({
     realm,
     side,
@@ -73,6 +80,7 @@ export class RootTester {
     this.voteAggregatorId = voteAggregatorId;
     const [, rootBump] = this.rootAddress;
     const [, maxVoterWeightBump] = this.maxVoterWeightAddress;
+    const [, lockAuthorityBump] = this.lockAuthority;
 
     this.root = {
       realm: realm.realmAddress,
@@ -88,6 +96,7 @@ export class RootTester {
       bumps: {
         root: rootBump,
         maxVoterWeight: maxVoterWeightBump,
+        lockAuthority: lockAuthorityBump,
       },
     };
 

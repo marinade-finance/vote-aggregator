@@ -1,6 +1,7 @@
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, system_program};
 use spl_governance::{
     addins::voter_weight::get_voter_weight_record_data_for_token_owner_record,
+    instruction::set_token_owner_record_lock, solana_program::program::invoke_signed,
     state::token_owner_record::get_token_owner_record_data_for_realm_and_governing_mint,
     PROGRAM_AUTHORITY_SEED,
 };
@@ -36,7 +37,39 @@ pub struct JoinClan<'info> {
     )]
     clan: Account<'info, Clan>,
 
+    #[account(
+        has_one = governance_program,
+        has_one = realm,
+    )]
     root: Account<'info, Root>,
+
+    /// CHECK: PDA
+    #[account(
+        seeds = [
+        Root::LOCK_AUTHORITY_SEED,
+            &root.key().to_bytes()
+        ],
+        bump = root.bumps.lock_authority,
+    )]
+    lock_authority: UncheckedAccount<'info>,
+
+    /// CHECK: dynamic owner
+    #[account(
+        owner = governance_program.key(),
+    )]
+    realm: UncheckedAccount<'info>,
+
+    /// CHECK: dynamic owner
+    #[account(
+        owner = governance_program.key(),
+        seeds = [
+            b"realm-config",
+            &realm.key.to_bytes()
+        ],
+        bump,
+        seeds::program = governance_program.key(),
+    )]
+    realm_config: UncheckedAccount<'info>,
 
     #[account(
         mut,
@@ -50,6 +83,7 @@ pub struct JoinClan<'info> {
 
     /// CHECK: dynamic owner
     #[account(
+        mut,
         seeds = [
             PROGRAM_AUTHORITY_SEED,
             &root.realm.to_bytes(),
@@ -76,6 +110,17 @@ pub struct JoinClan<'info> {
         bump = root.bumps.max_voter_weight,
     )]
     max_voter_weight_record: Account<'info, MaxVoterWeightRecord>,
+
+    #[account(
+        mut,
+        owner = system_program::ID
+    )]
+    payer: Signer<'info>,
+
+    system_program: Program<'info, System>,
+    /// CHECK: program
+    #[account(executable)]
+    governance_program: UncheckedAccount<'info>,
 }
 
 impl<'info> JoinClan<'info> {
@@ -123,6 +168,32 @@ impl<'info> JoinClan<'info> {
         self.clan.active_members += 1;
         self.clan.potential_voter_weight += self.member.voter_weight;
         self.clan_voter_weight_record.voter_weight += self.member.voter_weight;
+
+        invoke_signed(
+            &set_token_owner_record_lock(
+                &self.governance_program.key(),
+                self.realm.key,
+                self.member_token_owner_record.key,
+                self.lock_authority.key,
+                self.payer.key,
+                0,
+                Some(i64::MAX),
+            ),
+            &[
+                self.governance_program.to_account_info(),
+                self.realm.to_account_info(),
+                self.realm_config.to_account_info(),
+                self.member_token_owner_record.to_account_info(),
+                self.lock_authority.to_account_info(),
+                self.payer.to_account_info(),
+                self.system_program.to_account_info(),
+            ],
+            &[&[
+                Root::LOCK_AUTHORITY_SEED,
+                &self.root.key().to_bytes(),
+                &[self.root.bumps.lock_authority],
+            ]],
+        )?;
 
         emit!(ClanMemberAdded {
             clan: self.clan.key(),

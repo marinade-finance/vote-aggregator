@@ -90,6 +90,30 @@ TransactionInstruction {
     },
     {
       "isSigner": false,
+      "isWritable": true,
+      "pubkey": PublicKey(2WfcnvxBPRbw3dRHd4u6WR4GNhZRymqvBVSRLbBEhgU4) PublicKey {
+        "_bn": BN {
+          "length": 10,
+          "negative": 0,
+          "red": null,
+          "words": [
+            37981421,
+            38343756,
+            25581879,
+            24099102,
+            43210665,
+            25035715,
+            9646035,
+            5600871,
+            31721131,
+            367948,
+            0,
+          ],
+        },
+      },
+    },
+    {
+      "isSigner": false,
       "isWritable": false,
       "pubkey": PublicKey(5fVvLAeBYETKMnmaqbrWNodai6Qorcuo5EMeJfbnHVFo) PublicKey {
         "_bn": BN {
@@ -107,6 +131,54 @@ TransactionInstruction {
             30259317,
             9438097,
             1135329,
+            0,
+          ],
+        },
+      },
+    },
+    {
+      "isSigner": false,
+      "isWritable": false,
+      "pubkey": PublicKey(6oLZpwQQrtFPDAP9qUo9ztG4jU1D1Hu1oiUgz8E67jDC) PublicKey {
+        "_bn": BN {
+          "length": 10,
+          "negative": 0,
+          "red": null,
+          "words": [
+            58752331,
+            40457087,
+            46224951,
+            27171266,
+            17247212,
+            51217890,
+            14143994,
+            398338,
+            40982732,
+            1411665,
+            0,
+          ],
+        },
+      },
+    },
+    {
+      "isSigner": false,
+      "isWritable": false,
+      "pubkey": PublicKey(5zGp3YAiWdPUBVinF3oWhMnZ5cFCenfGUdL7aWwBDjx9) PublicKey {
+        "_bn": BN {
+          "length": 10,
+          "negative": 0,
+          "red": null,
+          "words": [
+            48487526,
+            43378866,
+            65604930,
+            30694608,
+            11205177,
+            24699852,
+            47643804,
+            56835297,
+            54715450,
+            1214126,
             0,
           ],
         },

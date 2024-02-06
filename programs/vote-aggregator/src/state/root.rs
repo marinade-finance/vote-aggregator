@@ -4,6 +4,7 @@ use anchor_lang::prelude::*;
 pub struct RootBumps {
     pub root: u8,
     pub max_voter_weight: u8,
+    pub lock_authority: u8,
 }
 
 #[account]
@@ -22,4 +23,5 @@ pub struct Root {
 impl Root {
     pub const SPACE: usize = 8 + std::mem::size_of::<Self>();
     pub const ADDRESS_SEED: &'static [u8] = b"root";
+    pub const LOCK_AUTHORITY_SEED: &'static [u8] = b"lock-authority";
 }

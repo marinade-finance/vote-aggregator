@@ -8,6 +8,7 @@ import {
   joinClanTestData,
 } from 'vote-aggregator-tests';
 import {VoteAggregatorSdk} from '../../src';
+import {PublicKey} from '@solana/web3.js';
 
 describe('join_clan instruction', () => {
   it.each(joinClanTestData.filter(({error}) => !error))(
@@ -33,6 +34,7 @@ describe('join_clan instruction', () => {
           memberData: memberTester.member,
           clanAddress: clanTester.clanAddress,
           memberVoterWeightAddress: memberVoterWeight.address,
+          payer: PublicKey.default,
         })
       ).resolves.toMatchSnapshot();
     }

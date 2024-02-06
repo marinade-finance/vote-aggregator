@@ -106,6 +106,7 @@ const useJoinClan = () => {
           },
           clanAddress,
           memberVoterWeightAddress,
+          payer: publicKey!,
         })
       );
 
