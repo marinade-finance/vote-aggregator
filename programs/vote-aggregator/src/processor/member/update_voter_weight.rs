@@ -3,8 +3,6 @@ use spl_governance::addins::voter_weight::get_voter_weight_record_data;
 
 use crate::error::Error;
 use crate::events::clan::ClanVoterWeightChanged;
-use crate::events::member::MemberVoterWeightChanged;
-use crate::events::root::MaxVoterWeightChanged;
 use crate::state::{Clan, MaxVoterWeightRecord, Member, Root, VoterWeightRecord};
 
 #[derive(Accounts)]
@@ -59,15 +57,18 @@ impl<'info> UpdateVoterWeight<'info> {
         .map_err(|e| {
             ProgramErrorWithOrigin::from(e).with_account_name("member_voter_weight_record")
         })?;
-        /* TODO
-        require!(
-            vwr.voter_weight_expiry.is_none(),
-            Error::VoterWeightExpiryIsNotImplemented
-        );
-        */
         require_keys_eq!(vwr.realm, self.root.realm);
         require_keys_eq!(vwr.governing_token_mint, self.root.governing_token_mint);
         require_keys_eq!(vwr.governing_token_owner, self.member.owner);
+
+        let old_member_voter_weight = self.member.voter_weight;
+        let member_key = self.member.key();
+        self.member.update_voter_weight(
+            member_key,
+            self.root.key(),
+            &vwr,
+            &mut self.max_voter_weight_record,
+        )?;
 
         if self.member.clan != Pubkey::default() {
             let clan = self.clan.as_mut().ok_or(error!(Error::ClanIsRequired))?;
@@ -77,7 +78,7 @@ impl<'info> UpdateVoterWeight<'info> {
                     .as_mut()
                     .ok_or(error!(Error::ClanVoterWeightRecordIsRequired))?;
                 let old_clan_voter_weight = clan_voter_weight_record.voter_weight;
-                clan_voter_weight_record.voter_weight -= self.member.voter_weight;
+                clan_voter_weight_record.voter_weight -= old_member_voter_weight;
                 clan_voter_weight_record.voter_weight += vwr.voter_weight;
                 emit!(ClanVoterWeightChanged {
                     clan: clan.key(),
@@ -86,27 +87,9 @@ impl<'info> UpdateVoterWeight<'info> {
                     new_voter_weight: clan_voter_weight_record.voter_weight
                 });
             }
-            clan.potential_voter_weight -= self.member.voter_weight;
+            clan.potential_voter_weight -= old_member_voter_weight;
             clan.potential_voter_weight += vwr.voter_weight;
         }
-        let old_max_voter_weight = self.max_voter_weight_record.max_voter_weight;
-        self.max_voter_weight_record.max_voter_weight -= self.member.voter_weight;
-        self.max_voter_weight_record.max_voter_weight += vwr.voter_weight;
-        emit!(MaxVoterWeightChanged {
-            root: self.root.key(),
-            old_max_voter_weight,
-            new_max_voter_weight: self.max_voter_weight_record.max_voter_weight
-        });
-        let old_member_voter_weight = self.member.voter_weight;
-        self.member.voter_weight = vwr.voter_weight;
-        self.member.voter_weight_expiry = vwr.voter_weight_expiry;
-        emit!(MemberVoterWeightChanged {
-            member: self.member.key(),
-            root: self.root.key(),
-            old_voter_weight: old_member_voter_weight,
-            new_voter_weight: self.member.voter_weight
-        });
-
         Ok(())
     }
 }

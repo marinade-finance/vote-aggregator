@@ -110,33 +110,11 @@ describe('join_clan instruction', () => {
           .then(meta => parseLogsEvent(program, meta.logMessages))
       ).resolves.toStrictEqual([
         {
-          name: 'ClanMemberAdded',
-          data: {
-            clan: clanTester.clanAddress,
-            member: memberTester.memberAddress[0],
-            owner: memberTester.ownerAddress,
-            root: rootTester.rootAddress[0],
-          },
-        },
-        {
           name: 'MemberVoterWeightChanged',
           data: {
             member: memberTester.memberAddress[0],
             newVoterWeight: resizeBN(memberVoterWeight.voterWeight),
             oldVoterWeight: resizeBN(memberTester.member.voterWeight),
-            root: rootTester.rootAddress[0],
-          },
-        },
-        {
-          name: 'ClanVoterWeightChanged',
-          data: {
-            clan: clanTester.clanAddress,
-            newVoterWeight: resizeBN(
-              clanTester.voterWeightRecord.voterWeight.add(
-                memberVoterWeight.voterWeight
-              )
-            ),
-            oldVoterWeight: resizeBN(clanTester.voterWeightRecord.voterWeight),
             root: rootTester.rootAddress[0],
           },
         },
@@ -151,6 +129,28 @@ describe('join_clan instruction', () => {
             oldMaxVoterWeight: resizeBN(
               rootTester.maxVoterWeight.maxVoterWeight
             ),
+            root: rootTester.rootAddress[0],
+          },
+        },
+        {
+          name: 'ClanMemberAdded',
+          data: {
+            clan: clanTester.clanAddress,
+            member: memberTester.memberAddress[0],
+            owner: memberTester.ownerAddress,
+            root: rootTester.rootAddress[0],
+          },
+        },
+        {
+          name: 'ClanVoterWeightChanged',
+          data: {
+            clan: clanTester.clanAddress,
+            newVoterWeight: resizeBN(
+              clanTester.voterWeightRecord.voterWeight.add(
+                memberVoterWeight.voterWeight
+              )
+            ),
+            oldVoterWeight: resizeBN(clanTester.voterWeightRecord.voterWeight),
             root: rootTester.rootAddress[0],
           },
         },
@@ -216,7 +216,7 @@ describe('join_clan instruction', () => {
         locks: [
           {
             lockType: 0,
-            expiry: new BN('9223372036854775807'),
+            expiry: null,
             authority: lockAuthority,
           },
         ],

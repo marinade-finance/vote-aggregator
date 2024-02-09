@@ -76,6 +76,29 @@ describe('update_voter_weight instruction', () => {
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
       ).resolves.toStrictEqual([
+        {
+          name: 'MemberVoterWeightChanged',
+          data: {
+            member: memberTester.memberAddress[0],
+            oldVoterWeight: resizeBN(memberTester.member.voterWeight),
+            newVoterWeight: resizeBN(memberVoterWeightRecord.voterWeight),
+            root: rootTester.rootAddress[0],
+          },
+        },
+        {
+          name: 'MaxVoterWeightChanged',
+          data: {
+            root: rootTester.rootAddress[0],
+            oldMaxVoterWeight: resizeBN(
+              rootTester.maxVoterWeight.maxVoterWeight
+            ),
+            newMaxVoterWeight: resizeBN(
+              rootTester.maxVoterWeight.maxVoterWeight
+                .sub(memberTester.member.voterWeight)
+                .add(memberVoterWeightRecord.voterWeight)
+            ),
+          },
+        },
         ...(clanTester &&
         memberTester.member.clanLeavingTime.eq(new BN('9223372036854775807')) // i64::MAX
           ? [
@@ -96,29 +119,6 @@ describe('update_voter_weight instruction', () => {
               },
             ]
           : []),
-        {
-          name: 'MaxVoterWeightChanged',
-          data: {
-            root: rootTester.rootAddress[0],
-            oldMaxVoterWeight: resizeBN(
-              rootTester.maxVoterWeight.maxVoterWeight
-            ),
-            newMaxVoterWeight: resizeBN(
-              rootTester.maxVoterWeight.maxVoterWeight
-                .sub(memberTester.member.voterWeight)
-                .add(memberVoterWeightRecord.voterWeight)
-            ),
-          },
-        },
-        {
-          name: 'MemberVoterWeightChanged',
-          data: {
-            member: memberTester.memberAddress[0],
-            oldVoterWeight: resizeBN(memberTester.member.voterWeight),
-            newVoterWeight: resizeBN(memberVoterWeightRecord.voterWeight),
-            root: rootTester.rootAddress[0],
-          },
-        },
       ]);
 
       expect(

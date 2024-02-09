@@ -60,4 +60,5 @@ pub enum Error {
     UnexpectedWeightAction,
     UnexpectedWeightActionTarget,
     NextInstructionMustBeSetRealmConfig,
+    VoterWeightExpired,
 }

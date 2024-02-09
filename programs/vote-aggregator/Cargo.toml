@@ -21,3 +21,4 @@ anchor-spl = { version = "0.29.0", features = ["governance"] }
 spl-governance = { git = "https://github.com/solana-labs/solana-program-library.git", branch = "governance-tor-locks", features = [
     "no-entrypoint",
 ] }
+spl-governance-addin-api = { git = "https://github.com/solana-labs/solana-program-library.git", branch = "governance-tor-locks" }

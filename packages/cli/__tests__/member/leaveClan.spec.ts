@@ -78,7 +78,7 @@ describe('start-leaving-clan command', () => {
           {
             lockType: 0,
             authority: rootTester.lockAuthority[0],
-            expiry: new BN('9223372036854775807'),
+            expiry: null,
           },
         ];
       }

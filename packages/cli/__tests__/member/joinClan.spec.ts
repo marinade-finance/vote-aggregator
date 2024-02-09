@@ -183,7 +183,7 @@ describe('join-clan command', () => {
         locks: [
           {
             lockType: 0,
-            expiry: new BN('9223372036854775807'),
+            expiry: null,
             authority: lockAuthority,
           },
         ],

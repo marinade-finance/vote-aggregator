@@ -57,7 +57,7 @@ describe('start_leaving_clan instruction', () => {
           {
             lockType: 0,
             authority: rootTester.lockAuthority[0],
-            expiry: new BN('9223372036854775807'),
+            expiry: null,
           },
         ];
       }

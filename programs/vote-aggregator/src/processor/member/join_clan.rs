@@ -8,11 +8,7 @@ use spl_governance::{
 
 use crate::{
     error::Error,
-    events::{
-        clan::{ClanMemberAdded, ClanVoterWeightChanged},
-        member::MemberVoterWeightChanged,
-        root::MaxVoterWeightChanged,
-    },
+    events::clan::{ClanMemberAdded, ClanVoterWeightChanged},
     state::{Clan, MaxVoterWeightRecord, Member, Root, VoterWeightRecord},
 };
 
@@ -143,32 +139,8 @@ impl<'info> JoinClan<'info> {
         .map_err(|e| {
             ProgramErrorWithOrigin::from(e).with_account_name("member_voter_weight_record")
         })?;
-        /* TODO
-        require!(
-            vwr.voter_weight_expiry.is_none(),
-            Error::VoterWeightExpiryIsNotImplemented
-        );
-        */
-        require!(vwr.weight_action.is_none(), Error::UnexpectedWeightAction);
-        require!(
-            vwr.weight_action_target.is_none(),
-            Error::UnexpectedWeightActionTarget
-        );
-        require_gte!(vwr.voter_weight, self.clan.min_voting_weight_to_join);
-        let old_member_voter_weight = self.member.voter_weight;
-        let old_clan_voter_weight = self.clan_voter_weight_record.voter_weight;
-        let old_max_voter_weight = self.max_voter_weight_record.max_voter_weight;
-        self.max_voter_weight_record.max_voter_weight -= old_member_voter_weight;
-        self.member.voter_weight_record = self.member_voter_weight_record.key();
-        self.member.voter_weight = vwr.voter_weight;
-        self.max_voter_weight_record.max_voter_weight += self.member.voter_weight;
-        // TODO: check expiry
-        self.member.voter_weight_expiry = vwr.voter_weight_expiry;
-        self.member.clan = self.clan.key();
-        self.clan.active_members += 1;
-        self.clan.potential_voter_weight += self.member.voter_weight;
-        self.clan_voter_weight_record.voter_weight += self.member.voter_weight;
 
+        require_gte!(vwr.voter_weight, self.clan.min_voting_weight_to_join);
         invoke_signed(
             &set_token_owner_record_lock(
                 &self.governance_program.key(),
@@ -177,7 +149,7 @@ impl<'info> JoinClan<'info> {
                 self.lock_authority.key,
                 self.payer.key,
                 0,
-                Some(i64::MAX),
+                None,
             ),
             &[
                 self.governance_program.to_account_info(),
@@ -195,28 +167,33 @@ impl<'info> JoinClan<'info> {
             ]],
         )?;
 
+        let old_clan_voter_weight = self.clan_voter_weight_record.voter_weight;
+
+        let member_key = self.member.key();
+        self.member.update_voter_weight(
+            member_key,
+            self.root.key(),
+            &vwr,
+            &mut self.max_voter_weight_record,
+        )?;
+
+        self.member.clan = self.clan.key();
+        self.member.voter_weight_record = self.member_voter_weight_record.key();
+        self.clan.active_members += 1;
+        self.clan.potential_voter_weight += self.member.voter_weight;
+        self.clan_voter_weight_record.voter_weight += self.member.voter_weight;
+
         emit!(ClanMemberAdded {
             clan: self.clan.key(),
             member: self.member.key(),
             root: self.root.key(),
             owner: self.member.owner,
         });
-        emit!(MemberVoterWeightChanged {
-            member: self.member.key(),
-            root: self.root.key(),
-            old_voter_weight: old_member_voter_weight,
-            new_voter_weight: self.member.voter_weight
-        });
         emit!(ClanVoterWeightChanged {
             clan: self.clan.key(),
             root: self.root.key(),
             old_voter_weight: old_clan_voter_weight,
             new_voter_weight: self.clan_voter_weight_record.voter_weight
-        });
-        emit!(MaxVoterWeightChanged {
-            root: self.root.key(),
-            old_max_voter_weight,
-            new_max_voter_weight: self.max_voter_weight_record.max_voter_weight
         });
 
         Ok(())
