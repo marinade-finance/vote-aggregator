@@ -1,4 +1,3 @@
-import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {PublicKey} from '@solana/web3.js';
 import {
@@ -69,7 +68,7 @@ describe('create_member instruction', () => {
       tx.feePayer = testContext.payer.publicKey;
       tx.sign(testContext.payer, member.owner);
 
-      expect(
+      await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
@@ -85,7 +84,7 @@ describe('create_member instruction', () => {
         },
       ]);
 
-      expect(
+      await expect(
         program.account.member.fetch(memberAddress)
       ).resolves.toStrictEqual({
         root: rootTester.rootAddress[0],
@@ -103,7 +102,7 @@ describe('create_member instruction', () => {
         voterWeightExpiry: null,
       });
 
-      expect(
+      await expect(
         program.account.root.fetch(rootTester.rootAddress[0])
       ).resolves.toMatchObject({
         clanCount: resizeBN(new BN(0)),

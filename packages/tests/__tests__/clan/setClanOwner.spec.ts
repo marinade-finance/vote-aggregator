@@ -1,4 +1,3 @@
-import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   SetClanOwnerTestData,
@@ -47,7 +46,7 @@ describe('set_clan_owner instruction', () => {
       tx.feePayer = testContext.payer.publicKey;
       tx.sign(testContext.payer, clanAuthority);
 
-      expect(
+      await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
@@ -63,7 +62,9 @@ describe('set_clan_owner instruction', () => {
         },
       ]);
 
-      expect(program.account.clan.fetch(clan.address)).resolves.toStrictEqual({
+      await expect(
+        program.account.clan.fetch(clan.address)
+      ).resolves.toStrictEqual({
         ...clanAccount,
         owner: newOwner,
       });

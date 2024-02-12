@@ -4,12 +4,7 @@
     "rootDir": ".",
     "outDir": "build",
     "esModuleInterop": true,
-    "skipLibCheck": true,
-    "typeRoots": [
-      "../../node_modules/@types",
-      "../../node_modules/bun-types"
-    ],
-    "types": ["types"]
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*.ts",

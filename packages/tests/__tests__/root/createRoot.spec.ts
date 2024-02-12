@@ -1,4 +1,3 @@
-import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {Keypair, SystemProgram} from '@solana/web3.js';
 import {PublicKey} from '@solana/web3.js';
@@ -150,7 +149,7 @@ describe('create_root instruction', () => {
       tx.feePayer = testContext.payer.publicKey;
       tx.sign(testContext.payer, realmTester.authority as Keypair);
 
-      expect(
+      await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
@@ -168,7 +167,9 @@ describe('create_root instruction', () => {
         },
       ]);
 
-      expect(program.account.root.fetch(rootAddress)).resolves.toStrictEqual({
+      await expect(
+        program.account.root.fetch(rootAddress)
+      ).resolves.toStrictEqual({
         realm: realmTester.realmAddress,
         governanceProgram: realmTester.splGovernanceId,
         governingTokenMint: realmTester.realm.communityMint,
@@ -184,10 +185,10 @@ describe('create_root instruction', () => {
         clanCount: resizeBN(new BN(0)),
         memberCount: resizeBN(new BN(0)),
       });
-      expect(
+      await expect(
         splGovernance.account.realmV2.fetch(realmTester.realmAddress)
       ).resolves.toStrictEqual(realmTester.realm);
-      expect(
+      await expect(
         splGovernance.account.realmConfigAccount.fetch(
           await realmTester.realmConfigId()
         )
@@ -200,7 +201,7 @@ describe('create_root instruction', () => {
         },
       });
 
-      expect(
+      await expect(
         program.account.maxVoterWeightRecord.fetch(maxVoterWeightAddress)
       ).resolves.toStrictEqual({
         realm: realmTester.realmAddress,
@@ -338,7 +339,7 @@ describe('create_root instruction', () => {
     tx.feePayer = testContext.payer.publicKey;
     tx.sign(testContext.payer, realmTester.authority as Keypair);
 
-    expect(
+    await expect(
       testContext.banksClient
         .processTransaction(tx)
         .then(meta => parseLogsEvent(program, meta.logMessages))
@@ -356,7 +357,9 @@ describe('create_root instruction', () => {
       },
     ]);
 
-    expect(program.account.root.fetch(rootAddress)).resolves.toStrictEqual({
+    await expect(
+      program.account.root.fetch(rootAddress)
+    ).resolves.toStrictEqual({
       realm: realmTester.realmAddress,
       governanceProgram: realmTester.splGovernanceId,
       governingTokenMint: realmTester.realm.config.councilMint!,
@@ -372,10 +375,10 @@ describe('create_root instruction', () => {
       clanCount: resizeBN(new BN(0)),
       memberCount: resizeBN(new BN(0)),
     });
-    expect(
+    await expect(
       splGovernance.account.realmV2.fetch(realmTester.realmAddress)
     ).resolves.toStrictEqual(realmTester.realm);
-    expect(
+    await expect(
       splGovernance.account.realmConfigAccount.fetch(
         await realmTester.realmConfigId()
       )
@@ -388,7 +391,7 @@ describe('create_root instruction', () => {
       },
     });
 
-    expect(
+    await expect(
       program.account.maxVoterWeightRecord.fetch(maxVoterWeightAddress)
     ).resolves.toStrictEqual({
       realm: realmTester.realmAddress,

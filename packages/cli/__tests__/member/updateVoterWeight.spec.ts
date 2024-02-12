@@ -1,12 +1,3 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  spyOn,
-  Mock,
-} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   UpdateVoterWeightTestData,
@@ -23,11 +14,10 @@ import {BN} from '@coral-xyz/anchor';
 import {Keypair} from '@solana/web3.js';
 
 describe('update-voter-weight command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
+  let stdout: jest.SpyInstance;
 
   beforeEach(() => {
-    stdout = spyOn(console, 'log').mockImplementation(() => {});
+    stdout = jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -73,7 +63,7 @@ describe('update-voter-weight command', () => {
       });
       const {sdk} = context!;
 
-      expect(
+      await expect(
         cli()
           .exitOverride((err: Error) => {
             throw err;
@@ -97,7 +87,7 @@ describe('update-voter-weight command', () => {
         ])
       );
 
-      expect(
+      await expect(
         sdk.member.fetchMember({memberAddress: memberTester.memberAddress[0]})
       ).resolves.toStrictEqual({
         ...memberTester.member,
@@ -105,7 +95,7 @@ describe('update-voter-weight command', () => {
         voterWeightExpiry: memberVoterWeightRecord.voterWeightExpiry || null,
       });
 
-      expect(
+      await expect(
         sdk.root.fetchMaxVoterWeight({rootAddress: rootTester.rootAddress[0]})
       ).resolves.toMatchObject({
         ...rootTester.maxVoterWeight,
@@ -117,7 +107,7 @@ describe('update-voter-weight command', () => {
       });
 
       if (clanTester) {
-        expect(
+        await expect(
           sdk.clan.fetchClan(clanTester.clanAddress)
         ).resolves.toStrictEqual({
           ...clanTester.clan,
@@ -128,7 +118,7 @@ describe('update-voter-weight command', () => {
           ),
         });
 
-        expect(
+        await expect(
           sdk.clan.fetchVoterWeight({
             clanAddress: clanTester.clanAddress,
           })

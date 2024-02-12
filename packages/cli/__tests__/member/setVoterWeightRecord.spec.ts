@@ -1,12 +1,3 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  spyOn,
-  Mock,
-} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   SetVoterWeightRecordTestData,
@@ -23,11 +14,10 @@ import {BN} from '@coral-xyz/anchor';
 import {Keypair} from '@solana/web3.js';
 
 describe('set-voter-weight-record command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
+  let stdout: jest.SpyInstance;
 
   beforeEach(() => {
-    stdout = spyOn(console, 'log').mockImplementation(() => {});
+    stdout = jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -73,7 +63,7 @@ describe('set-voter-weight-record command', () => {
       });
       const {sdk} = context!;
 
-      expect(
+      await expect(
         cli()
           .exitOverride((err: Error) => {
             throw err;
@@ -99,7 +89,7 @@ describe('set-voter-weight-record command', () => {
         ])
       );
 
-      expect(
+      await expect(
         sdk.member.fetchMember({memberAddress: memberTester.memberAddress[0]})
       ).resolves.toStrictEqual({
         ...memberTester.member,
@@ -108,7 +98,7 @@ describe('set-voter-weight-record command', () => {
         voterWeightExpiry: memberVoterWeightRecord.voterWeightExpiry || null,
       });
 
-      expect(
+      await expect(
         sdk.root.fetchMaxVoterWeight({rootAddress: rootTester.rootAddress[0]})
       ).resolves.toMatchObject({
         ...rootTester.maxVoterWeight,
@@ -120,7 +110,7 @@ describe('set-voter-weight-record command', () => {
       });
 
       if (clanTester) {
-        expect(
+        await expect(
           sdk.clan.fetchClan(clanTester.clanAddress)
         ).resolves.toStrictEqual({
           ...clanTester.clan,
@@ -131,7 +121,7 @@ describe('set-voter-weight-record command', () => {
           ),
         });
 
-        expect(
+        await expect(
           sdk.clan.fetchVoterWeight({
             clanAddress: clanTester.clanAddress,
           })

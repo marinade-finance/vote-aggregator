@@ -1,4 +1,3 @@
-import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   SetVotingDelegateTestData,
@@ -83,7 +82,7 @@ describe('set_voting_delegate instruction', () => {
       tx.feePayer = testContext.payer.publicKey;
       tx.sign(testContext.payer, clanAuthority);
 
-      expect(
+      await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
@@ -98,7 +97,7 @@ describe('set_voting_delegate instruction', () => {
         },
       ]);
 
-      expect(
+      await expect(
         splGovernance.account.tokenOwnerRecordV2.fetch(tokenOwnerRecord)
       ).resolves.toStrictEqual({
         ...clanTester.tokenOwnerRecord,

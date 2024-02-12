@@ -1,12 +1,3 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  spyOn,
-  Mock,
-} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   JoinClanTestData,
@@ -21,14 +12,12 @@ import {
 import {context} from '../../src/context';
 import {cli} from '../../src/cli';
 import {Keypair, PublicKey} from '@solana/web3.js';
-import BN from 'bn.js';
 
 describe('join-clan command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
+  let stdout: jest.SpyInstance;
 
   beforeEach(() => {
-    stdout = spyOn(console, 'log').mockImplementation(() => {});
+    stdout = jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -101,7 +90,7 @@ describe('join-clan command', () => {
       });
       const {sdk} = context!;
 
-      expect(
+      await expect(
         cli()
           .exitOverride((err: Error) => {
             throw err;
@@ -125,7 +114,7 @@ describe('join-clan command', () => {
         ])
       );
 
-      expect(
+      await expect(
         sdk.member.fetchMember({memberAddress: memberTester.memberAddress[0]})
       ).resolves.toStrictEqual({
         ...memberTester.member,
@@ -138,19 +127,19 @@ describe('join-clan command', () => {
           null,
       });
 
-      expect(sdk.clan.fetchClan(clanTester.clanAddress)).resolves.toStrictEqual(
-        {
-          ...clanTester.clan,
-          potentialVoterWeight: resizeBN(
-            clanTester.clan.potentialVoterWeight.add(
-              memberVoterWeight.voterWeight
-            )
-          ),
-          activeMembers: resizeBN(clanTester.clan.activeMembers.addn(1)),
-        }
-      );
+      await expect(
+        sdk.clan.fetchClan(clanTester.clanAddress)
+      ).resolves.toStrictEqual({
+        ...clanTester.clan,
+        potentialVoterWeight: resizeBN(
+          clanTester.clan.potentialVoterWeight.add(
+            memberVoterWeight.voterWeight
+          )
+        ),
+        activeMembers: resizeBN(clanTester.clan.activeMembers.addn(1)),
+      });
 
-      expect(
+      await expect(
         sdk.clan.fetchVoterWeight({
           clanAddress: clanTester.clanAddress,
         })
@@ -163,7 +152,7 @@ describe('join-clan command', () => {
         ),
       });
 
-      expect(
+      await expect(
         sdk.root.fetchMaxVoterWeight({rootAddress: rootTester.rootAddress[0]})
       ).resolves.toMatchObject({
         ...rootTester.maxVoterWeight,
@@ -174,7 +163,7 @@ describe('join-clan command', () => {
         ),
       });
 
-      expect(
+      await expect(
         splGovernance.account.tokenOwnerRecordV2.fetch(
           memberTester.tokenOwnerRecordAddress[0]
         )

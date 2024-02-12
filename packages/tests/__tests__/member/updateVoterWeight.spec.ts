@@ -1,4 +1,3 @@
-import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   UpdateVoterWeightTestData,
@@ -71,7 +70,7 @@ describe('update_voter_weight instruction', () => {
       tx.feePayer = testContext.payer.publicKey;
       tx.sign(testContext.payer);
 
-      expect(
+      await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
@@ -121,7 +120,7 @@ describe('update_voter_weight instruction', () => {
           : []),
       ]);
 
-      expect(
+      await expect(
         program.account.member.fetch(memberTester.memberAddress[0])
       ).resolves.toStrictEqual({
         ...memberTester.member,
@@ -129,7 +128,7 @@ describe('update_voter_weight instruction', () => {
         voterWeightExpiry: memberVoterWeightRecord.voterWeightExpiry || null,
       });
 
-      expect(
+      await expect(
         program.account.maxVoterWeightRecord.fetch(
           rootTester.maxVoterWeightAddress[0]
         )
@@ -143,7 +142,7 @@ describe('update_voter_weight instruction', () => {
       });
 
       if (clanTester) {
-        expect(
+        await expect(
           program.account.clan.fetch(clanTester.clanAddress)
         ).resolves.toStrictEqual({
           ...clanTester.clan,
@@ -154,7 +153,7 @@ describe('update_voter_weight instruction', () => {
           ),
         });
 
-        expect(
+        await expect(
           program.account.voterWeightRecord.fetch(
             clanTester.voterWeightAddress[0]
           )

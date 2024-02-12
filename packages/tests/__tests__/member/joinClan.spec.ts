@@ -1,4 +1,3 @@
-import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   JoinClanTestData,
@@ -10,7 +9,6 @@ import {
 } from '../../src';
 import {ClanTester, MemberTester, RootTester} from '../../src/VoteAggregator';
 import {Keypair, PublicKey, SystemProgram} from '@solana/web3.js';
-import {BN} from 'bn.js';
 
 describe('join_clan instruction', () => {
   it.each(joinClanTestData.filter(({error}) => !error))(
@@ -104,7 +102,7 @@ describe('join_clan instruction', () => {
       tx.feePayer = testContext.payer.publicKey;
       tx.sign(testContext.payer, member.owner as Keypair);
 
-      expect(
+      await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
@@ -156,7 +154,7 @@ describe('join_clan instruction', () => {
         },
       ]);
 
-      expect(
+      await expect(
         program.account.member.fetch(memberTester.memberAddress[0])
       ).resolves.toStrictEqual({
         ...memberTester.member,
@@ -169,7 +167,7 @@ describe('join_clan instruction', () => {
           null,
       });
 
-      expect(
+      await expect(
         program.account.clan.fetch(clanTester.clanAddress)
       ).resolves.toStrictEqual({
         ...clanTester.clan,
@@ -181,7 +179,7 @@ describe('join_clan instruction', () => {
         activeMembers: resizeBN(clanTester.clan.activeMembers.addn(1)),
       });
 
-      expect(
+      await expect(
         program.account.voterWeightRecord.fetch(
           clanTester.voterWeightAddress[0]
         )
@@ -194,7 +192,7 @@ describe('join_clan instruction', () => {
         ),
       });
 
-      expect(
+      await expect(
         program.account.maxVoterWeightRecord.fetch(
           rootTester.maxVoterWeightAddress[0]
         )
@@ -207,7 +205,7 @@ describe('join_clan instruction', () => {
         ),
       });
 
-      expect(
+      await expect(
         splGovernance.account.tokenOwnerRecordV2.fetch(
           memberTester.tokenOwnerRecordAddress[0]
         )

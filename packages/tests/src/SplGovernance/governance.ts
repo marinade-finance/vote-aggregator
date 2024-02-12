@@ -36,6 +36,7 @@ export class GovernanceTester {
       config,
       reservedV2: new Array(120).fill(0),
       activeProposalCount,
+      requiredSignatoriesCount: 0,
     };
   }
 

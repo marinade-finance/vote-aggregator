@@ -1,12 +1,3 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  spyOn,
-  Mock,
-} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {Keypair, PublicKey} from '@solana/web3.js';
 import {RealmTester, buildSplGovernanceProgram} from 'vote-aggregator-tests';
@@ -20,11 +11,10 @@ import {context} from '../../src/context';
 import {cli} from '../../src/cli';
 
 describe('create-root command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  let stdout: Mock<(_message?: any, ..._optionalParams: any[]) => void>;
+  let stdout: jest.SpyInstance;
 
   beforeEach(() => {
-    stdout = spyOn(console, 'log').mockImplementation(() => {});
+    stdout = jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -45,7 +35,7 @@ describe('create-root command', () => {
       });
       const {sdk} = context!;
 
-      expect(
+      await expect(
         cli()
           .exitOverride((err: Error) => {
             throw err;
@@ -82,7 +72,7 @@ describe('create-root command', () => {
         rootAddress,
       });
 
-      expect(sdk.root.fetchRoot(rootAddress)).resolves.toStrictEqual({
+      await expect(sdk.root.fetchRoot(rootAddress)).resolves.toStrictEqual({
         realm: realmTester.realmAddress,
         governanceProgram: realmTester.splGovernanceId,
         governingTokenMint: realmTester.realm.communityMint,
@@ -98,10 +88,10 @@ describe('create-root command', () => {
         clanCount: resizeBN(new BN(0)),
         memberCount: resizeBN(new BN(0)),
       });
-      expect(
+      await expect(
         splGovernance.account.realmV2.fetch(realmTester.realmAddress)
       ).resolves.toStrictEqual(realmTester.realm);
-      expect(
+      await expect(
         splGovernance.account.realmConfigAccount.fetch(
           await realmTester.realmConfigId()
         )
@@ -114,7 +104,7 @@ describe('create-root command', () => {
         },
       });
 
-      expect(
+      await expect(
         sdk.root.fetchMaxVoterWeight({maxVoterWeightAddress})
       ).resolves.toStrictEqual({
         realm: realmTester.realmAddress,
@@ -140,7 +130,7 @@ describe('create-root command', () => {
     });
     const {sdk} = context!;
 
-    expect(
+    await expect(
       cli()
         .exitOverride((err: Error) => {
           throw err;
@@ -176,7 +166,7 @@ describe('create-root command', () => {
       rootAddress,
     });
 
-    expect(sdk.root.fetchRoot(rootAddress)).resolves.toStrictEqual({
+    await expect(sdk.root.fetchRoot(rootAddress)).resolves.toStrictEqual({
       realm: realmTester.realmAddress,
       governanceProgram: realmTester.splGovernanceId,
       governingTokenMint: realmTester.realm.config.councilMint!,
@@ -192,10 +182,10 @@ describe('create-root command', () => {
       clanCount: resizeBN(new BN(0)),
       memberCount: resizeBN(new BN(0)),
     });
-    expect(
+    await expect(
       splGovernance.account.realmV2.fetch(realmTester.realmAddress)
     ).resolves.toStrictEqual(realmTester.realm);
-    expect(
+    await expect(
       splGovernance.account.realmConfigAccount.fetch(
         await realmTester.realmConfigId()
       )
@@ -208,7 +198,7 @@ describe('create-root command', () => {
       },
     });
 
-    expect(
+    await expect(
       sdk.root.fetchMaxVoterWeight({maxVoterWeightAddress})
     ).resolves.toStrictEqual({
       realm: realmTester.realmAddress,

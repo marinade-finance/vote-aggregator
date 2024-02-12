@@ -1,4 +1,3 @@
-import {describe, it, expect} from 'bun:test';
 import {ResizeClanTestData, resizeClanTestData} from 'vote-aggregator-tests';
 import {Keypair, PublicKey} from '@solana/web3.js';
 import {VoteAggregatorSdk} from '../../src';

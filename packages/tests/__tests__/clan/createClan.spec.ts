@@ -1,4 +1,3 @@
-import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {PublicKey} from '@solana/web3.js';
 import {
@@ -80,7 +79,7 @@ describe('create_clan instruction', () => {
       tx.feePayer = testContext.payer.publicKey;
       tx.sign(testContext.payer, clan.address);
 
-      expect(
+      await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
@@ -96,7 +95,7 @@ describe('create_clan instruction', () => {
         },
       ]);
 
-      expect(
+      await expect(
         program.account.clan.fetch(clan.address.publicKey)
       ).resolves.toStrictEqual({
         root: rootTester.rootAddress[0],
@@ -118,7 +117,7 @@ describe('create_clan instruction', () => {
         description: '',
       });
 
-      expect(
+      await expect(
         splGovernance.account.tokenOwnerRecordV2.fetch(tokenOwnerRecord)
       ).resolves.toStrictEqual({
         accountType: {tokenOwnerRecordV2: {}},
@@ -135,7 +134,7 @@ describe('create_clan instruction', () => {
         locks: [],
       });
 
-      expect(
+      await expect(
         program.account.voterWeightRecord.fetch(voterWeightRecord)
       ).resolves.toStrictEqual({
         realm: rootTester.realm.realmAddress,
@@ -148,7 +147,7 @@ describe('create_clan instruction', () => {
         reserved: [0, 0, 0, 0, 0, 0, 0, 0],
       });
 
-      expect(
+      await expect(
         program.account.root.fetch(rootTester.rootAddress[0])
       ).resolves.toMatchObject({
         clanCount: resizeBN(new BN(1)),

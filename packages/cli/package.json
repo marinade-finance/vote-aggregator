@@ -1,22 +1,25 @@
 {
   "name": "vote-aggregator-cli",
-  "module": "src/index.ts",
+  "module": "build/src/index.js",
   "files": [
     "src"
   ],
   "type": "module",
   "devDependencies": {
-    "bun-types": "latest",
     "@types/expand-tilde": "^2.0.2",
+    "@types/jest": "^29.5.12",
     "@types/mz": "^2.7.8",
+    "@types/node": "^20.11.17",
     "anchor-bankrun": "^0.2.0",
+    "jest": "^29.7.0",
     "solana-bankrun": "^0.2.0",
+    "ts-node": "^10.9.2",
     "vote-aggregator-tests": "workspace:*"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
     "@solana/spl-governance": "^0.3.28",
-    "@solana/web3.js": "=1.87.6",
+    "@solana/web3.js": "1.90.0",
     "bn.js": "^5.2.1",
     "commander": "^11.1.0",
     "expand-tilde": "^2.0.2",
@@ -25,6 +28,8 @@
     "yaml": "^2.3.4"
   },
   "scripts": {
-    "cli": "bun src/index.ts"
+    "cli": "pnpm build && node build/src/index.js",
+    "test": "pnpm build && jest",
+    "build": "tsc"
   }
 }

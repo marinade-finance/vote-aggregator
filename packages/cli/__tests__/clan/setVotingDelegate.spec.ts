@@ -1,12 +1,3 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  spyOn,
-  Mock,
-} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   SetVotingDelegateTestData,
@@ -21,11 +12,10 @@ import {Keypair} from '@solana/web3.js';
 import {getTokenOwnerRecord} from '@solana/spl-governance';
 
 describe('set-voting-delegate command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
+  let stdout: jest.SpyInstance;
 
   beforeEach(() => {
-    stdout = spyOn(console, 'log').mockImplementation(() => {});
+    stdout = jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -69,7 +59,7 @@ describe('set-voting-delegate command', () => {
 
       const {sdk} = context!;
 
-      expect(
+      await expect(
         cli()
           .exitOverride((err: Error) => {
             throw err;
@@ -101,7 +91,7 @@ describe('set-voting-delegate command', () => {
         splGovernanceId: rootTester.splGovernanceId,
       });
 
-      expect(
+      await expect(
         getTokenOwnerRecord(provider.connection, tokenOwnerRecord).then(
           ({account}) => account
         )

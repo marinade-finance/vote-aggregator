@@ -1,12 +1,3 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  spyOn,
-  Mock,
-} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   StartLeavingClanTestData,
@@ -23,11 +14,10 @@ import {BN} from '@coral-xyz/anchor';
 import {Keypair} from '@solana/web3.js';
 
 describe('start-leaving-clan command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
+  let stdout: jest.SpyInstance;
 
   beforeEach(() => {
-    stdout = spyOn(console, 'log').mockImplementation(() => {});
+    stdout = jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -60,7 +50,7 @@ describe('start-leaving-clan command', () => {
       const {sdk} = context!;
 
       const time = (await testContext.banksClient.getClock()).unixTimestamp;
-      expect(
+      await expect(
         cli()
           .exitOverride((err: Error) => {
             throw err;
@@ -84,7 +74,7 @@ describe('start-leaving-clan command', () => {
         ])
       );
 
-      expect(
+      await expect(
         sdk.member.fetchMember({memberAddress: memberTester.memberAddress[0]})
       ).resolves.toStrictEqual({
         ...memberTester.member,
@@ -93,15 +83,15 @@ describe('start-leaving-clan command', () => {
         ),
       });
 
-      expect(sdk.clan.fetchClan(clanTester.clanAddress)).resolves.toStrictEqual(
-        {
-          ...clanTester.clan,
-          activeMembers: resizeBN(clanTester.clan.activeMembers.subn(1)),
-          leavingMembers: resizeBN(clanTester.clan.leavingMembers.addn(1)),
-        }
-      );
+      await expect(
+        sdk.clan.fetchClan(clanTester.clanAddress)
+      ).resolves.toStrictEqual({
+        ...clanTester.clan,
+        activeMembers: resizeBN(clanTester.clan.activeMembers.subn(1)),
+        leavingMembers: resizeBN(clanTester.clan.leavingMembers.addn(1)),
+      });
 
-      expect(
+      await expect(
         sdk.clan.fetchVoterWeight({
           clanAddress: clanTester.clanAddress,
         })

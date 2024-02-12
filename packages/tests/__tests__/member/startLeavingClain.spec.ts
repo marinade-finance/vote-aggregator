@@ -1,4 +1,3 @@
-import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   StartLeavingClanTestData,
@@ -51,7 +50,7 @@ describe('start_leaving_clan instruction', () => {
       tx.sign(testContext.payer, member.owner as Keypair);
 
       const time = (await testContext.banksClient.getClock()).unixTimestamp;
-      expect(
+      await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
@@ -80,7 +79,7 @@ describe('start_leaving_clan instruction', () => {
         },
       ]);
 
-      expect(
+      await expect(
         program.account.member.fetch(memberTester.memberAddress[0])
       ).resolves.toStrictEqual({
         ...memberTester.member,
@@ -89,7 +88,7 @@ describe('start_leaving_clan instruction', () => {
         ),
       });
 
-      expect(
+      await expect(
         program.account.clan.fetch(clanTester.clanAddress)
       ).resolves.toStrictEqual({
         ...clanTester.clan,
@@ -97,7 +96,7 @@ describe('start_leaving_clan instruction', () => {
         leavingMembers: resizeBN(clanTester.clan.leavingMembers.addn(1)),
       });
 
-      expect(
+      await expect(
         program.account.voterWeightRecord.fetch(
           clanTester.voterWeightAddress[0]
         )

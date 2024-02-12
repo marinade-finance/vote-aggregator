@@ -1,12 +1,3 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  spyOn,
-  Mock,
-} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   LeaveClanTestData,
@@ -24,11 +15,10 @@ import {BN} from '@coral-xyz/anchor';
 import {Keypair, PublicKey} from '@solana/web3.js';
 
 describe('start-leaving-clan command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
+  let stdout: jest.SpyInstance;
 
   beforeEach(() => {
-    stdout = spyOn(console, 'log').mockImplementation(() => {});
+    stdout = jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -105,7 +95,7 @@ describe('start-leaving-clan command', () => {
       });
       const {sdk} = context!;
 
-      expect(
+      await expect(
         cli()
           .exitOverride((err: Error) => {
             throw err;
@@ -129,7 +119,7 @@ describe('start-leaving-clan command', () => {
         ])
       );
 
-      expect(
+      await expect(
         sdk.member.fetchMember({memberAddress: memberTester.memberAddress[0]})
       ).resolves.toStrictEqual({
         ...memberTester.member,
@@ -137,19 +127,19 @@ describe('start-leaving-clan command', () => {
         clanLeavingTime: new BN('9223372036854775807'), // i64::MAX
       });
 
-      expect(sdk.clan.fetchClan(clanTester.clanAddress)).resolves.toStrictEqual(
-        {
-          ...clanTester.clan,
-          potentialVoterWeight: resizeBN(
-            clanTester.clan.potentialVoterWeight.sub(
-              memberTester.member.voterWeight
-            )
-          ),
-          leavingMembers: resizeBN(clanTester.clan.leavingMembers.subn(1)),
-        }
-      );
+      await expect(
+        sdk.clan.fetchClan(clanTester.clanAddress)
+      ).resolves.toStrictEqual({
+        ...clanTester.clan,
+        potentialVoterWeight: resizeBN(
+          clanTester.clan.potentialVoterWeight.sub(
+            memberTester.member.voterWeight
+          )
+        ),
+        leavingMembers: resizeBN(clanTester.clan.leavingMembers.subn(1)),
+      });
 
-      expect(
+      await expect(
         splGovernance.account.tokenOwnerRecordV2.fetch(
           memberTester.tokenOwnerRecordAddress[0]
         )

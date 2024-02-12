@@ -1,4 +1,3 @@
-import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   leaveClanTestData,
@@ -99,7 +98,7 @@ describe('start_leaving_clan instruction', () => {
       tx.feePayer = testContext.payer.publicKey;
       tx.sign(testContext.payer, member.owner as Keypair);
 
-      expect(
+      await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
@@ -115,7 +114,7 @@ describe('start_leaving_clan instruction', () => {
         },
       ]);
 
-      expect(
+      await expect(
         program.account.member.fetch(memberTester.memberAddress[0])
       ).resolves.toStrictEqual({
         ...memberTester.member,
@@ -123,7 +122,7 @@ describe('start_leaving_clan instruction', () => {
         clanLeavingTime: new BN('9223372036854775807'), // i64::MAX
       });
 
-      expect(
+      await expect(
         program.account.clan.fetch(clanTester.clanAddress)
       ).resolves.toStrictEqual({
         ...clanTester.clan,
@@ -135,7 +134,7 @@ describe('start_leaving_clan instruction', () => {
         leavingMembers: resizeBN(clanTester.clan.leavingMembers.subn(1)),
       });
 
-      expect(
+      await expect(
         splGovernance.account.tokenOwnerRecordV2.fetch(
           memberTester.tokenOwnerRecordAddress[0]
         )

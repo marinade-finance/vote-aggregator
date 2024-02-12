@@ -1,12 +1,3 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  spyOn,
-  Mock,
-} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   ForcedCancelProposalTestData,
@@ -17,15 +8,13 @@ import {
 } from 'vote-aggregator-tests';
 import {cli} from '../../src/cli';
 import {ProposalState, getProposal} from '@solana/spl-governance';
-import {GovernanceTester} from 'vote-aggregator-tests/src/SplGovernance/governance';
-import {ProposalTester} from 'vote-aggregator-tests/src/SplGovernance';
+import {GovernanceTester, ProposalTester} from 'vote-aggregator-tests';
 
 describe('cancel-proposal command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
+  let stdout: jest.SpyInstance;
 
   beforeEach(() => {
-    stdout = spyOn(console, 'log').mockImplementation(() => {});
+    stdout = jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -67,7 +56,7 @@ describe('cancel-proposal command', () => {
         ],
       });
 
-      expect(
+      await expect(
         cli()
           .exitOverride((err: Error) => {
             throw err;
@@ -89,7 +78,7 @@ describe('cancel-proposal command', () => {
         ])
       );
 
-      expect(
+      await expect(
         getProposal(provider.connection, proposalTester.proposalAddress).then(
           ({account}) => account
         )

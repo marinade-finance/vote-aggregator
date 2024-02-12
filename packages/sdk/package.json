@@ -1,20 +1,26 @@
 {
   "name": "vote-aggregator-sdk",
-  "module": "src/index.ts",
-  "type": "module",
+  "module": "build/src/index.js",
   "files": [
     "src"
   ],
-  "main": "src/index.ts",
+  "main": "build/src/index.js",
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
-    "@solana/spl-governance": "^0.3.28",
     "@coral-xyz/spl-governance": "workspace:*",
-    "@solana/web3.js": "=1.87.6"
+    "@solana/spl-governance": "^0.3.28",
+    "@solana/web3.js": "1.90.0"
   },
   "devDependencies": {
-    "bun-types": "latest",
     "@types/bn.js": "^5.1.0",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.17",
+    "jest": "^29.7.0",
+    "ts-node": "^10.9.2",
     "vote-aggregator-tests": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "pnpm build && jest"
   }
 }

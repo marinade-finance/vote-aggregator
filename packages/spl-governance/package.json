@@ -9,15 +9,18 @@
     "url": "https://github.com/solana-labs/solana-program-library.git"
   },
   "files": [
-    "src"
+    "build"
   ],
-  "module": "./src/index.ts",
-  "main": "./src/index.ts",
+  "module": "./build/src/index.js",
+  "main": "./build/src/index.js",
   "dependencies": {
     "@coral-xyz/anchor": "=0.29.0",
     "@native-to-anchor/buffer-layout": "=0.1.0"
   },
   "devDependencies": {
-    "@types/node": "=17.0.21"
+    "@types/node": "^17.0.21"
+  },
+  "scripts": {
+    "build": "tsc"
   }
 }

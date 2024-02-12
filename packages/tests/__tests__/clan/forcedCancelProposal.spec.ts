@@ -1,4 +1,3 @@
-import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   ForcedCancelProposalTestData,
@@ -91,7 +90,7 @@ describe('forced_cancel_proposal instruction', () => {
       tx.feePayer = testContext.payer.publicKey;
       tx.sign(testContext.payer);
 
-      expect(
+      await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
@@ -105,7 +104,7 @@ describe('forced_cancel_proposal instruction', () => {
         },
       ]);
 
-      expect(
+      await expect(
         splGovernance.account.proposalV2.fetch(proposalTester.proposalAddress)
       ).resolves.toMatchObject({
         state: {
