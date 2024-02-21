@@ -4,7 +4,6 @@ import {
   CreateMemberTestData,
   RealmTester,
   parseLogsEvent,
-  resizeBN,
   createMemberTestData,
 } from '../../src';
 import {BN} from '@coral-xyz/anchor';
@@ -42,16 +41,15 @@ describe('create_member instruction', () => {
           rootTester.voteAggregatorId
         );
 
-      const [tokenOwnerRecord, tokenOwnerRecordBump] =
-        PublicKey.findProgramAddressSync(
-          [
-            Buffer.from('governance', 'utf-8'),
-            rootTester.realm.realmAddress.toBuffer(),
-            rootTester.governingTokenMint.toBuffer(),
-            member.owner.publicKey.toBuffer(),
-          ],
-          rootTester.splGovernanceId
-        );
+      const [memberTor, memberTorBump] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from('governance', 'utf-8'),
+          rootTester.realm.realmAddress.toBuffer(),
+          rootTester.governingTokenMint.toBuffer(),
+          member.owner.publicKey.toBuffer(),
+        ],
+        rootTester.splGovernanceId
+      );
 
       const tx = await program.methods
         .createMember()
@@ -60,7 +58,7 @@ describe('create_member instruction', () => {
           member: memberAddress,
           payer: program.provider.publicKey!,
           systemProgram: SYSTEM_PROGRAM_ID,
-          tokenOwnerRecord,
+          memberTor,
           owner: member.owner.publicKey,
         })
         .transaction();
@@ -78,7 +76,7 @@ describe('create_member instruction', () => {
           data: {
             member: memberAddress,
             root: rootTester.rootAddress[0],
-            memberIndex: resizeBN(new BN(0)),
+            memberIndex: new BN(0),
             owner: member.owner.publicKey,
           },
         },
@@ -90,23 +88,23 @@ describe('create_member instruction', () => {
         root: rootTester.rootAddress[0],
         owner: member.owner.publicKey,
         delegate: PublicKey.default,
-        tokenOwnerRecord,
+        tokenOwnerRecord: memberTor,
         bumps: {
           address: memberAddressBump,
-          tokenOwnerRecord: tokenOwnerRecordBump,
+          tokenOwnerRecord: memberTorBump,
         },
         clan: PublicKey.default,
         clanLeavingTime: new BN('9223372036854775807'), // i64::MAX
         voterWeightRecord: PublicKey.default,
-        voterWeight: resizeBN(new BN(0)),
+        voterWeight: new BN(0),
         voterWeightExpiry: null,
       });
 
       await expect(
         program.account.root.fetch(rootTester.rootAddress[0])
       ).resolves.toMatchObject({
-        clanCount: resizeBN(new BN(0)),
-        memberCount: resizeBN(new BN(1)),
+        clanCount: new BN(0),
+        memberCount: new BN(1),
       });
     }
   );

@@ -60,6 +60,7 @@ export const startLeavingClanTestData: StartLeavingClanTestData[] = [
         name: 'Marinade',
         activeMembers: new BN(2),
         voterWeight: new BN('845094346777'),
+        permanentVoterWeight: new BN('845094346777'),
       },
     },
   },

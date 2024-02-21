@@ -45,7 +45,7 @@ describe('set_voting_delegate instruction', () => {
         ],
         program.programId
       );
-      const [tokenOwnerRecord] = PublicKey.findProgramAddressSync(
+      const [clanTor] = PublicKey.findProgramAddressSync(
         [
           Buffer.from('governance', 'utf-8'),
           rootTester.realm.realmAddress.toBuffer(),
@@ -74,7 +74,7 @@ describe('set_voting_delegate instruction', () => {
           clan: clanTester.clanAddress,
           governanceProgram: rootTester.splGovernanceId,
           voterAuthority,
-          tokenOwnerRecord,
+          clanTor,
           clanAuthority: clanAuthority.publicKey,
         })
         .transaction();
@@ -98,7 +98,7 @@ describe('set_voting_delegate instruction', () => {
       ]);
 
       await expect(
-        splGovernance.account.tokenOwnerRecordV2.fetch(tokenOwnerRecord)
+        splGovernance.account.tokenOwnerRecordV2.fetch(clanTor)
       ).resolves.toStrictEqual({
         ...clanTester.tokenOwnerRecord,
         governanceDelegate: newVotingDelegate,

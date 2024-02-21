@@ -1,5 +1,5 @@
 import {Keypair, PublicKey} from '@solana/web3.js';
-import {getMinimumBalanceForRentExemption, resizeBN} from '../utils';
+import {getMinimumBalanceForRentExemption} from '../utils';
 import {BN} from '@coral-xyz/anchor';
 import {MemberAccount} from './accounts';
 import {RootTester} from './root';
@@ -117,8 +117,8 @@ export class MemberTester {
       root: root.rootAddress[0],
       clan: clan || PublicKey.default,
       clanLeavingTime,
-      voterWeight: resizeBN(voterWeight),
-      voterWeightExpiry: voterWeightExpiry && resizeBN(voterWeightExpiry),
+      voterWeight,
+      voterWeightExpiry: voterWeightExpiry,
       tokenOwnerRecord,
       voterWeightRecord,
       bumps: {
@@ -132,8 +132,8 @@ export class MemberTester {
       realm: root.realm.realmAddress,
       governingTokenMint: root.governingTokenMint,
       governingTokenOwner: this.ownerAddress,
-      governingTokenDepositAmount: resizeBN(governingTokenDepositAmount),
-      unrelinquishedVotesCount: resizeBN(unrelinquishedVotesCount),
+      governingTokenDepositAmount,
+      unrelinquishedVotesCount,
       outstandingProposalCount,
       version: 1,
       reserved: [0, 0, 0, 0, 0, 0],

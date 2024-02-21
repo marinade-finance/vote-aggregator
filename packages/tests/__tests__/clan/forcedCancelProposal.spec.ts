@@ -59,7 +59,7 @@ describe('forced_cancel_proposal instruction', () => {
         ],
         program.programId
       );
-      const [tokenOwnerRecord] = PublicKey.findProgramAddressSync(
+      const [clanTor] = PublicKey.findProgramAddressSync(
         [
           Buffer.from('governance', 'utf-8'),
           rootTester.realm.realmAddress.toBuffer(),
@@ -76,14 +76,14 @@ describe('forced_cancel_proposal instruction', () => {
           clan: clanTester.clanAddress,
           governanceProgram: rootTester.splGovernanceId,
           voterAuthority,
-          tokenOwnerRecord,
+          clanTor,
           realm: realmTester.realmAddress,
           realmConfig: await realmTester.realmConfigId(),
           governingTokenMint: proposalTester.proposal.governingTokenMint,
           systemProgram: SYSTEM_PROGRAM_ID,
           governance: governanceTester.governanceAddress,
           proposal: proposalTester.proposalAddress,
-          clanVoterWeightRecord: clanTester.voterWeightAddress[0],
+          clanVwr: clanTester.voterWeightAddress[0],
         })
         .transaction();
       tx.recentBlockhash = testContext.lastBlockhash;

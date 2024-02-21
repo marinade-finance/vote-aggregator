@@ -12,14 +12,6 @@ export const buildKeypair: (pub: string, secret: number[]) => Keypair = (
   return keypair;
 };
 
-export const resizeBN: (bn: BN, length?: number) => BN = (bn, length = 8) => {
-  let buf = bn.toBuffer();
-  if (buf.length < length) {
-    buf = Buffer.concat([Buffer.alloc(length - buf.length), buf]);
-  }
-  return new BN(buf);
-};
-
 export function parseLogLine<P extends Idl, T>(
   program: Program<P>,
   log: string

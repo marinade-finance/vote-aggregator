@@ -8,7 +8,7 @@ use spl_governance::{
 
 use crate::{
     error::Error,
-    events::clan::{ClanMemberAdded, ClanVoterWeightChanged},
+    events::clan::ClanMemberAdded,
     state::{Clan, MaxVoterWeightRecord, Member, Root, VoterWeightRecord},
 };
 
@@ -34,6 +34,7 @@ pub struct JoinClan<'info> {
     clan: Account<'info, Clan>,
 
     #[account(
+        mut,
         has_one = governance_program,
         has_one = realm,
     )]
@@ -75,7 +76,7 @@ pub struct JoinClan<'info> {
         ],
         bump = clan.bumps.voter_weight_record,
     )]
-    clan_voter_weight_record: Box<Account<'info, VoterWeightRecord>>,
+    clan_vwr: Box<Account<'info, VoterWeightRecord>>,
 
     /// CHECK: dynamic owner
     #[account(
@@ -88,14 +89,15 @@ pub struct JoinClan<'info> {
         ],
         seeds::program = root.governance_program,
         bump,
+        address = member.token_owner_record,
     )]
-    member_token_owner_record: UncheckedAccount<'info>,
+    member_tor: UncheckedAccount<'info>,
 
     /// CHECK: dynamic owner
     #[account(
         owner = root.voting_weight_plugin,
     )]
-    member_voter_weight_record: UncheckedAccount<'info>,
+    member_vwr: UncheckedAccount<'info>,
 
     #[account(
         mut,
@@ -105,7 +107,7 @@ pub struct JoinClan<'info> {
         ],
         bump = root.bumps.max_voter_weight,
     )]
-    max_voter_weight_record: Account<'info, MaxVoterWeightRecord>,
+    max_vwr: Account<'info, MaxVoterWeightRecord>,
 
     #[account(
         mut,
@@ -121,31 +123,30 @@ pub struct JoinClan<'info> {
 
 impl<'info> JoinClan<'info> {
     pub fn process(&mut self) -> Result<()> {
-        let tor = get_token_owner_record_data_for_realm_and_governing_mint(
+        let member_tor = get_token_owner_record_data_for_realm_and_governing_mint(
             &self.root.governance_program,
-            &self.member_token_owner_record.to_account_info(),
+            &self.member_tor.to_account_info(),
             &self.root.realm,
             &self.root.governing_token_mint,
         )
-        .map_err(|e| {
-            ProgramErrorWithOrigin::from(e).with_account_name("member_token_owner_record")
-        })?;
-        require_keys_eq!(tor.governing_token_owner, self.member.owner);
-        let vwr = get_voter_weight_record_data_for_token_owner_record(
+        .map_err(|e| ProgramErrorWithOrigin::from(e).with_account_name("member_tor"))?;
+        require_keys_eq!(member_tor.governing_token_owner, self.member.owner);
+        let new_member_vwr = get_voter_weight_record_data_for_token_owner_record(
             &self.root.voting_weight_plugin,
-            &self.member_voter_weight_record,
-            &tor,
+            &self.member_vwr,
+            &member_tor,
         )
-        .map_err(|e| {
-            ProgramErrorWithOrigin::from(e).with_account_name("member_voter_weight_record")
-        })?;
+        .map_err(|e| ProgramErrorWithOrigin::from(e).with_account_name("member_vwr"))?;
 
-        require_gte!(vwr.voter_weight, self.clan.min_voting_weight_to_join);
+        require_gte!(
+            new_member_vwr.voter_weight,
+            self.clan.min_voting_weight_to_join
+        );
         invoke_signed(
             &set_token_owner_record_lock(
                 &self.governance_program.key(),
                 self.realm.key,
-                self.member_token_owner_record.key,
+                self.member_tor.key,
                 self.lock_authority.key,
                 self.payer.key,
                 0,
@@ -155,7 +156,7 @@ impl<'info> JoinClan<'info> {
                 self.governance_program.to_account_info(),
                 self.realm.to_account_info(),
                 self.realm_config.to_account_info(),
-                self.member_token_owner_record.to_account_info(),
+                self.member_tor.to_account_info(),
                 self.lock_authority.to_account_info(),
                 self.payer.to_account_info(),
                 self.system_program.to_account_info(),
@@ -167,33 +168,34 @@ impl<'info> JoinClan<'info> {
             ]],
         )?;
 
-        let old_clan_voter_weight = self.clan_voter_weight_record.voter_weight;
-
-        let member_key = self.member.key();
-        self.member.update_voter_weight(
-            member_key,
-            self.root.key(),
-            &vwr,
-            &mut self.max_voter_weight_record,
+        let clock = Clock::get()?;
+        self.root.update_next_voter_weight_reset_time(&clock);
+        self.clan
+            .reset_voter_weight_if_needed(&mut self.root, &mut self.clan_vwr);
+        Clan::update_member(
+            &mut self.clan,
+            &self.member,
+            Some(&new_member_vwr),
+            &mut self.clan_vwr,
+            false,
+            true,
+            &clock,
         )?;
 
+        Member::update_voter_weight(
+            &mut self.member,
+            self.member_vwr.key(),
+            &new_member_vwr,
+            &mut self.max_vwr,
+        )?;
+        self.member.next_voter_weight_reset_time = self.root.next_voter_weight_reset_time;
         self.member.clan = self.clan.key();
-        self.member.voter_weight_record = self.member_voter_weight_record.key();
-        self.clan.active_members += 1;
-        self.clan.potential_voter_weight += self.member.voter_weight;
-        self.clan_voter_weight_record.voter_weight += self.member.voter_weight;
 
         emit!(ClanMemberAdded {
             clan: self.clan.key(),
             member: self.member.key(),
             root: self.root.key(),
             owner: self.member.owner,
-        });
-        emit!(ClanVoterWeightChanged {
-            clan: self.clan.key(),
-            root: self.root.key(),
-            old_voter_weight: old_clan_voter_weight,
-            new_voter_weight: self.clan_voter_weight_record.voter_weight
         });
 
         Ok(())

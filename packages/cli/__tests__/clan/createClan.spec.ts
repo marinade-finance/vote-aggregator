@@ -99,7 +99,7 @@ describe('create-clan command', () => {
         },
         activeMembers: resizeBN(new BN(0)),
         leavingMembers: resizeBN(new BN(0)),
-        potentialVoterWeight: resizeBN(new BN(0)),
+        permanentVoterWeight: resizeBN(new BN(0)),
         name: '',
         description: '',
       });

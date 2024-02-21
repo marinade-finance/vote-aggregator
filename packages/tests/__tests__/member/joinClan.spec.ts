@@ -3,7 +3,6 @@ import {
   JoinClanTestData,
   RealmTester,
   parseLogsEvent,
-  resizeBN,
   joinClanTestData,
   buildSplGovernanceProgram,
 } from '../../src';
@@ -86,10 +85,10 @@ describe('join_clan instruction', () => {
           member: memberTester.memberAddress[0],
           clan: clan.address,
           memberAuthority: memberTester.ownerAddress,
-          clanVoterWeightRecord: clanTester.voterWeightAddress[0],
-          memberTokenOwnerRecord: memberTester.tokenOwnerRecordAddress[0],
-          memberVoterWeightRecord: memberVoterWeight.address,
-          maxVoterWeightRecord: rootTester.maxVoterWeightAddress[0],
+          clanVwr: clanTester.voterWeightAddress[0],
+          memberTor: memberTester.tokenOwnerRecordAddress[0],
+          memberVwr: memberVoterWeight.address,
+          maxVwr: rootTester.maxVoterWeightAddress[0],
           realm: realmTester.realmAddress,
           realmConfig: await realmTester.realmConfigId(),
           lockAuthority: rootTester.lockAuthority[0],
@@ -111,22 +110,37 @@ describe('join_clan instruction', () => {
           name: 'MemberVoterWeightChanged',
           data: {
             member: memberTester.memberAddress[0],
-            newVoterWeight: resizeBN(memberVoterWeight.voterWeight),
-            oldVoterWeight: resizeBN(memberTester.member.voterWeight),
+            newVoterWeight: memberVoterWeight.voterWeight,
+            oldVoterWeight: memberTester.member.voterWeight,
+            oldVoterWeightRecord: memberTester.member.voterWeightRecord,
+            newVoterWeightRecord: memberVoterWeight.address,
             root: rootTester.rootAddress[0],
           },
         },
         {
           name: 'MaxVoterWeightChanged',
           data: {
-            newMaxVoterWeight: resizeBN(
-              rootTester.maxVoterWeight.maxVoterWeight.add(
-                memberVoterWeight.voterWeight
-              )
+            newMaxVoterWeight: rootTester.maxVoterWeight.maxVoterWeight.add(
+              memberVoterWeight.voterWeight
             ),
-            oldMaxVoterWeight: resizeBN(
-              rootTester.maxVoterWeight.maxVoterWeight
+            oldMaxVoterWeight: rootTester.maxVoterWeight.maxVoterWeight,
+            root: rootTester.rootAddress[0],
+          },
+        },
+        {
+          name: 'ClanVoterWeightChanged',
+          data: {
+            clan: clanTester.clanAddress,
+            newVoterWeight: clanTester.voterWeightRecord.voterWeight.add(
+              memberVoterWeight.voterWeight
             ),
+            oldVoterWeight: clanTester.voterWeightRecord.voterWeight,
+            oldPermamentVoterWeight: clanTester.clan.permanentVoterWeight,
+            newPermamentVoterWeight: clanTester.clan.permanentVoterWeight.add(
+              memberVoterWeight.voterWeight
+            ),
+            oldIsPermanent: true,
+            newIsPermanent: true,
             root: rootTester.rootAddress[0],
           },
         },
@@ -139,19 +153,6 @@ describe('join_clan instruction', () => {
             root: rootTester.rootAddress[0],
           },
         },
-        {
-          name: 'ClanVoterWeightChanged',
-          data: {
-            clan: clanTester.clanAddress,
-            newVoterWeight: resizeBN(
-              clanTester.voterWeightRecord.voterWeight.add(
-                memberVoterWeight.voterWeight
-              )
-            ),
-            oldVoterWeight: resizeBN(clanTester.voterWeightRecord.voterWeight),
-            root: rootTester.rootAddress[0],
-          },
-        },
       ]);
 
       await expect(
@@ -160,23 +161,18 @@ describe('join_clan instruction', () => {
         ...memberTester.member,
         clan: clanTester.clanAddress,
         voterWeightRecord: memberVoterWeight.address,
-        voterWeight: resizeBN(memberVoterWeight.voterWeight),
-        voterWeightExpiry:
-          (memberVoterWeight.voterWeightExpiry &&
-            resizeBN(memberVoterWeight.voterWeightExpiry)) ||
-          null,
+        voterWeight: memberVoterWeight.voterWeight,
+        voterWeightExpiry: memberVoterWeight.voterWeightExpiry || null,
       });
 
       await expect(
         program.account.clan.fetch(clanTester.clanAddress)
       ).resolves.toStrictEqual({
         ...clanTester.clan,
-        potentialVoterWeight: resizeBN(
-          clanTester.clan.potentialVoterWeight.add(
-            memberVoterWeight.voterWeight
-          )
+        permanentVoterWeight: clanTester.clan.permanentVoterWeight.add(
+          memberVoterWeight.voterWeight
         ),
-        activeMembers: resizeBN(clanTester.clan.activeMembers.addn(1)),
+        activeMembers: clanTester.clan.activeMembers.addn(1),
       });
 
       await expect(
@@ -185,10 +181,8 @@ describe('join_clan instruction', () => {
         )
       ).resolves.toStrictEqual({
         ...clanTester.voterWeightRecord,
-        voterWeight: resizeBN(
-          clanTester.voterWeightRecord.voterWeight.add(
-            memberVoterWeight.voterWeight
-          )
+        voterWeight: clanTester.voterWeightRecord.voterWeight.add(
+          memberVoterWeight.voterWeight
         ),
       });
 
@@ -198,10 +192,8 @@ describe('join_clan instruction', () => {
         )
       ).resolves.toMatchObject({
         ...rootTester.maxVoterWeight,
-        maxVoterWeight: resizeBN(
-          rootTester.maxVoterWeight.maxVoterWeight.add(
-            memberVoterWeight.voterWeight
-          )
+        maxVoterWeight: rootTester.maxVoterWeight.maxVoterWeight.add(
+          memberVoterWeight.voterWeight
         ),
       });
 

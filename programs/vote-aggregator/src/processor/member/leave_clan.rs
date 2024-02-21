@@ -44,8 +44,9 @@ pub struct LeaveClan<'info> {
         ],
         seeds::program = governance_program.key(),
         bump = member.bumps.token_owner_record,
+        address = member.token_owner_record,
     )]
-    member_token_owner_record: UncheckedAccount<'info>,
+    member_tor: UncheckedAccount<'info>,
 
     #[account(
         has_one = governance_program,
@@ -79,18 +80,17 @@ impl<'info> LeaveClan<'info> {
         self.member.clan = Member::NO_CLAN;
         self.member.clan_leaving_time = Member::NOT_LEAVING_CLAN;
         self.clan.leaving_members -= 1;
-        self.clan.potential_voter_weight -= self.member.voter_weight;
 
         invoke_signed(
             &remove_token_owner_record_lock(
                 self.governance_program.key,
-                self.member_token_owner_record.key,
+                self.member_tor.key,
                 self.lock_authority.key,
                 0,
             ),
             &[
                 self.governance_program.to_account_info(),
-                self.member_token_owner_record.to_account_info(),
+                self.member_tor.to_account_info(),
                 self.lock_authority.to_account_info(),
             ],
             &[&[

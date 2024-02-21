@@ -27,7 +27,7 @@ const clanToJson = (clan: ClanAccount) => {
     minVotingWeightToJoin: clan.minVotingWeightToJoin.toString(),
     activeMembers: clan.activeMembers.toString(),
     leavingMembers: clan.leavingMembers.toString(),
-    potentialVoterWeight: clan.potentialVoterWeight.toString(),
+    permanentVoterWeight: clan.permanentVoterWeight.toString(),
     name: clan.name,
     description: clan.description,
   };

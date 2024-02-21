@@ -2,8 +2,7 @@ use anchor_lang::prelude::*;
 use spl_governance::addins::voter_weight::get_voter_weight_record_data;
 
 use crate::error::Error;
-use crate::events::clan::ClanVoterWeightChanged;
-use crate::state::{Clan, MaxVoterWeightRecord, Member, Root, VoterWeightRecord};
+use crate::state::{Clan, VoterWeightRecord, MaxVoterWeightRecord, Member, Root};
 
 #[derive(Accounts)]
 pub struct UpdateVoterWeight<'info> {
@@ -18,8 +17,9 @@ pub struct UpdateVoterWeight<'info> {
         owner = root.voting_weight_plugin,
         address = member.voter_weight_record,
     )]
-    member_voter_weight_record: UncheckedAccount<'info>,
+    member_vwr: UncheckedAccount<'info>,
 
+    #[account(mut)]
     root: Account<'info, Root>,
     #[account(
         mut,
@@ -29,7 +29,7 @@ pub struct UpdateVoterWeight<'info> {
         ],
         bump = root.bumps.max_voter_weight,
     )]
-    max_voter_weight_record: Account<'info, MaxVoterWeightRecord>,
+    max_vwr: Account<'info, MaxVoterWeightRecord>,
 
     #[account(
         mut,
@@ -45,51 +45,54 @@ pub struct UpdateVoterWeight<'info> {
         ],
         bump = clan.as_ref().unwrap().bumps.voter_weight_record,
     )]
-    clan_voter_weight_record: Option<Account<'info, VoterWeightRecord>>,
+    clan_vwr: Option<Account<'info, VoterWeightRecord>>,
 }
 
 impl<'info> UpdateVoterWeight<'info> {
     pub fn process(&mut self) -> Result<()> {
-        let vwr = get_voter_weight_record_data(
-            &self.root.voting_weight_plugin,
-            &self.member_voter_weight_record,
-        )
-        .map_err(|e| {
-            ProgramErrorWithOrigin::from(e).with_account_name("member_voter_weight_record")
-        })?;
-        require_keys_eq!(vwr.realm, self.root.realm);
-        require_keys_eq!(vwr.governing_token_mint, self.root.governing_token_mint);
-        require_keys_eq!(vwr.governing_token_owner, self.member.owner);
+        let new_member_vwr =
+            get_voter_weight_record_data(&self.root.voting_weight_plugin, &self.member_vwr)
+                .map_err(|e| {
+                    ProgramErrorWithOrigin::from(e).with_account_name("member_voter_weight_record")
+                })?;
+        require_keys_eq!(new_member_vwr.realm, self.root.realm);
+        require_keys_eq!(
+            new_member_vwr.governing_token_mint,
+            self.root.governing_token_mint
+        );
+        require_keys_eq!(new_member_vwr.governing_token_owner, self.member.owner);
 
-        let old_member_voter_weight = self.member.voter_weight;
-        let member_key = self.member.key();
-        self.member.update_voter_weight(
-            member_key,
-            self.root.key(),
-            &vwr,
-            &mut self.max_voter_weight_record,
-        )?;
+        let clock = Clock::get()?;
+        self.root.update_next_voter_weight_reset_time(&clock);
 
-        if self.member.clan != Pubkey::default() {
+        if self.member.clan != Pubkey::default()
+            && self.member.clan_leaving_time == Member::NOT_LEAVING_CLAN
+        {
             let clan = self.clan.as_mut().ok_or(error!(Error::ClanIsRequired))?;
-            if self.member.clan_leaving_time == Member::NOT_LEAVING_CLAN {
-                let clan_voter_weight_record = self
-                    .clan_voter_weight_record
-                    .as_mut()
-                    .ok_or(error!(Error::ClanVoterWeightRecordIsRequired))?;
-                let old_clan_voter_weight = clan_voter_weight_record.voter_weight;
-                clan_voter_weight_record.voter_weight -= old_member_voter_weight;
-                clan_voter_weight_record.voter_weight += vwr.voter_weight;
-                emit!(ClanVoterWeightChanged {
-                    clan: clan.key(),
-                    root: self.root.key(),
-                    old_voter_weight: old_clan_voter_weight,
-                    new_voter_weight: clan_voter_weight_record.voter_weight
-                });
-            }
-            clan.potential_voter_weight -= old_member_voter_weight;
-            clan.potential_voter_weight += vwr.voter_weight;
+            let clan_vwr = self
+                .clan_vwr
+                .as_mut()
+                .ok_or(error!(Error::ClanVoterWeightRecordIsRequired))?;
+            clan.reset_voter_weight_if_needed(&self.root, clan_vwr);
+            Clan::update_member(
+                clan,
+                &self.member,
+                Some(&new_member_vwr),
+                clan_vwr,
+                true, // keep membership
+                true,
+                &clock,
+            )?;
         }
+
+        Member::update_voter_weight(
+            &mut self.member,
+            self.member_vwr.key(),
+            &new_member_vwr,
+            &mut self.max_vwr,
+        )?;
+        self.member.next_voter_weight_reset_time = self.root.next_voter_weight_reset_time;
+
         Ok(())
     }
 }

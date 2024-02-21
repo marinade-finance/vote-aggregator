@@ -1,7 +1,7 @@
 import {Keypair, PublicKey} from '@solana/web3.js';
-import {getMinimumBalanceForRentExemption, resizeBN} from '../utils';
+import {getMinimumBalanceForRentExemption} from '../utils';
 import {BN} from '@coral-xyz/anchor';
-import {ClanAccount, VoterWeightAccount} from './accounts';
+import {ClanAccount, VoterWeightRecordAccount} from './accounts';
 import {RootTester} from './root';
 import {AddedAccount} from 'solana-bankrun';
 import {buildVoteAggregatorProgram} from './program';
@@ -16,10 +16,12 @@ export type ClanTestData = {
   minVotingWeightToJoin?: BN;
   activeMembers?: BN;
   leavingMembers?: BN;
-  potentialVoterWeight?: BN;
   name: string;
   description?: string;
   voterWeight?: BN;
+  acceptTemporaryMembers?: boolean;
+  permanentVoterWeight?: BN;
+  nextWeightDeadline?: BN;
   governingTokenDepositAmount?: BN;
   unrelinquishedVotesCount?: BN;
   outstandingProposalCount?: number;
@@ -34,7 +36,7 @@ export class ClanTester {
   public clan: ClanAccount;
   public clanSize?: number;
   public tokenOwnerRecord: TokenOwnerRecordAccount;
-  public voterWeightRecord: VoterWeightAccount;
+  public voterWeightRecord: VoterWeightRecordAccount;
 
   get voterAuthority(): [PublicKey, number] {
     return PublicKey.findProgramAddressSync(
@@ -110,10 +112,11 @@ export class ClanTester {
     minVotingWeightToJoin = new BN(0),
     activeMembers = new BN(0),
     leavingMembers = new BN(0),
+    acceptTemporaryMembers = true,
+    permanentVoterWeight = new BN(0),
+    nextWeightDeadline = new BN(0),
     name,
     description = '',
-    voterWeight = new BN(0),
-    potentialVoterWeight = voterWeight,
   }: ClanTestData & {root: PublicKey}): ClanAccount {
     return {
       root,
@@ -125,15 +128,17 @@ export class ClanTester {
       voterAuthority: PublicKey.default,
       tokenOwnerRecord: PublicKey.default,
       voterWeightRecord: PublicKey.default,
-      minVotingWeightToJoin: resizeBN(minVotingWeightToJoin),
+      minVotingWeightToJoin: minVotingWeightToJoin,
+      acceptTemporaryMembers,
+      permanentVoterWeight,
+      nextWeightDeadline,
       bumps: {
         voterAuthority: 0,
         tokenOwnerRecord: 0,
         voterWeightRecord: 0,
       },
-      activeMembers: resizeBN(activeMembers),
-      leavingMembers: resizeBN(leavingMembers),
-      potentialVoterWeight: resizeBN(potentialVoterWeight),
+      activeMembers,
+      leavingMembers,
       name,
       description,
     };
@@ -151,7 +156,9 @@ export class ClanTester {
     name,
     description = '',
     voterWeight = new BN(0),
-    potentialVoterWeight = voterWeight,
+    acceptTemporaryMembers = true,
+    permanentVoterWeight = new BN(0),
+    nextWeightDeadline = new BN(0),
     governingTokenDepositAmount = new BN(0),
     unrelinquishedVotesCount = new BN(0),
     outstandingProposalCount = 0,
@@ -199,15 +206,17 @@ export class ClanTester {
       voterAuthority,
       tokenOwnerRecord,
       voterWeightRecord,
-      minVotingWeightToJoin: resizeBN(minVotingWeightToJoin),
+      minVotingWeightToJoin,
+      acceptTemporaryMembers,
+      permanentVoterWeight,
+      nextWeightDeadline,
       bumps: {
         voterAuthority: voterAuthorityBump,
         tokenOwnerRecord: tokenOwnerRecordBump,
         voterWeightRecord: voterWeightRecordBump,
       },
-      activeMembers: resizeBN(activeMembers),
-      leavingMembers: resizeBN(leavingMembers),
-      potentialVoterWeight: resizeBN(potentialVoterWeight),
+      activeMembers,
+      leavingMembers,
       name,
       description,
     };
@@ -216,7 +225,7 @@ export class ClanTester {
       realm: root.realm.realmAddress,
       governingTokenMint: root.governingTokenMint,
       governingTokenOwner: this.voterAuthority[0],
-      voterWeight: resizeBN(voterWeight),
+      voterWeight,
       voterWeightExpiry: null,
       weightAction: null,
       weightActionTarget: null,
@@ -228,8 +237,8 @@ export class ClanTester {
       realm: root.realm.realmAddress,
       governingTokenMint: root.governingTokenMint,
       governingTokenOwner: voterAuthority,
-      governingTokenDepositAmount: resizeBN(governingTokenDepositAmount),
-      unrelinquishedVotesCount: resizeBN(unrelinquishedVotesCount),
+      governingTokenDepositAmount,
+      unrelinquishedVotesCount,
       outstandingProposalCount,
       version: 1,
       reserved: [0, 0, 0, 0, 0, 0],
@@ -261,7 +270,7 @@ export class ClanTester {
 
     {
       const voterWeigthRecordData =
-        await program.coder.accounts.encode<VoterWeightAccount>(
+        await program.coder.accounts.encode<VoterWeightRecordAccount>(
           'voterWeightRecord',
           this.voterWeightRecord
         );

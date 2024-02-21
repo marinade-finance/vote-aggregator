@@ -17,7 +17,7 @@ import {
   TokenOwnerRecordAccount,
 } from './accounts';
 import {buildSplGovernanceProgram} from './program';
-import {getMinimumBalanceForRentExemption, resizeBN} from '../utils';
+import {getMinimumBalanceForRentExemption} from '../utils';
 import {
   Realm as SplRealm,
   RealmConfig as SplRealmConfig,
@@ -25,7 +25,7 @@ import {
   GoverningTokenType as SplGoverningTokenType,
 } from '@solana/spl-governance';
 import {
-  VoterWeightAccount,
+  VoterWeightRecordAccount,
   buildVoteAggregatorProgram,
 } from '../VoteAggregator';
 
@@ -91,15 +91,6 @@ export class RealmTester {
   }: RealmTestData) {
     this.splGovernanceId = splGovernanceId;
     this.realmAddress = realmAddress;
-    if ('supplyFraction' in communityMintMaxVoterWeightSource) {
-      communityMintMaxVoterWeightSource.supplyFraction = resizeBN(
-        communityMintMaxVoterWeightSource.supplyFraction
-      );
-    } else {
-      communityMintMaxVoterWeightSource.absolute = resizeBN(
-        communityMintMaxVoterWeightSource.absolute
-      );
-    }
 
     this.authority = authority;
     this.communityMintAuthority = communityMintAuthority;
@@ -117,9 +108,7 @@ export class RealmTester {
           communityMintMaxVoterWeightSource as unknown as
             | {supplyFraction: [BN]}
             | {absolute: [BN]}, // anchor type bug
-        minCommunityWeightToCreateGovernance: resizeBN(
-          minCommunityWeightToCreateGovernance
-        ),
+        minCommunityWeightToCreateGovernance,
         reserved: [0, 0, 0, 0, 0, 0],
         legacy1: 0,
         legacy2: 0,
@@ -344,8 +333,8 @@ export class RealmTester {
       realm: this.realmAddress,
       governingTokenMint,
       governingTokenOwner: owner,
-      governingTokenDepositAmount: resizeBN(new BN(0)),
-      unrelinquishedVotesCount: resizeBN(new BN(0)),
+      governingTokenDepositAmount: new BN(0),
+      unrelinquishedVotesCount: new BN(0),
       outstandingProposalCount: 0,
       reserved: [0, 0, 0, 0, 0, 0],
       governanceDelegate: null,
@@ -392,18 +381,18 @@ export class RealmTester {
         ? this.realm.communityMint
         : this.realm.config.councilMint!;
 
-    const record: VoterWeightAccount = {
+    const record: VoterWeightRecordAccount = {
       realm: this.realmAddress,
       governingTokenMint,
       governingTokenOwner: owner,
-      voterWeight: resizeBN(voterWeight),
-      voterWeightExpiry: voterWeightExpiry && resizeBN(voterWeightExpiry),
+      voterWeight,
+      voterWeightExpiry,
       weightAction: null,
       weightActionTarget: null,
       reserved: [0, 0, 0, 0, 0, 0, 0, 0],
     };
     const program = buildVoteAggregatorProgram({});
-    const data = await program.coder.accounts.encode<VoterWeightAccount>(
+    const data = await program.coder.accounts.encode<VoterWeightRecordAccount>(
       'voterWeightRecord',
       record
     );

@@ -17,8 +17,16 @@ pub mod vote_aggregator {
         ctx.accounts.process(ctx.bumps)
     }
 
+    pub fn update_root(ctx: Context<UpdateRoot>) -> Result<()> {
+        ctx.accounts.process()
+    }
+
     pub fn create_clan(ctx: Context<CreateClan>, owner: Pubkey) -> Result<()> {
         ctx.accounts.process(owner, ctx.bumps)
+    }
+
+    pub fn update_clan(ctx: Context<UpdateClan>) -> Result<()> {
+        ctx.accounts.process()
     }
 
     pub fn set_clan_owner(ctx: Context<SetClanOwner>, owner: Pubkey) -> Result<()> {

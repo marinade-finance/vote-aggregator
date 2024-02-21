@@ -1,6 +1,9 @@
 import BN from 'bn.js';
 import {ClanTestData, MemberTestData, RootTestData} from '../../VoteAggregator';
-import {RealmTestData, VoterWeightRecordTestData} from '../../SplGovernance/realm';
+import {
+  RealmTestData,
+  VoterWeightRecordTestData,
+} from '../../SplGovernance/realm';
 import {PublicKey} from '@solana/web3.js';
 
 export type UpdateVoterWeightTestData = {
@@ -54,6 +57,7 @@ export const updateVoterWeightTestData: UpdateVoterWeightTestData[] = [
         name: 'Marinade',
         activeMembers: new BN(2),
         voterWeight: new BN('43564574675566'),
+        permanentVoterWeight: new BN('43564574675566'),
       },
     },
     memberVoterWeightRecord: {
@@ -103,6 +107,7 @@ export const updateVoterWeightTestData: UpdateVoterWeightTestData[] = [
         name: 'Marinade',
         activeMembers: new BN(2),
         voterWeight: new BN('43564574675566'),
+        permanentVoterWeight: new BN('43564574675566'),
       },
       clanLeavingTime: new BN('892374238439232'),
     },

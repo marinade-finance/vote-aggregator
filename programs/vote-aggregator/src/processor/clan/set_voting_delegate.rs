@@ -16,7 +16,6 @@ pub struct SetVotingDelegate<'info> {
     #[account(
         mut,
         has_one = root,
-        has_one = token_owner_record,
     )]
     clan: Account<'info, Clan>,
     #[account(
@@ -50,8 +49,9 @@ pub struct SetVotingDelegate<'info> {
         ],
         bump = clan.bumps.token_owner_record,
         seeds::program = root.governance_program,
+        address = clan.token_owner_record,
     )]
-    token_owner_record: UncheckedAccount<'info>,
+    clan_tor: UncheckedAccount<'info>,
 
     /// CHECK: program
     #[account(executable)]
@@ -62,12 +62,12 @@ impl<'info> SetVotingDelegate<'info> {
     pub fn process(&mut self, new_voting_delegate: Pubkey) -> Result<()> {
         let old_voting_delegate = get_token_owner_record_data(
             self.governance_program.key,
-            &self.token_owner_record.to_account_info(),
+            &self.clan_tor.to_account_info(),
         )
         .map_err(|e| {
             AnchorError::from(e)
                 .with_source(source!())
-                .with_account_name("token_owner_record")
+                .with_account_name("clan_tor")
         })?
         .governance_delegate;
         let new_voting_delegate = if new_voting_delegate == Pubkey::default() {
@@ -88,7 +88,7 @@ impl<'info> SetVotingDelegate<'info> {
             &[
                 self.governance_program.to_account_info(),
                 self.voter_authority.to_account_info(),
-                self.token_owner_record.to_account_info(),
+                self.clan_tor.to_account_info(),
             ],
             &[&[
                 Clan::VOTER_AUTHORITY_SEED,

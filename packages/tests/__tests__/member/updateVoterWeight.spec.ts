@@ -3,7 +3,6 @@ import {
   UpdateVoterWeightTestData,
   RealmTester,
   parseLogsEvent,
-  resizeBN,
   updateVoterWeightTestData,
 } from '../../src';
 import {ClanTester, MemberTester, RootTester} from '../../src/VoteAggregator';
@@ -55,15 +54,15 @@ describe('update_voter_weight instruction', () => {
           root: rootTester.rootAddress[0],
           member: memberTester.memberAddress[0],
           clan: memberTester.clan ? memberTester.member.clan : null,
-          clanVoterWeightRecord:
+          clanVwr:
             clanTester &&
             memberTester.member.clanLeavingTime.eq(
               new BN('9223372036854775807')
             )
               ? clanTester.voterWeightAddress[0]
               : null,
-          maxVoterWeightRecord: rootTester.maxVoterWeightAddress[0],
-          memberVoterWeightRecord: memberVoterWeightRecord.address,
+          maxVwr: rootTester.maxVoterWeightAddress[0],
+          memberVwr: memberVoterWeightRecord.address,
         })
         .transaction();
       tx.recentBlockhash = testContext.lastBlockhash;
@@ -79,8 +78,10 @@ describe('update_voter_weight instruction', () => {
           name: 'MemberVoterWeightChanged',
           data: {
             member: memberTester.memberAddress[0],
-            oldVoterWeight: resizeBN(memberTester.member.voterWeight),
-            newVoterWeight: resizeBN(memberVoterWeightRecord.voterWeight),
+            oldVoterWeight: memberTester.member.voterWeight,
+            newVoterWeight: memberVoterWeightRecord.voterWeight,
+            oldVoterWeightRecord: memberTester.member.voterWeightRecord,
+            newVoterWeightRecord: memberTester.member.voterWeightRecord,
             root: rootTester.rootAddress[0],
           },
         },
@@ -88,14 +89,10 @@ describe('update_voter_weight instruction', () => {
           name: 'MaxVoterWeightChanged',
           data: {
             root: rootTester.rootAddress[0],
-            oldMaxVoterWeight: resizeBN(
-              rootTester.maxVoterWeight.maxVoterWeight
-            ),
-            newMaxVoterWeight: resizeBN(
-              rootTester.maxVoterWeight.maxVoterWeight
-                .sub(memberTester.member.voterWeight)
-                .add(memberVoterWeightRecord.voterWeight)
-            ),
+            oldMaxVoterWeight: rootTester.maxVoterWeight.maxVoterWeight,
+            newMaxVoterWeight: rootTester.maxVoterWeight.maxVoterWeight
+              .sub(memberTester.member.voterWeight)
+              .add(memberVoterWeightRecord.voterWeight),
           },
         },
         ...(clanTester &&
@@ -105,14 +102,16 @@ describe('update_voter_weight instruction', () => {
                 name: 'ClanVoterWeightChanged',
                 data: {
                   clan: clanTester.clanAddress,
-                  newVoterWeight: resizeBN(
-                    clanTester.voterWeightRecord.voterWeight
-                      .sub(memberTester.member.voterWeight)
-                      .add(memberVoterWeightRecord.voterWeight)
-                  ),
-                  oldVoterWeight: resizeBN(
-                    clanTester.voterWeightRecord.voterWeight
-                  ),
+                  newVoterWeight: clanTester.voterWeightRecord.voterWeight
+                    .sub(memberTester.member.voterWeight)
+                    .add(memberVoterWeightRecord.voterWeight),
+                  oldVoterWeight: clanTester.voterWeightRecord.voterWeight,
+                  oldPermamentVoterWeight: clanTester.clan.permanentVoterWeight,
+                  newPermamentVoterWeight: clanTester.clan.permanentVoterWeight
+                    .sub(memberTester.member.voterWeight)
+                    .add(memberVoterWeightRecord.voterWeight),
+                  oldIsPermanent: true,
+                  newIsPermanent: true,
                   root: rootTester.rootAddress[0],
                 },
               },
@@ -124,7 +123,7 @@ describe('update_voter_weight instruction', () => {
         program.account.member.fetch(memberTester.memberAddress[0])
       ).resolves.toStrictEqual({
         ...memberTester.member,
-        voterWeight: resizeBN(memberVoterWeightRecord.voterWeight),
+        voterWeight: memberVoterWeightRecord.voterWeight,
         voterWeightExpiry: memberVoterWeightRecord.voterWeightExpiry || null,
       });
 
@@ -134,11 +133,9 @@ describe('update_voter_weight instruction', () => {
         )
       ).resolves.toMatchObject({
         ...rootTester.maxVoterWeight,
-        maxVoterWeight: resizeBN(
-          rootTester.maxVoterWeight.maxVoterWeight
-            .sub(memberTester.member.voterWeight)
-            .add(memberVoterWeightRecord.voterWeight)
-        ),
+        maxVoterWeight: rootTester.maxVoterWeight.maxVoterWeight
+          .sub(memberTester.member.voterWeight)
+          .add(memberVoterWeightRecord.voterWeight),
       });
 
       if (clanTester) {
@@ -146,11 +143,13 @@ describe('update_voter_weight instruction', () => {
           program.account.clan.fetch(clanTester.clanAddress)
         ).resolves.toStrictEqual({
           ...clanTester.clan,
-          potentialVoterWeight: resizeBN(
-            clanTester.clan.potentialVoterWeight
-              .sub(memberTester.member.voterWeight)
-              .add(memberVoterWeightRecord.voterWeight)
-          ),
+          permanentVoterWeight: memberTester.member.clanLeavingTime.eq(
+            new BN('9223372036854775807')
+          ) // i64::MAX
+            ? clanTester.clan.permanentVoterWeight
+                .sub(memberTester.member.voterWeight)
+                .add(memberVoterWeightRecord.voterWeight)
+            : clanTester.clan.permanentVoterWeight,
         });
 
         await expect(
@@ -159,15 +158,13 @@ describe('update_voter_weight instruction', () => {
           )
         ).resolves.toStrictEqual({
           ...clanTester.voterWeightRecord,
-          voterWeight: resizeBN(
-            memberTester.member.clanLeavingTime.eq(
-              new BN('9223372036854775807')
-            ) // i64::MAX
-              ? clanTester.voterWeightRecord.voterWeight
-                  .sub(memberTester.member.voterWeight)
-                  .add(memberVoterWeightRecord.voterWeight)
-              : clanTester.voterWeightRecord.voterWeight
-          ),
+          voterWeight: memberTester.member.clanLeavingTime.eq(
+            new BN('9223372036854775807')
+          ) // i64::MAX
+            ? clanTester.voterWeightRecord.voterWeight
+                .sub(memberTester.member.voterWeight)
+                .add(memberVoterWeightRecord.voterWeight)
+            : clanTester.voterWeightRecord.voterWeight,
         });
       }
     }

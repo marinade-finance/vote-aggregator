@@ -14,6 +14,8 @@ pub struct MemberVoterWeightChanged {
     pub root: Pubkey,
     pub old_voter_weight: u64,
     pub new_voter_weight: u64,
+    pub old_voter_weight_record: Pubkey,
+    pub new_voter_weight_record: Pubkey,
 }
 #[event]
 pub struct StartingLeavingClan {

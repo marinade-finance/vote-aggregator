@@ -58,7 +58,7 @@ pub struct CreateRoot<'info> {
         payer = payer,
         space = MaxVoterWeightRecord::SPACE,
     )]
-    max_voter_weight: Account<'info, MaxVoterWeightRecord>,
+    max_vwr: Account<'info, MaxVoterWeightRecord>,
 
     #[account(
         mut,
@@ -124,16 +124,18 @@ impl<'info> CreateRoot<'info> {
             governing_token_mint: self.governing_token_mint.key(),
             voting_weight_plugin: voting_weight_plugin.unwrap_or_default(),
             max_proposal_lifetime: 0,
-            bumps: RootBumps {
-                root: bumps.root,
-                max_voter_weight: bumps.max_voter_weight,
-                lock_authority: lock_authority_bump,
-            },
+            next_voter_weight_reset_time: 0,
+            voter_weight_reset_step: 0,
             clan_count: 0,
             member_count: 0,
+            bumps: RootBumps {
+                root: bumps.root,
+                max_voter_weight: bumps.max_vwr,
+                lock_authority: lock_authority_bump,
+            },
         });
 
-        self.max_voter_weight.set_inner(MaxVoterWeightRecord::new(
+        self.max_vwr.set_inner(MaxVoterWeightRecord::new(
             self.realm.key(),
             self.governing_token_mint.key(),
         ));

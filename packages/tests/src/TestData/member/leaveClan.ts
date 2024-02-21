@@ -63,7 +63,6 @@ export const leaveClanTestData: LeaveClanTestData[] = [
         name: 'Marinade',
         activeMembers: new BN(1),
         leavingMembers: new BN(1),
-        potentialVoterWeight: new BN('87428734639842'),
       },
     },
   },

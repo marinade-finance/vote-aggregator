@@ -6,7 +6,6 @@ import {
   CreateRootTestData,
   RealmTester,
   parseLogsEvent,
-  resizeBN,
   createRootTestData,
 } from '../../src';
 import {BN} from '@coral-xyz/anchor';
@@ -38,11 +37,10 @@ describe('create_root instruction', () => {
         ],
         program.programId
       );
-      const [maxVoterWeightAddress, maxVoterWeightBump] =
-        PublicKey.findProgramAddressSync(
-          [Buffer.from('max-voter-weight', 'utf-8'), rootAddress.toBuffer()],
-          program.programId
-        );
+      const [maxVwr, maxVwrBump] = PublicKey.findProgramAddressSync(
+        [Buffer.from('max-voter-weight', 'utf-8'), rootAddress.toBuffer()],
+        program.programId
+      );
 
       const communityTokenConfigArgs = {
         voterWeightAddin: new PublicKey(
@@ -97,7 +95,7 @@ describe('create_root instruction', () => {
           realmConfig: await realmTester.realmConfigId(),
           governingTokenMint: realmTester.realm.communityMint,
           realmAuthority: realmTester.realm.authority!,
-          maxVoterWeight: maxVoterWeightAddress,
+          maxVwr: maxVwr,
           payer: program.provider.publicKey!,
           governanceProgram: realmTester.splGovernanceId,
           systemProgram: SystemProgram.programId,
@@ -176,14 +174,16 @@ describe('create_root instruction', () => {
         votingWeightPlugin:
           realmTester.config.communityTokenConfig.voterWeightAddin ||
           PublicKey.default,
-        maxProposalLifetime: resizeBN(new BN(0)),
+        maxProposalLifetime: new BN(0),
+        nextWeightDeadline: new BN(0),
+        epochLength: new BN(0),
         bumps: {
           root: rootBump,
-          maxVoterWeight: maxVoterWeightBump,
+          maxVoterWeight: maxVwrBump,
           lockAuthority: lockAuthorityBump,
         },
-        clanCount: resizeBN(new BN(0)),
-        memberCount: resizeBN(new BN(0)),
+        clanCount: new BN(0),
+        memberCount: new BN(0),
       });
       await expect(
         splGovernance.account.realmV2.fetch(realmTester.realmAddress)
@@ -201,15 +201,15 @@ describe('create_root instruction', () => {
         },
       });
 
-      await expect(
-        program.account.maxVoterWeightRecord.fetch(maxVoterWeightAddress)
-      ).resolves.toStrictEqual({
-        realm: realmTester.realmAddress,
-        governingTokenMint: realmTester.realm.communityMint,
-        maxVoterWeight: resizeBN(new BN(0)),
-        maxVoterWeightExpiry: null,
-        reserved: [0, 0, 0, 0, 0, 0, 0, 0],
-      });
+      await expect(program.account.maxVoterWeightRecord.fetch(maxVwr)).resolves.toStrictEqual(
+        {
+          realm: realmTester.realmAddress,
+          governingTokenMint: realmTester.realm.communityMint,
+          maxVoterWeight: new BN(0),
+          maxVoterWeightExpiry: null,
+          reserved: [0, 0, 0, 0, 0, 0, 0, 0],
+        }
+      );
     }
   );
 
@@ -233,11 +233,10 @@ describe('create_root instruction', () => {
       ],
       program.programId
     );
-    const [maxVoterWeightAddress, maxVoterWeightBump] =
-      PublicKey.findProgramAddressSync(
-        [Buffer.from('max-voter-weight', 'utf-8'), rootAddress.toBuffer()],
-        program.programId
-      );
+    const [maxVwr, maxVwrBump] = PublicKey.findProgramAddressSync(
+      [Buffer.from('max-voter-weight', 'utf-8'), rootAddress.toBuffer()],
+      program.programId
+    );
 
     const communityTokenConfigArgs = {
       voterWeightAddin:
@@ -287,7 +286,7 @@ describe('create_root instruction', () => {
         realmConfig: await realmTester.realmConfigId(),
         governingTokenMint: realmTester.realm.config.councilMint!,
         realmAuthority: realmTester.realm.authority!,
-        maxVoterWeight: maxVoterWeightAddress,
+        maxVwr: maxVwr,
         payer: program.provider.publicKey!,
         governanceProgram: realmTester.splGovernanceId,
         systemProgram: SystemProgram.programId,
@@ -366,14 +365,16 @@ describe('create_root instruction', () => {
       votingWeightPlugin:
         realmTester.config.councilTokenConfig.voterWeightAddin ||
         PublicKey.default,
-      maxProposalLifetime: resizeBN(new BN(0)),
+      maxProposalLifetime: new BN(0),
+      nextWeightDeadline: new BN(0),
+      epochLength: new BN(0),
       bumps: {
         root: rootBump,
-        maxVoterWeight: maxVoterWeightBump,
+        maxVoterWeight: maxVwrBump,
         lockAuthority: lockAuthorityBump,
       },
-      clanCount: resizeBN(new BN(0)),
-      memberCount: resizeBN(new BN(0)),
+      clanCount: new BN(0),
+      memberCount: new BN(0),
     });
     await expect(
       splGovernance.account.realmV2.fetch(realmTester.realmAddress)
@@ -391,12 +392,10 @@ describe('create_root instruction', () => {
       },
     });
 
-    await expect(
-      program.account.maxVoterWeightRecord.fetch(maxVoterWeightAddress)
-    ).resolves.toStrictEqual({
+    await expect(program.account.maxVoterWeightRecord.fetch(maxVwr)).resolves.toStrictEqual({
       realm: realmTester.realmAddress,
       governingTokenMint: realmTester.realm.config.councilMint!,
-      maxVoterWeight: resizeBN(new BN(0)),
+      maxVoterWeight: new BN(0),
       maxVoterWeightExpiry: null,
       reserved: [0, 0, 0, 0, 0, 0, 0, 0],
     });

@@ -3,7 +3,6 @@ import {
   StartLeavingClanTestData,
   RealmTester,
   parseLogsEvent,
-  resizeBN,
   startLeavingClanTestData,
 } from '../../src';
 import {ClanTester, MemberTester, RootTester} from '../../src/VoteAggregator';
@@ -42,7 +41,7 @@ describe('start_leaving_clan instruction', () => {
           member: memberTester.memberAddress[0],
           clan: memberTester.member.clan,
           memberAuthority: memberTester.ownerAddress,
-          clanVoterWeightRecord: clanTester.voterWeightAddress[0],
+          clanVwr: clanTester.voterWeightAddress[0],
         })
         .transaction();
       tx.recentBlockhash = testContext.lastBlockhash;
@@ -56,24 +55,28 @@ describe('start_leaving_clan instruction', () => {
           .then(meta => parseLogsEvent(program, meta.logMessages))
       ).resolves.toStrictEqual([
         {
+          name: 'ClanVoterWeightChanged',
+          data: {
+            clan: clanTester.clanAddress,
+            newVoterWeight: clanTester.voterWeightRecord.voterWeight.sub(
+              memberTester.member.voterWeight
+            ),
+            oldVoterWeight: clanTester.voterWeightRecord.voterWeight,
+            oldPermamentVoterWeight: clanTester.clan.permanentVoterWeight,
+            newPermamentVoterWeight: clanTester.clan.permanentVoterWeight.sub(
+              memberTester.member.voterWeight
+            ),
+            oldIsPermanent: true,
+            newIsPermanent: true,
+            root: rootTester.rootAddress[0],
+          },
+        },
+        {
           name: 'StartingLeavingClan',
           data: {
             clan: clanTester.clanAddress,
             member: memberTester.memberAddress[0],
             owner: memberTester.ownerAddress,
-            root: rootTester.rootAddress[0],
-          },
-        },
-        {
-          name: 'ClanVoterWeightChanged',
-          data: {
-            clan: clanTester.clanAddress,
-            newVoterWeight: resizeBN(
-              clanTester.voterWeightRecord.voterWeight.sub(
-                memberTester.member.voterWeight
-              )
-            ),
-            oldVoterWeight: resizeBN(clanTester.voterWeightRecord.voterWeight),
             root: rootTester.rootAddress[0],
           },
         },
@@ -92,8 +95,11 @@ describe('start_leaving_clan instruction', () => {
         program.account.clan.fetch(clanTester.clanAddress)
       ).resolves.toStrictEqual({
         ...clanTester.clan,
-        activeMembers: resizeBN(clanTester.clan.activeMembers.subn(1)),
-        leavingMembers: resizeBN(clanTester.clan.leavingMembers.addn(1)),
+        activeMembers: clanTester.clan.activeMembers.subn(1),
+        leavingMembers: clanTester.clan.leavingMembers.addn(1),
+        permanentVoterWeight: clanTester.clan.permanentVoterWeight.sub(
+          memberTester.member.voterWeight
+        ),
       });
 
       await expect(
@@ -102,10 +108,8 @@ describe('start_leaving_clan instruction', () => {
         )
       ).resolves.toStrictEqual({
         ...clanTester.voterWeightRecord,
-        voterWeight: resizeBN(
-          clanTester.voterWeightRecord.voterWeight.sub(
-            memberTester.member.voterWeight
-          )
+        voterWeight: clanTester.voterWeightRecord.voterWeight.sub(
+          memberTester.member.voterWeight
         ),
       });
     }

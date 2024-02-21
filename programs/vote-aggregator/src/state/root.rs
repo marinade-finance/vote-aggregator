@@ -9,19 +9,31 @@ pub struct RootBumps {
 
 #[account]
 pub struct Root {
-    pub governance_program: Pubkey,          // 8
-    pub realm: Pubkey,                       // 40
-    pub governing_token_mint: Pubkey,        // 72
-    pub voting_weight_plugin: Pubkey,        // 104
+    pub governance_program: Pubkey,   // 8
+    pub realm: Pubkey,                // 40
+    pub governing_token_mint: Pubkey, // 72
+    pub voting_weight_plugin: Pubkey, // 104
     pub max_proposal_lifetime: u64,
-    pub bumps: RootBumps,
+    pub next_voter_weight_reset_time: i64,
+    pub voter_weight_reset_step: u64,
     pub clan_count: u64,
     pub member_count: u64,
+    pub bumps: RootBumps,
 }
-
 
 impl Root {
     pub const SPACE: usize = 8 + std::mem::size_of::<Self>();
     pub const ADDRESS_SEED: &'static [u8] = b"root";
     pub const LOCK_AUTHORITY_SEED: &'static [u8] = b"lock-authority";
+
+    pub fn update_next_voter_weight_reset_time(&mut self, clock: &Clock) {
+        if self.voter_weight_reset_step == 0 {
+            return;
+        }
+        if clock.unix_timestamp >= self.next_voter_weight_reset_time {
+            self.next_voter_weight_reset_time +=
+                ((clock.unix_timestamp - self.next_voter_weight_reset_time) / self.voter_weight_reset_step as i64 + 1)
+                    * self.voter_weight_reset_step as i64;
+        }
+    }
 }

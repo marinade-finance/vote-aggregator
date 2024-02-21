@@ -1,8 +1,8 @@
 import {PublicKey} from '@solana/web3.js';
-import {MaxVoterWeightAccount, RootAccount} from './accounts';
+import {MaxVoterWeightRecordAccount, RootAccount} from './accounts';
 import {RealmTester} from '../SplGovernance/realm';
 import {BN} from '@coral-xyz/anchor';
-import {getMinimumBalanceForRentExemption, resizeBN} from '../utils';
+import {getMinimumBalanceForRentExemption} from '../utils';
 import {AddedAccount} from 'solana-bankrun';
 import {buildVoteAggregatorProgram} from './program';
 
@@ -14,6 +14,8 @@ export type RootTestData = {
   memberCount?: BN;
   maxVoterWeight?: BN;
   maxProposalLifetime?: BN;
+  nextWeightDeadline?: BN;
+  epochLength?: BN;
 };
 
 export class RootTester {
@@ -21,7 +23,7 @@ export class RootTester {
   public side: 'community' | 'council';
   public voteAggregatorId: PublicKey;
   public root: RootAccount;
-  public maxVoterWeight: MaxVoterWeightAccount;
+  public maxVoterWeight: MaxVoterWeightRecordAccount;
 
   get splGovernanceId(): PublicKey {
     return this.realm.splGovernanceId;
@@ -74,6 +76,8 @@ export class RootTester {
     memberCount = new BN(0),
     maxVoterWeight = new BN(0),
     maxProposalLifetime = new BN(0),
+    nextWeightDeadline = new BN(0),
+    epochLength = new BN(0),
   }: RootTestData & {realm: RealmTester}) {
     this.realm = realm;
     this.side = side;
@@ -89,10 +93,12 @@ export class RootTester {
         side === 'community'
           ? realm.realm.communityMint
           : realm.realm.config.councilMint!,
-      maxProposalLifetime: resizeBN(maxProposalLifetime),
+      maxProposalLifetime,
       votingWeightPlugin,
       clanCount,
       memberCount,
+      nextWeightDeadline,
+      epochLength,
       bumps: {
         root: rootBump,
         maxVoterWeight: maxVoterWeightBump,
@@ -103,7 +109,7 @@ export class RootTester {
     this.maxVoterWeight = {
       realm: this.realm.realmAddress,
       governingTokenMint: this.governingTokenMint,
-      maxVoterWeight: resizeBN(maxVoterWeight),
+      maxVoterWeight,
       maxVoterWeightExpiry: null, // TODO
       reserved: [0, 0, 0, 0, 0, 0, 0, 0],
     };
@@ -131,7 +137,7 @@ export class RootTester {
     }
     {
       const mvwrData =
-        await program.coder.accounts.encode<MaxVoterWeightAccount>(
+        await program.coder.accounts.encode<MaxVoterWeightRecordAccount>(
           'maxVoterWeightRecord',
           this.maxVoterWeight
         );

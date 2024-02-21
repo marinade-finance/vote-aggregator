@@ -14,13 +14,13 @@ use spl_governance::{
 
 use crate::events::clan::ProposalCanceled;
 use crate::state::{Clan, Root, VoterWeightRecord};
+use crate::error::Error;
 
 #[derive(Accounts)]
 pub struct ForcedCancelProposal<'info> {
     #[account(
-        mut,
         has_one = root,
-        has_one = token_owner_record,
+        constraint = clan.is_updated() @ Error::TemporaryMembersNotUpdated
     )]
     clan: Box<Account<'info, Clan>>,
     #[account(
@@ -78,9 +78,10 @@ pub struct ForcedCancelProposal<'info> {
             &voter_authority.key.to_bytes(),
         ],
         seeds::program = root.governance_program,
-        bump = clan.bumps.token_owner_record
+        bump = clan.bumps.token_owner_record,
+        address = clan.token_owner_record,
     )]
-    token_owner_record: UncheckedAccount<'info>,
+    clan_tor: UncheckedAccount<'info>,
     #[account(
         seeds = [
             VoterWeightRecord::ADDRESS_SEED,
@@ -88,7 +89,7 @@ pub struct ForcedCancelProposal<'info> {
         ],
         bump = clan.bumps.voter_weight_record,
     )]
-    clan_voter_weight_record: Box<Account<'info, VoterWeightRecord>>,
+    clan_vwr: Box<Account<'info, VoterWeightRecord>>,
 
     system_program: Program<'info, System>,
     /// CHECK: program
@@ -128,7 +129,7 @@ impl<'info> ForcedCancelProposal<'info> {
             };
         require_gt!(
             min_weight_to_create_proposal,
-            self.clan_voter_weight_record.voter_weight
+            self.clan_vwr.voter_weight
         );
         let proposal = get_proposal_data_for_governance_and_governing_mint(
             self.governance_program.key,
@@ -141,16 +142,16 @@ impl<'info> ForcedCancelProposal<'info> {
                 .with_source(source!())
                 .with_account_name("governance")
         })?;
-        require_keys_eq!(self.token_owner_record.key(), proposal.token_owner_record,);
+        require_keys_eq!(self.clan_tor.key(), proposal.token_owner_record,);
 
-        get_token_owner_record_data(self.governance_program.key, &self.token_owner_record)?;
+        get_token_owner_record_data(self.governance_program.key, &self.clan_tor)?;
         invoke_signed(
             &cancel_proposal(
                 self.governance_program.key,
                 self.realm.key,
                 self.governance.key,
                 self.proposal.key,
-                self.token_owner_record.key,
+                self.clan_tor.key,
                 self.voter_authority.key,
             ),
             &[
@@ -158,7 +159,7 @@ impl<'info> ForcedCancelProposal<'info> {
                 self.realm.to_account_info(),
                 self.governance.to_account_info(),
                 self.proposal.to_account_info(),
-                self.token_owner_record.to_account_info(),
+                self.clan_tor.to_account_info(),
                 self.governing_token_mint.to_account_info(),
                 self.voter_authority.to_account_info(),
             ],

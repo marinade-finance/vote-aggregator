@@ -3,7 +3,6 @@ import {
   leaveClanTestData,
   RealmTester,
   parseLogsEvent,
-  resizeBN,
   LeaveClanTestData,
   buildSplGovernanceProgram,
 } from '../../src';
@@ -91,7 +90,7 @@ describe('start_leaving_clan instruction', () => {
           memberAuthority: memberTester.ownerAddress,
           governanceProgram: rootTester.splGovernanceId,
           lockAuthority: rootTester.lockAuthority[0],
-          memberTokenOwnerRecord: memberTester.tokenOwnerRecordAddress[0],
+          memberTor: memberTester.tokenOwnerRecordAddress[0],
         })
         .transaction();
       tx.recentBlockhash = testContext.lastBlockhash;
@@ -126,12 +125,7 @@ describe('start_leaving_clan instruction', () => {
         program.account.clan.fetch(clanTester.clanAddress)
       ).resolves.toStrictEqual({
         ...clanTester.clan,
-        potentialVoterWeight: resizeBN(
-          clanTester.clan.potentialVoterWeight.sub(
-            memberTester.member.voterWeight
-          )
-        ),
-        leavingMembers: resizeBN(clanTester.clan.leavingMembers.subn(1)),
+        leavingMembers: clanTester.clan.leavingMembers.subn(1),
       });
 
       await expect(

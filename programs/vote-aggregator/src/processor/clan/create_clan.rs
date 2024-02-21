@@ -54,7 +54,7 @@ pub struct CreateClan<'info> {
         seeds::program = root.governance_program,
         bump
     )]
-    token_owner_record: UncheckedAccount<'info>, // will be created
+    clan_tor: UncheckedAccount<'info>, // will be created
 
     /// The voter weight record is the account that will be shown to spl-governance
     /// to prove how much vote weight the voter has. See update_voter_weight_record.
@@ -68,7 +68,7 @@ pub struct CreateClan<'info> {
         payer = payer,
         space = VoterWeightRecord::SPACE,
     )]
-    voter_weight_record: Box<Account<'info, VoterWeightRecord>>,
+    clan_vwr: Box<Account<'info, VoterWeightRecord>>,
 
     #[account(
         mut,
@@ -86,24 +86,31 @@ pub struct CreateClan<'info> {
 
 impl<'info> CreateClan<'info> {
     pub fn process(&mut self, owner: Pubkey, bumps: CreateClanBumps) -> Result<()> {
+        let clock = Clock::get()?;
+        self.root.update_next_voter_weight_reset_time(&clock);
+
         self.clan.set_inner(Clan {
             root: self.root.key(),
             owner,
             delegate: Pubkey::default(),
             voter_authority: self.voter_authority.key(),
-            token_owner_record: self.token_owner_record.key(),
-            voter_weight_record: self.voter_weight_record.key(),
+            token_owner_record: self.clan_tor.key(),
+            voter_weight_record: self.clan_vwr.key(),
             min_voting_weight_to_join: 0,
-            bumps: ClanBumps {
-                voter_authority: bumps.voter_authority,
-                token_owner_record: bumps.token_owner_record,
-                voter_weight_record: bumps.voter_weight_record,
-            },
-            active_members: 0,
+            permanent_members: 0,
+            temporary_members: 0,
+            updated_temporary_members: 0,
             leaving_members: 0,
-            potential_voter_weight: 0,
+            accept_temporary_members: true,
+            permanent_voter_weight: 0,
+            next_voter_weight_reset_time: self.root.next_voter_weight_reset_time,
             name: "".to_owned(),
             description: "".to_owned(),
+            bumps: ClanBumps {
+                voter_authority: bumps.voter_authority,
+                token_owner_record: bumps.clan_tor,
+                voter_weight_record: bumps.clan_vwr,
+            },
         });
         invoke(
             &create_token_owner_record(
@@ -116,14 +123,14 @@ impl<'info> CreateClan<'info> {
             &[
                 self.realm.to_account_info(),
                 self.voter_authority.to_account_info(),
-                self.token_owner_record.to_account_info(),
+                self.clan_tor.to_account_info(),
                 self.governing_token_mint.to_account_info(),
                 self.payer.to_account_info(),
                 self.system_program.to_account_info(),
                 self.governance_program.to_account_info(),
             ],
         )?;
-        self.voter_weight_record.set_inner(VoterWeightRecord::new(
+        self.clan_vwr.set_inner(VoterWeightRecord::new(
             self.realm.key(),
             self.root.governing_token_mint,
             self.voter_authority.key(),
