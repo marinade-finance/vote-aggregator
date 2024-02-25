@@ -3,15 +3,12 @@ import {
   SetVoterWeightRecordTestData,
   RealmTester,
   RootTester,
-  resizeBN,
   setVoterWeightRecordTestData,
   MemberTester,
-  ClanTester,
 } from 'vote-aggregator-tests';
 import {context} from '../../src/context';
 import {cli} from '../../src/cli';
-import {BN} from '@coral-xyz/anchor';
-import {Keypair} from '@solana/web3.js';
+import {Keypair, PublicKey} from '@solana/web3.js';
 
 describe('set-voter-weight-record command', () => {
   let stdout: jest.SpyInstance;
@@ -40,24 +37,39 @@ describe('set-voter-weight-record command', () => {
       const memberTester = new MemberTester({
         ...member,
         root: rootTester,
-        clan: member.clan?.address,
+        membership: MemberTester.membershipTesters({
+          membership: member.membership || [],
+          root: rootTester,
+        }),
       });
-      const clanTester =
-        member.clan && new ClanTester({...member.clan!, root: rootTester});
+
+      const clanTesters = memberTester.membership.flatMap(
+        ({clan, leavingTime}) => {
+          if (leavingTime) {
+            return [];
+          }
+
+          if (clan instanceof PublicKey) {
+            throw new Error('Clan data should be provided');
+          }
+
+          return [clan];
+        }
+      );
+
       await startTest({
         splGovernanceId: rootTester.splGovernanceId,
         accounts: [
           ...(await realmTester.accounts()),
           ...(await rootTester.accounts()),
           ...(await memberTester.accounts()),
-          ...(clanTester ? await clanTester.accounts() : []),
+          ...(
+            await Promise.all(clanTesters.map(clan => clan.accounts()))
+          ).flat(),
           await realmTester.voterWeightRecord({
             ...memberVoterWeightRecord,
             side: root.side,
-            owner:
-              member.owner instanceof Keypair
-                ? member.owner.publicKey
-                : member.owner,
+            owner: memberTester.ownerAddress,
           }),
         ],
       });
@@ -94,7 +106,7 @@ describe('set-voter-weight-record command', () => {
       ).resolves.toStrictEqual({
         ...memberTester.member,
         voterWeightRecord: memberVoterWeightRecord.address,
-        voterWeight: resizeBN(memberVoterWeightRecord.voterWeight),
+        voterWeight: memberVoterWeightRecord.voterWeight,
         voterWeightExpiry: memberVoterWeightRecord.voterWeightExpiry || null,
       });
 
@@ -102,23 +114,19 @@ describe('set-voter-weight-record command', () => {
         sdk.root.fetchMaxVoterWeight({rootAddress: rootTester.rootAddress[0]})
       ).resolves.toMatchObject({
         ...rootTester.maxVoterWeight,
-        maxVoterWeight: resizeBN(
-          rootTester.maxVoterWeight.maxVoterWeight
-            .sub(memberTester.member.voterWeight)
-            .add(memberVoterWeightRecord.voterWeight)
-        ),
+        maxVoterWeight: rootTester.maxVoterWeight.maxVoterWeight
+          .sub(memberTester.member.voterWeight)
+          .add(memberVoterWeightRecord.voterWeight),
       });
 
-      if (clanTester) {
+      for (const clanTester of clanTesters) {
         await expect(
           sdk.clan.fetchClan(clanTester.clanAddress)
         ).resolves.toStrictEqual({
           ...clanTester.clan,
-          potentialVoterWeight: resizeBN(
-            clanTester.clan.potentialVoterWeight
-              .sub(memberTester.member.voterWeight)
-              .add(memberVoterWeightRecord.voterWeight)
-          ),
+          permanentVoterWeight: clanTester.clan.permanentVoterWeight
+            .sub(memberTester.member.voterWeight)
+            .add(memberVoterWeightRecord.voterWeight),
         });
 
         await expect(
@@ -127,15 +135,9 @@ describe('set-voter-weight-record command', () => {
           })
         ).resolves.toStrictEqual({
           ...clanTester.voterWeightRecord,
-          voterWeight: resizeBN(
-            memberTester.member.clanLeavingTime.eq(
-              new BN('9223372036854775807')
-            ) // i64::MAX
-              ? clanTester.voterWeightRecord.voterWeight
-                  .sub(memberTester.member.voterWeight)
-                  .add(memberVoterWeightRecord.voterWeight)
-              : clanTester.voterWeightRecord.voterWeight
-          ),
+          voterWeight: clanTester.voterWeightRecord.voterWeight
+            .sub(memberTester.member.voterWeight)
+            .add(memberVoterWeightRecord.voterWeight),
         });
       }
     }

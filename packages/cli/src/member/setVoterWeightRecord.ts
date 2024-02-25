@@ -47,7 +47,7 @@ const setVoterWeightRecord = async ({
   if (!memberData) {
     throw new Error(`Member ${memberAddress} does not exist`);
   }
-  const vwrAddress = await parsePubkey(vwr);
+  const memberVwr = await parsePubkey(vwr);
 
   const signers = [];
   if (ownerKp) {
@@ -58,7 +58,7 @@ const setVoterWeightRecord = async ({
       await sdk.member.setVoterWeightRecordInstruction({
         memberAddress,
         memberData,
-        voterWeightRecord: vwrAddress,
+        memberVwr,
       }),
     ],
     signers,

@@ -15,7 +15,7 @@ exports[`forced_cancel_proposal instruction Works 1`] = `
   "keys": [
     {
       "isSigner": false,
-      "isWritable": true,
+      "isWritable": false,
       "pubkey": "L2VcC3CPVRm7ji8FFizoLfqrXPPjix1TKYhFmBzsUo6",
     },
     {

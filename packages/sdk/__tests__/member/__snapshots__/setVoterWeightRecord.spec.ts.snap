@@ -30,23 +30,13 @@ exports[`set_voter_weight_record instruction Works 1`] = `
     },
     {
       "isSigner": false,
-      "isWritable": false,
+      "isWritable": true,
       "pubkey": "4uYaSNSqksSWcZZaKp89fQqFk7m1oq1XzyJw349TEwSV",
     },
     {
       "isSigner": false,
       "isWritable": true,
       "pubkey": "2Cw2oHCP3VHSZcGdxJ4VECCxg79LXULQdMEv2qwG2JBf",
-    },
-    {
-      "isSigner": false,
-      "isWritable": true,
-      "pubkey": "GYV657WS94UU9TRy3Pfy541vDozNzBa9aQL2YKpLpyJv",
-    },
-    {
-      "isSigner": false,
-      "isWritable": true,
-      "pubkey": "wBKR4HVxmv1Yca55u9u3Zbfwjzcao2JNcPeanPdgS4m",
     },
   ],
   "programId": "VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT",
@@ -83,23 +73,13 @@ exports[`set_voter_weight_record instruction Works 2`] = `
     },
     {
       "isSigner": false,
-      "isWritable": false,
+      "isWritable": true,
       "pubkey": "H9tgTZTBQLriaD4383dbjuM8BH2Vx2dgKht1ik9XD1DF",
     },
     {
       "isSigner": false,
       "isWritable": true,
       "pubkey": "3QcfnwL9uVT4nBDSvUwwEQrq4qqn8G7sCCN1CApiRYqZ",
-    },
-    {
-      "isSigner": false,
-      "isWritable": true,
-      "pubkey": "DdRA96x57UUBNEKgjmxohYEMUQhzZZ4PD2tNCzc7Cimt",
-    },
-    {
-      "isSigner": false,
-      "isWritable": false,
-      "pubkey": "VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT",
     },
   ],
   "programId": "VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT",
@@ -136,23 +116,13 @@ exports[`set_voter_weight_record instruction Works 3`] = `
     },
     {
       "isSigner": false,
-      "isWritable": false,
+      "isWritable": true,
       "pubkey": "Hzot6JotcPuPusCYwaJUAEeTMurt6Z9C1Fq2pMvjsQXD",
     },
     {
       "isSigner": false,
       "isWritable": true,
       "pubkey": "9yUPQs6PGU2snZKpnVRQXDNx3PL34A27YiWp6nSdE75c",
-    },
-    {
-      "isSigner": false,
-      "isWritable": false,
-      "pubkey": "VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT",
-    },
-    {
-      "isSigner": false,
-      "isWritable": false,
-      "pubkey": "VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT",
     },
   ],
   "programId": "VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT",

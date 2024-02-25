@@ -51,6 +51,8 @@ pub enum Error {
     CancelingNonExistentLeavingClanRequest,
     #[msg("Requesting to join a clan while already participating in some clan. Must leave first")]
     AlreadyJoinedClan,
+    MaxMembershipExceeded,
+    InvalidShareBp,
     UnknownGoverningTokenMint,
     InvalidCouncilMint,
     CouncilMintRequired,
@@ -63,4 +65,7 @@ pub enum Error {
     VoterWeightExpired,
     TemporaryMembersNotAllowed,
     TemporaryMembersNotUpdated,
+    UnexpectedClan,
+    MemberHasUnrelinquishedVotes,
+    MemberHasOutstandingProposals,
 }

@@ -103,7 +103,7 @@ impl<'info> CreateClan<'info> {
             leaving_members: 0,
             accept_temporary_members: true,
             permanent_voter_weight: 0,
-            next_voter_weight_reset_time: self.root.next_voter_weight_reset_time,
+            next_voter_weight_reset_time: self.root.next_voter_weight_reset_time(),
             name: "".to_owned(),
             description: "".to_owned(),
             bumps: ClanBumps {

@@ -20,7 +20,7 @@ use crate::error::Error;
 pub struct ForcedCancelProposal<'info> {
     #[account(
         has_one = root,
-        constraint = clan.is_updated() @ Error::TemporaryMembersNotUpdated
+        constraint = clan.is_updated(&root) @ Error::TemporaryMembersNotUpdated
     )]
     clan: Box<Account<'info, Clan>>,
     #[account(

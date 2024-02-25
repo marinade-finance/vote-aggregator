@@ -107,10 +107,13 @@ describe('create_clan instruction', () => {
           tokenOwnerRecord: clanTorBump,
           voterWeightRecord: clanVwrBump,
         },
-        activeMembers: new BN(0),
+        permanentMembers: new BN(0),
+        temporaryMembers: new BN(0),
+        updatedTemporaryMembers: new BN(0),
         leavingMembers: new BN(0),
         permanentVoterWeight: new BN(0),
-        nextWeightDeadline: new BN(0),
+        nextVoterWeightResetTime:
+          rootTester.root.voterWeightReset?.nextResetTime || null,
         acceptTemporaryMembers: true,
         name: '',
         description: '',
@@ -148,9 +151,9 @@ describe('create_clan instruction', () => {
 
       await expect(
         program.account.root.fetch(rootTester.rootAddress[0])
-      ).resolves.toMatchObject({
-        clanCount: new BN(1),
-        memberCount: new BN(0),
+      ).resolves.toStrictEqual({
+        ...rootTester.root,
+        clanCount: rootTester.root.clanCount.addn(1),
       });
     }
   );

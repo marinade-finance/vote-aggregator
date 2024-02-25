@@ -156,6 +156,7 @@ export class RootSdk {
     realmData,
     realmConfigData,
     side,
+    maxProposalLifetime = new BN(0),
     payer,
   }: {
     splGovernanceId?: PublicKey;
@@ -174,6 +175,7 @@ export class RootSdk {
       councilTokenConfig: GoverningTokenConfig;
     };
     side: RealmSide;
+    maxProposalLifetime?: BN;
     payer: PublicKey;
   }): Promise<TransactionInstruction[]> {
     if (!realmData) {
@@ -213,17 +215,17 @@ export class RootSdk {
     }
 
     const [rootAddress] = this.rootAddress({realmAddress, governingTokenMint});
-    const [maxVoterWeightAddress] = this.maxVoterWieghtAddress({rootAddress});
+    const [maxVwr] = this.maxVoterWieghtAddress({rootAddress});
 
     const createRootIx = await this.sdk.program.methods
-      .createRoot()
+      .createRoot(maxProposalLifetime)
       .accountsStrict({
         root: rootAddress,
         realm: realmAddress,
         realmConfig: await getRealmConfigAddress(splGovernanceId, realmAddress),
         governingTokenMint,
         realmAuthority: realmData.authority,
-        maxVoterWeight: maxVoterWeightAddress,
+        maxVwr,
         payer,
         governanceProgram: splGovernanceId,
         systemProgram: SystemProgram.programId,

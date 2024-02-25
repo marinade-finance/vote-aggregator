@@ -1,8 +1,7 @@
 use anchor_lang::prelude::*;
 use spl_governance::addins::voter_weight::get_voter_weight_record_data;
 
-use crate::error::Error;
-use crate::state::{Clan, VoterWeightRecord, MaxVoterWeightRecord, Member, Root};
+use crate::state::{MaxVoterWeightRecord, Member, Root};
 
 #[derive(Accounts)]
 pub struct UpdateVoterWeight<'info> {
@@ -30,26 +29,10 @@ pub struct UpdateVoterWeight<'info> {
         bump = root.bumps.max_voter_weight,
     )]
     max_vwr: Account<'info, MaxVoterWeightRecord>,
-
-    #[account(
-        mut,
-        has_one = root,
-        address = member.clan,
-    )]
-    clan: Option<Account<'info, Clan>>,
-    #[account(
-        mut,
-        seeds = [
-            VoterWeightRecord::ADDRESS_SEED,
-            &clan.as_ref().unwrap().key().to_bytes()
-        ],
-        bump = clan.as_ref().unwrap().bumps.voter_weight_record,
-    )]
-    clan_vwr: Option<Account<'info, VoterWeightRecord>>,
 }
 
 impl<'info> UpdateVoterWeight<'info> {
-    pub fn process(&mut self) -> Result<()> {
+    pub fn process<'c: 'info>(&mut self, rest: &'c [AccountInfo<'info>]) -> Result<()> {
         let new_member_vwr =
             get_voter_weight_record_data(&self.root.voting_weight_plugin, &self.member_vwr)
                 .map_err(|e| {
@@ -64,25 +47,15 @@ impl<'info> UpdateVoterWeight<'info> {
 
         let clock = Clock::get()?;
         self.root.update_next_voter_weight_reset_time(&clock);
-
-        if self.member.clan != Pubkey::default()
-            && self.member.clan_leaving_time == Member::NOT_LEAVING_CLAN
-        {
-            let clan = self.clan.as_mut().ok_or(error!(Error::ClanIsRequired))?;
-            let clan_vwr = self
-                .clan_vwr
-                .as_mut()
-                .ok_or(error!(Error::ClanVoterWeightRecordIsRequired))?;
-            clan.reset_voter_weight_if_needed(&self.root, clan_vwr);
-            Clan::update_member(
-                clan,
-                &self.member,
-                Some(&new_member_vwr),
-                clan_vwr,
-                true, // keep membership
-                true,
+        for (mut chunk, entry) in self.member.load_clan_chunks(rest, |_| true)? {
+            self.member.refresh_membership(
+                &mut self.root,
+                entry,
+                &mut chunk,
+                &new_member_vwr,
                 &clock,
             )?;
+            chunk.exit(&crate::ID)?;
         }
 
         Member::update_voter_weight(
@@ -91,7 +64,7 @@ impl<'info> UpdateVoterWeight<'info> {
             &new_member_vwr,
             &mut self.max_vwr,
         )?;
-        self.member.next_voter_weight_reset_time = self.root.next_voter_weight_reset_time;
+        self.member.next_voter_weight_reset_time = self.root.next_voter_weight_reset_time();
 
         Ok(())
     }

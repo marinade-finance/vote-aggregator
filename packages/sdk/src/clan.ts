@@ -219,13 +219,13 @@ export class ClanSdk {
     payer?: PublicKey;
   }) {
     const [voterAuthority] = this.voterAuthority({clanAddress});
-    const [tokenOwnerRecord] = this.tokenOwnerRecordAddress({
+    const [clanTor] = this.tokenOwnerRecordAddress({
       realmAddress: rootData.realm,
       governingTokenMint: rootData.governingTokenMint,
       clanAddress,
       splGovernanceId: rootData.governanceProgram,
     });
-    const [voterWeightRecord] = this.voterWeightAddress(clanAddress);
+    const [clanVwr] = this.voterWeightAddress(clanAddress);
     return await this.sdk.program.methods
       .createClan(owner)
       .accountsStrict({
@@ -237,8 +237,8 @@ export class ClanSdk {
         governanceProgram: rootData.governanceProgram,
         systemProgram: SystemProgram.programId,
         voterAuthority,
-        tokenOwnerRecord,
-        voterWeightRecord,
+        clanTor,
+        clanVwr,
       })
       .instruction();
   }
@@ -337,7 +337,7 @@ export class ClanSdk {
     newVotingDelegate: PublicKey | null;
   }) {
     const [voterAuthority] = this.voterAuthority({clanAddress});
-    const [tokenOwnerRecord] = this.tokenOwnerRecordAddress({
+    const [clanTor] = this.tokenOwnerRecordAddress({
       realmAddress: rootData.realm,
       governingTokenMint: rootData.governingTokenMint,
       clanAddress,
@@ -350,7 +350,7 @@ export class ClanSdk {
         clan: clanAddress,
         governanceProgram: rootData.governanceProgram,
         voterAuthority,
-        tokenOwnerRecord,
+        clanTor,
         clanAuthority,
       })
       .instruction();
@@ -374,7 +374,7 @@ export class ClanSdk {
     clanAddress: PublicKey;
   }) {
     const [voterAuthority] = this.voterAuthority({clanAddress});
-    const [tokenOwnerRecord] = this.tokenOwnerRecordAddress({
+    const [clanTor] = this.tokenOwnerRecordAddress({
       realmAddress: rootData.realm,
       governingTokenMint: rootData.governingTokenMint,
       clanAddress,
@@ -387,7 +387,7 @@ export class ClanSdk {
         clan: clanAddress,
         governanceProgram: rootData.governanceProgram,
         voterAuthority,
-        tokenOwnerRecord,
+        clanTor,
         realm: rootData.realm,
         realmConfig: await getRealmConfigAddress(
           rootData.governanceProgram,
@@ -397,7 +397,7 @@ export class ClanSdk {
         systemProgram: SYSTEM_PROGRAM_ID,
         governance,
         proposal,
-        clanVoterWeightRecord: this.sdk.clan.voterWeightAddress(clanAddress)[0],
+        clanVwr: this.sdk.clan.voterWeightAddress(clanAddress)[0],
       })
       .instruction();
   }
@@ -408,7 +408,7 @@ export class ClanSdk {
     governance,
     proposal,
     proposalOwnerRecord,
-    maxVoterWeight = null,
+    maxVwr = null,
     clanAddress,
     payer,
   }: {
@@ -421,12 +421,12 @@ export class ClanSdk {
     governance: PublicKey;
     proposal: PublicKey;
     proposalOwnerRecord: PublicKey;
-    maxVoterWeight?: PublicKey | null;
+    maxVwr?: PublicKey | null;
     clanAddress: PublicKey;
     payer: PublicKey;
   }) {
     const [voterAuthority] = this.voterAuthority({clanAddress});
-    const [tokenOwnerRecord] = this.tokenOwnerRecordAddress({
+    const [clanTor] = this.tokenOwnerRecordAddress({
       realmAddress: rootData.realm,
       governingTokenMint: rootData.governingTokenMint,
       clanAddress,
@@ -439,7 +439,7 @@ export class ClanSdk {
         clan: clanAddress,
         governanceProgram: rootData.governanceProgram,
         voterAuthority,
-        tokenOwnerRecord,
+        clanTor,
         realm: rootData.realm,
         realmConfig: await getRealmConfigAddress(
           rootData.governanceProgram,
@@ -449,8 +449,8 @@ export class ClanSdk {
         systemProgram: SYSTEM_PROGRAM_ID,
         governance,
         proposal,
-        clanVoterWeightRecord: this.sdk.clan.voterWeightAddress(clanAddress)[0],
-        maxVoterWeight,
+        clanVwr: this.sdk.clan.voterWeightAddress(clanAddress)[0],
+        maxVwr,
         proposalOwnerRecord,
         voteRecord: await getVoteRecordAddress(
           rootData.governanceProgram,

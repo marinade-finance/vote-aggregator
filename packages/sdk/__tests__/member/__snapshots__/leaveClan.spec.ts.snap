@@ -48,6 +48,11 @@ exports[`start_leaving_clan instruction Works 1`] = `
       "isWritable": false,
       "pubkey": "5zGp3YAiWdPUBVinF3oWhMnZ5cFCenfGUdL7aWwBDjx9",
     },
+    {
+      "isSigner": false,
+      "isWritable": true,
+      "pubkey": "DGzm59v87rFpijVw6aiQtAAXk6FcZLpZ3SFPxdqrdnMX",
+    },
   ],
   "programId": "VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT",
 }

@@ -10,19 +10,16 @@ use crate::{
 pub struct StartLeavingClan<'info> {
     #[account(
         mut,
-        has_one = clan,
         has_one = root,
-        constraint = member.clan_leaving_time == Member::NOT_LEAVING_CLAN
-            @ Error::RerequestingLeavingClan,
     )]
     member: Account<'info, Member>,
+    #[account(mut)]
+    root: Account<'info, Root>,
     #[account(
         mut,
         has_one = root,
     )]
     clan: Account<'info, Clan>,
-    #[account(mut)]
-    root: Account<'info, Root>,
     #[account(
         mut,
         seeds = [
@@ -42,21 +39,31 @@ pub struct StartLeavingClan<'info> {
 
 impl<'info> StartLeavingClan<'info> {
     pub fn process(&mut self) -> Result<()> {
+        let entry = self
+            .member
+            .membership
+            .iter_mut()
+            .find(|entry| entry.clan == self.clan.key())
+            .ok_or(error!(Error::UnexpectedClan))?;
+        require!(entry.leaving_time.is_none(), Error::RerequestingLeavingClan);
+
         let clock = Clock::get()?;
+        entry.leaving_time =
+            Some(clock.unix_timestamp + i64::try_from(self.root.max_proposal_lifetime).unwrap());
+
         self.root.update_next_voter_weight_reset_time(&clock);
         self.clan
             .reset_voter_weight_if_needed(&mut self.root, &mut self.clan_vwr);
+        let share_bp = entry.share_bp;
         Clan::update_member(
             &mut self.clan,
             &self.member,
+            Some(share_bp),
             None,
+            None, // Leaving the clan
             &mut self.clan_vwr,
-            true,
-            false, // Leaving the clan
             &clock,
         )?;
-        self.member.clan_leaving_time =
-            clock.unix_timestamp + i64::try_from(self.root.max_proposal_lifetime).unwrap();
         self.clan.leaving_members += 1;
         emit!(StartingLeavingClan {
             member: self.member.key(),

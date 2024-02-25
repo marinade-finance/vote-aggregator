@@ -19,7 +19,10 @@ describe('update_voter_weight instruction', () => {
       const memberTester = new MemberTester({
         ...member,
         root: rootTester,
-        clan: member.clan?.address,
+        membership: MemberTester.membershipTesters({
+          membership: member.membership || [],
+          root: rootTester,
+        }),
       });
       const sdk = new VoteAggregatorSdk();
       expect(

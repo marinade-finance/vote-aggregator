@@ -1,5 +1,9 @@
 import {PublicKey} from '@solana/web3.js';
-import {MaxVoterWeightRecordAccount, RootAccount} from './accounts';
+import {
+  MaxVoterWeightRecordAccount,
+  RootAccount,
+  VoterWeightReset,
+} from './accounts';
 import {RealmTester} from '../SplGovernance/realm';
 import {BN} from '@coral-xyz/anchor';
 import {getMinimumBalanceForRentExemption} from '../utils';
@@ -10,12 +14,11 @@ export type RootTestData = {
   side: 'community' | 'council';
   voteAggregatorId?: PublicKey;
   votingWeightPlugin?: PublicKey;
-  clanCount?: BN;
-  memberCount?: BN;
   maxVoterWeight?: BN;
   maxProposalLifetime?: BN;
-  nextWeightDeadline?: BN;
-  epochLength?: BN;
+  voterWeightReset?: VoterWeightReset | null;
+  clanCount?: BN;
+  memberCount?: BN;
 };
 
 export class RootTester {
@@ -72,12 +75,11 @@ export class RootTester {
       'VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT'
     ),
     votingWeightPlugin = PublicKey.default,
-    clanCount = new BN(0),
-    memberCount = new BN(0),
     maxVoterWeight = new BN(0),
     maxProposalLifetime = new BN(0),
-    nextWeightDeadline = new BN(0),
-    epochLength = new BN(0),
+    voterWeightReset = null,
+    clanCount = new BN(0),
+    memberCount = new BN(0),
   }: RootTestData & {realm: RealmTester}) {
     this.realm = realm;
     this.side = side;
@@ -97,8 +99,7 @@ export class RootTester {
       votingWeightPlugin,
       clanCount,
       memberCount,
-      nextWeightDeadline,
-      epochLength,
+      voterWeightReset,
       bumps: {
         root: rootBump,
         maxVoterWeight: maxVoterWeightBump,

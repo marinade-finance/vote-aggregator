@@ -3,7 +3,6 @@ import {
   LeaveClanTestData,
   RealmTester,
   RootTester,
-  resizeBN,
   leaveClanTestData,
   MemberTester,
   ClanTester,
@@ -27,7 +26,13 @@ describe('start-leaving-clan command', () => {
 
   it.each(leaveClanTestData.filter(({error}) => !error))(
     'Works',
-    async ({realm, root, member}: LeaveClanTestData) => {
+    async ({
+      realm,
+      root,
+      member,
+      clanIndex = 0,
+      clanLeavingTimeOffset,
+    }: LeaveClanTestData) => {
       const tokenConfig =
         (root.side === 'community'
           ? realm.communityTokenConfig
@@ -73,13 +78,22 @@ describe('start-leaving-clan command', () => {
         ];
       }
       const currentTime = new BN(Math.floor(Date.now() / 1000));
+      const membership = MemberTester.membershipTesters({
+        membership: member.membership || [],
+        root: rootTester,
+      });
+      membership[clanIndex].leavingTime ||= currentTime.add(
+        clanLeavingTimeOffset!
+      );
       const memberTester = new MemberTester({
         ...member,
-        clanLeavingTime: currentTime.add(member.clanLeavingTimeOffset!),
         root: rootTester,
-        clan: member.clan!.address,
+        membership,
       });
-      const clanTester = new ClanTester({...member.clan!, root: rootTester});
+      const clanTester = membership[clanIndex].clan;
+      if (!(clanTester instanceof ClanTester)) {
+        throw new Error(`Clan #${clanIndex} must be provided`);
+      }
       const {provider} = await startTest({
         splGovernanceId: rootTester.splGovernanceId,
         accounts: [
@@ -109,6 +123,8 @@ describe('start-leaving-clan command', () => {
               rootTester.side,
               '--owner',
               '[' + (memberTester.owner as Keypair).secretKey.toString() + ']',
+              '--clan',
+              clanTester.clanAddress.toString(),
             ],
             {from: 'user'}
           )
@@ -119,24 +135,20 @@ describe('start-leaving-clan command', () => {
         ])
       );
 
+      const newMembership = [...memberTester.member.membership];
+      newMembership.splice(clanIndex, 1);
       await expect(
         sdk.member.fetchMember({memberAddress: memberTester.memberAddress[0]})
       ).resolves.toStrictEqual({
         ...memberTester.member,
-        clan: PublicKey.default,
-        clanLeavingTime: new BN('9223372036854775807'), // i64::MAX
+        membership: newMembership,
       });
 
       await expect(
         sdk.clan.fetchClan(clanTester.clanAddress)
       ).resolves.toStrictEqual({
         ...clanTester.clan,
-        potentialVoterWeight: resizeBN(
-          clanTester.clan.potentialVoterWeight.sub(
-            memberTester.member.voterWeight
-          )
-        ),
-        leavingMembers: resizeBN(clanTester.clan.leavingMembers.subn(1)),
+        leavingMembers: clanTester.clan.leavingMembers.subn(1),
       });
 
       await expect(
@@ -145,7 +157,8 @@ describe('start-leaving-clan command', () => {
         )
       ).resolves.toStrictEqual({
         ...memberTester.tokenOwnerRecord,
-        locks: [],
+        locks:
+          newMembership.length > 0 ? memberTester.tokenOwnerRecord.locks : [],
       });
     }
   );

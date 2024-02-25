@@ -9,7 +9,7 @@ import {PublicKey} from '@solana/web3.js';
 describe('create_root instruction', () => {
   it.each(createRootTestData.filter(({error}) => !error))(
     'Works for community side',
-    async ({realm}: CreateRootTestData) => {
+    async ({realm, maxProposalLifetime}: CreateRootTestData) => {
       const realmTester = new RealmTester(realm);
       const sdk = new VoteAggregatorSdk();
       expect(
@@ -19,6 +19,7 @@ describe('create_root instruction', () => {
           realmData: realmTester.splRealmData(),
           realmConfigData: realmTester.splRealmConfigData(),
           side: 'community',
+          maxProposalLifetime,
           payer: PublicKey.default,
         })
       ).resolves.toMatchSnapshot();
@@ -27,18 +28,22 @@ describe('create_root instruction', () => {
 
   it.each(
     createRootTestData.filter(({realm, error}) => !error && realm.councilMint)
-  )('Works for council side', async ({realm}: CreateRootTestData) => {
-    const realmTester = new RealmTester(realm);
-    const sdk = new VoteAggregatorSdk();
-    expect(
-      sdk.root.createRootInstructions({
-        splGovernanceId: realmTester.splGovernanceId,
-        realmAddress: realmTester.realmAddress,
-        realmData: realmTester.splRealmData(),
-        realmConfigData: realmTester.splRealmConfigData(),
-        side: 'council',
-        payer: PublicKey.default,
-      })
-    ).resolves.toMatchSnapshot();
-  });
+  )(
+    'Works for council side',
+    async ({realm, maxProposalLifetime}: CreateRootTestData) => {
+      const realmTester = new RealmTester(realm);
+      const sdk = new VoteAggregatorSdk();
+      expect(
+        sdk.root.createRootInstructions({
+          splGovernanceId: realmTester.splGovernanceId,
+          realmAddress: realmTester.realmAddress,
+          realmData: realmTester.splRealmData(),
+          realmConfigData: realmTester.splRealmConfigData(),
+          side: 'council',
+          maxProposalLifetime,
+          payer: PublicKey.default,
+        })
+      ).resolves.toMatchSnapshot();
+    }
+  );
 });

@@ -7,7 +7,7 @@ import {
   buildSplGovernanceProgram,
 } from '../../src';
 import {ClanTester, MemberTester, RootTester} from '../../src/VoteAggregator';
-import {Keypair, PublicKey, SystemProgram} from '@solana/web3.js';
+import {AccountMeta, Keypair, PublicKey, SystemProgram} from '@solana/web3.js';
 
 describe('join_clan instruction', () => {
   it.each(joinClanTestData.filter(({error}) => !error))(
@@ -18,6 +18,7 @@ describe('join_clan instruction', () => {
       member,
       memberVoterWeight,
       clan,
+      shareBp = 10000,
     }: JoinClanTestData) => {
       const tokenConfig =
         (root.side === 'community'
@@ -54,7 +55,29 @@ describe('join_clan instruction', () => {
         ...root,
         realm: realmTester,
       });
-      const memberTester = new MemberTester({...member, root: rootTester});
+      const memberTester = new MemberTester({
+        ...member,
+        root: rootTester,
+        membership: MemberTester.membershipTesters({
+          membership: member.membership || [],
+          root: rootTester,
+        }),
+      });
+
+      const oldClanTesters = memberTester.membership.flatMap(
+        ({clan, leavingTime}) => {
+          if (leavingTime) {
+            return [];
+          }
+
+          if (clan instanceof PublicKey) {
+            throw new Error('Clan data should be provided');
+          }
+
+          return [clan];
+        }
+      );
+
       const clanTester = new ClanTester({...clan, root: rootTester});
       const {testContext, program} = await startTest({
         splGovernanceId: rootTester.splGovernanceId,
@@ -62,14 +85,14 @@ describe('join_clan instruction', () => {
           ...(await realmTester.accounts()),
           ...(await rootTester.accounts()),
           ...(await memberTester.accounts()),
+          ...(
+            await Promise.all(oldClanTesters.map(clan => clan.accounts()))
+          ).flat(),
           ...(await clanTester.accounts()),
           await realmTester.voterWeightRecord({
             ...memberVoterWeight,
             side: root.side,
-            owner:
-              member.owner instanceof Keypair
-                ? member.owner.publicKey
-                : member.owner,
+            owner: memberTester.ownerAddress,
           }),
         ],
       });
@@ -78,8 +101,24 @@ describe('join_clan instruction', () => {
         connection: program.provider.connection,
       });
 
+      const rest: AccountMeta[] = [];
+      for (const clanTester of oldClanTesters) {
+        rest.push(
+          {
+            pubkey: clanTester.clanAddress,
+            isWritable: true,
+            isSigner: false,
+          },
+          {
+            pubkey: clanTester.voterWeightAddress[0],
+            isWritable: true,
+            isSigner: false,
+          }
+        );
+      }
+
       const tx = await program.methods
-        .joinClan()
+        .joinClan(shareBp)
         .accountsStrict({
           root: rootTester.rootAddress[0],
           member: memberTester.memberAddress[0],
@@ -96,16 +135,53 @@ describe('join_clan instruction', () => {
           governanceProgram: rootTester.splGovernanceId,
           systemProgram: SystemProgram.programId,
         })
+        .remainingAccounts(rest)
         .transaction();
       tx.recentBlockhash = testContext.lastBlockhash;
       tx.feePayer = testContext.payer.publicKey;
       tx.sign(testContext.payer, member.owner as Keypair);
+
+      const oldClanUpdateEvents = oldClanTesters.map(clanTester => ({
+        name: 'ClanVoterWeightChanged',
+        data: {
+          clan: clanTester.clanAddress,
+          newVoterWeight: clanTester.voterWeightRecord.voterWeight
+            .sub(memberTester.member.voterWeight)
+            .add(memberVoterWeight.voterWeight),
+          oldVoterWeight: clanTester.voterWeightRecord.voterWeight,
+          oldPermamentVoterWeight: clanTester.clan.permanentVoterWeight,
+          newPermamentVoterWeight: clanTester.clan.permanentVoterWeight
+            .sub(memberTester.member.voterWeight)
+            .add(memberVoterWeight.voterWeight),
+          oldIsPermanent: true,
+          newIsPermanent: true,
+          root: rootTester.rootAddress[0],
+        },
+      }));
 
       await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
       ).resolves.toStrictEqual([
+        ...oldClanUpdateEvents,
+        {
+          name: 'ClanVoterWeightChanged',
+          data: {
+            clan: clanTester.clanAddress,
+            newVoterWeight: clanTester.voterWeightRecord.voterWeight.add(
+              memberVoterWeight.voterWeight
+            ),
+            oldVoterWeight: clanTester.voterWeightRecord.voterWeight,
+            oldPermamentVoterWeight: clanTester.clan.permanentVoterWeight,
+            newPermamentVoterWeight: clanTester.clan.permanentVoterWeight.add(
+              memberVoterWeight.voterWeight
+            ),
+            oldIsPermanent: true,
+            newIsPermanent: true,
+            root: rootTester.rootAddress[0],
+          },
+        },
         {
           name: 'MemberVoterWeightChanged',
           data: {
@@ -128,23 +204,6 @@ describe('join_clan instruction', () => {
           },
         },
         {
-          name: 'ClanVoterWeightChanged',
-          data: {
-            clan: clanTester.clanAddress,
-            newVoterWeight: clanTester.voterWeightRecord.voterWeight.add(
-              memberVoterWeight.voterWeight
-            ),
-            oldVoterWeight: clanTester.voterWeightRecord.voterWeight,
-            oldPermamentVoterWeight: clanTester.clan.permanentVoterWeight,
-            newPermamentVoterWeight: clanTester.clan.permanentVoterWeight.add(
-              memberVoterWeight.voterWeight
-            ),
-            oldIsPermanent: true,
-            newIsPermanent: true,
-            root: rootTester.rootAddress[0],
-          },
-        },
-        {
           name: 'ClanMemberAdded',
           data: {
             clan: clanTester.clanAddress,
@@ -159,7 +218,11 @@ describe('join_clan instruction', () => {
         program.account.member.fetch(memberTester.memberAddress[0])
       ).resolves.toStrictEqual({
         ...memberTester.member,
-        clan: clanTester.clanAddress,
+        membership: memberTester.membership.concat({
+          clan: clanTester.clanAddress,
+          shareBp,
+          leavingTime: null,
+        }),
         voterWeightRecord: memberVoterWeight.address,
         voterWeight: memberVoterWeight.voterWeight,
         voterWeightExpiry: memberVoterWeight.voterWeightExpiry || null,
@@ -172,7 +235,7 @@ describe('join_clan instruction', () => {
         permanentVoterWeight: clanTester.clan.permanentVoterWeight.add(
           memberVoterWeight.voterWeight
         ),
-        activeMembers: clanTester.clan.activeMembers.addn(1),
+        permanentMembers: clanTester.clan.permanentMembers.addn(1),
       });
 
       await expect(

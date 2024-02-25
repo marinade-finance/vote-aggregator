@@ -1,8 +1,8 @@
-use crate::{error::Error, events::clan::ClanVoterWeightChanged};
+use crate::events::clan::ClanVoterWeightChanged;
 use anchor_lang::prelude::*;
 use spl_governance_addin_api::voter_weight::VoterWeightRecord as SplVoterWeightRecord;
 
-use super::{Member, Root, VoterWeightRecord};
+use super::{Member, Root, VoterWeightRecord, VoterWeightReset};
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize, Default)]
 pub struct ClanBumps {
@@ -27,7 +27,7 @@ pub struct Clan {
     pub leaving_members: u64,
     pub accept_temporary_members: bool,
     pub permanent_voter_weight: u64, // not decaiying part
-    pub next_voter_weight_reset_time: i64,
+    pub next_voter_weight_reset_time: Option<i64>,
     pub name: String,
     pub description: String,
     pub bumps: ClanBumps,
@@ -38,67 +38,48 @@ impl Clan {
     pub const VOTER_AUTHORITY_SEED: &'static [u8] = b"voter-authority";
 
     pub fn reset_voter_weight_if_needed(&mut self, root: &Root, clan_vwr: &mut VoterWeightRecord) {
-        if self.next_voter_weight_reset_time < root.next_voter_weight_reset_time {
-            self.next_voter_weight_reset_time = root.next_voter_weight_reset_time;
-            clan_vwr.voter_weight = self.permanent_voter_weight;
-            clan_vwr.voter_weight_expiry = None;
-            self.updated_temporary_members = 0;
+        if let Some(VoterWeightReset {
+            next_reset_time, ..
+        }) = &root.voter_weight_reset
+        {
+            if self.next_voter_weight_reset_time.is_none()
+                || self.next_voter_weight_reset_time.unwrap() < *next_reset_time
+            {
+                self.next_voter_weight_reset_time = Some(*next_reset_time);
+                clan_vwr.voter_weight = self.permanent_voter_weight;
+                clan_vwr.voter_weight_expiry = None;
+                self.updated_temporary_members = 0;
+            }
         }
     }
 
     pub fn update_member<'info>(
         clan: &mut Account<'info, Self>,
         member: &Member,
+        old_share_bp: Option<u16>, // None means was not a member
         // None is useful if we need to change membership without updating voter weight
         new_member_vwr: Option<&SplVoterWeightRecord>,
+        new_share_bp: Option<u16>, // None means will be not a member
         clan_vwr: &mut VoterWeightRecord,
-        was_member: bool,
-        become_member: bool,
         clock: &Clock,
     ) -> Result<()> {
-        if let Some(new_member_vwr) = new_member_vwr {
-            require!(
-                new_member_vwr.voter_weight_expiry.is_none() || clan.accept_temporary_members,
-                Error::TemporaryMembersNotAllowed,
-            );
-        }
-
-        // Not updating the member's VWR is the same as updating to the current values
-        let new_member_voter_weight = if let Some(new_member_vwr) = new_member_vwr {
-            new_member_vwr.voter_weight
-        } else {
-            member.voter_weight
-        };
-        let new_member_voter_weight_expiry = if let Some(new_member_vwr) = new_member_vwr {
-            new_member_vwr.voter_weight_expiry
-        } else {
-            member.voter_weight_expiry
-        };
-
         let old_clan_voter_weight = clan_vwr.voter_weight;
         let old_clan_voter_weight_expiry = clan_vwr.voter_weight_expiry;
         let old_permament_clan_voter_weight = clan.permanent_voter_weight;
-        let is_outdated = member.voter_weight_expiry.is_some()
-            && member.next_voter_weight_reset_time < clan.next_voter_weight_reset_time;
-        // Update real vote weight
-        if was_member && !is_outdated {
-            // if temporary member was outdated
-            // then it's power was already removed on clan reset
-            clan_vwr.voter_weight -= member.voter_weight;
-        }
-        if become_member {
-            clan_vwr.voter_weight += new_member_voter_weight;
-        }
-        // Update permanent vote weight
-        if was_member && member.voter_weight_expiry.is_none() {
-            clan.permanent_voter_weight -= member.voter_weight;
-        }
-        if become_member && new_member_voter_weight_expiry.is_none() {
-            clan.permanent_voter_weight += new_member_voter_weight;
-        }
-        // Update member counts
-        if was_member {
+
+        // Remove the old state of the member from the clan
+        if let Some(old_share_bp) = old_share_bp {
+            let old_member_voter_weight =
+                ((member.voter_weight as u128) * (old_share_bp as u128) / 10000) as u64;
+            let is_outdated = member.voter_weight_expiry.is_some()
+                && member.next_voter_weight_reset_time != clan.next_voter_weight_reset_time;
+            if !is_outdated {
+                // if temporary member was outdated
+                // then it's power was already removed on the previous clan reset
+                clan_vwr.voter_weight -= old_member_voter_weight;
+            }
             if member.voter_weight_expiry.is_none() {
+                clan.permanent_voter_weight -= old_member_voter_weight;
                 clan.permanent_members -= 1;
             } else {
                 clan.temporary_members -= 1;
@@ -108,8 +89,27 @@ impl Clan {
                 }
             }
         }
-        if become_member {
+
+        // Install the new state of the member to the clan
+        if let Some(new_share_bp) = new_share_bp {
+            // Not updating the member's VWR is the same as updating to the current values
+            let new_member_voter_weight = ((if let Some(new_member_vwr) = new_member_vwr {
+                new_member_vwr.voter_weight
+            } else {
+                member.voter_weight
+            } as u128)
+                * (new_share_bp as u128)
+                / 10000) as u64;
+
+            let new_member_voter_weight_expiry = if let Some(new_member_vwr) = new_member_vwr {
+                new_member_vwr.voter_weight_expiry
+            } else {
+                member.voter_weight_expiry
+            };
+
+            clan_vwr.voter_weight += new_member_voter_weight;
             if new_member_voter_weight_expiry.is_none() {
+                clan.permanent_voter_weight += new_member_voter_weight;
                 clan.permanent_members += 1;
             } else {
                 clan.temporary_members += 1;
@@ -118,6 +118,7 @@ impl Clan {
             }
         }
 
+        // Update the clan's VWR permanent/temporary status
         clan_vwr.voter_weight_expiry = if clan.permanent_voter_weight == clan_vwr.voter_weight {
             None
         } else {
@@ -137,9 +138,16 @@ impl Clan {
         Ok(())
     }
 
-    pub fn is_updated(&self) -> bool {
+    pub fn is_updated(&self, root: &Root) -> bool {
         let clock = Clock::get().unwrap();
-        clock.unix_timestamp < self.next_voter_weight_reset_time
-            && self.updated_temporary_members == self.temporary_members
+        if root.voter_weight_reset.is_none() {
+            return true;
+        }
+        if let Some(next_voter_weight_reset_time) = self.next_voter_weight_reset_time {
+            clock.unix_timestamp < next_voter_weight_reset_time
+                && self.updated_temporary_members == self.temporary_members
+        } else {
+            false
+        }
     }
 }

@@ -4,6 +4,7 @@ import {execute} from '../execute';
 import {parseKeypair, parsePubkey} from '../keyParser';
 import {RealmSide} from 'vote-aggregator-sdk';
 import {getRealm} from '@solana/spl-governance';
+import BN from 'bn.js';
 
 export const installLeaveClanCLI = (program: Command) => {
   program
@@ -11,6 +12,7 @@ export const installLeaveClanCLI = (program: Command) => {
     .requiredOption('--realm <pubkey>', 'Realm address')
     .option('--side <string>', 'Side', 'community')
     .option('--owner <keypair>', 'Owner')
+    .option('--clan <pubkey>', 'Clan')
     .action(leaveClan);
 };
 
@@ -18,10 +20,12 @@ const leaveClan = async ({
   realm,
   side,
   owner,
+  clan,
 }: {
   realm: string;
   side: RealmSide;
   owner?: string;
+  clan?: string;
 }) => {
   const {sdk, provider} = context!;
   const ownerKp = owner ? await parseKeypair(owner) : null;
@@ -37,13 +41,21 @@ const leaveClan = async ({
     governingTokenMint,
   });
   const rootData = await sdk.root.fetchRoot(rootAddress);
-  const memberAddress = sdk.member.memberAddress({
+  const [memberAddress] = sdk.member.memberAddress({
     rootAddress,
     owner: ownerAddress,
-  })[0];
+  });
   const memberData = await sdk.member.fetchMember({memberAddress});
   if (!memberData) {
     throw new Error(`Member ${memberAddress} does not exist`);
+  }
+  const currentTime = new BN(Math.floor(Date.now() / 1000));
+  const clanAddress = clan
+    ? await parsePubkey(clan)
+    : memberData.membership.find(m => m.leavingTime?.lte(currentTime))?.clan;
+
+  if (!clanAddress) {
+    throw new Error('No clan for leaving found');
   }
 
   const signers = [];
@@ -56,6 +68,7 @@ const leaveClan = async ({
         rootData,
         memberAddress,
         memberData,
+        clan: clanAddress,
       }),
     ],
     signers,

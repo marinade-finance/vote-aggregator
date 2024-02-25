@@ -13,8 +13,8 @@ declare_id!("VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT");
 pub mod vote_aggregator {
     use super::*;
 
-    pub fn create_root(ctx: Context<CreateRoot>) -> Result<()> {
-        ctx.accounts.process(ctx.bumps)
+    pub fn create_root(ctx: Context<CreateRoot>, max_proposal_lifetime: u64) -> Result<()> {
+        ctx.accounts.process(max_proposal_lifetime, ctx.bumps)
     }
 
     pub fn update_root(ctx: Context<UpdateRoot>) -> Result<()> {
@@ -57,8 +57,11 @@ pub mod vote_aggregator {
         ctx.accounts.process(ctx.bumps)
     }
 
-    pub fn join_clan(ctx: Context<JoinClan>) -> Result<()> {
-        ctx.accounts.process()
+    pub fn join_clan<'a, 'b, 'c: 'info, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, JoinClan<'info>>,
+        share_bp: u16,
+    ) -> Result<()> {
+        ctx.accounts.process(share_bp, ctx.remaining_accounts)
     }
 
     pub fn start_leaving_clan(ctx: Context<StartLeavingClan>) -> Result<()> {
@@ -76,11 +79,15 @@ pub mod vote_aggregator {
         ctx.accounts.process(new_voting_delegate)
     }
 
-    pub fn update_voter_weight(ctx: Context<UpdateVoterWeight>) -> Result<()> {
-        ctx.accounts.process()
+    pub fn update_voter_weight<'a, 'b, 'c: 'info, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, UpdateVoterWeight<'info>>,
+    ) -> Result<()> {
+        ctx.accounts.process(ctx.remaining_accounts)
     }
 
-    pub fn set_voter_weight_record(ctx: Context<SetVoterWeightRecord>) -> Result<()> {
-        ctx.accounts.process()
+    pub fn set_voter_weight_record<'a, 'b, 'c: 'info, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, SetVoterWeightRecord<'info>>,
+    ) -> Result<()> {
+        ctx.accounts.process(ctx.remaining_accounts)
     }
 }

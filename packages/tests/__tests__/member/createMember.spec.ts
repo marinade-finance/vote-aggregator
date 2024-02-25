@@ -89,12 +89,13 @@ describe('create_member instruction', () => {
         owner: member.owner.publicKey,
         delegate: PublicKey.default,
         tokenOwnerRecord: memberTor,
+        nextVoterWeightResetTime:
+          rootTester.root.voterWeightReset?.nextResetTime || null,
+        membership: [],
         bumps: {
           address: memberAddressBump,
           tokenOwnerRecord: memberTorBump,
         },
-        clan: PublicKey.default,
-        clanLeavingTime: new BN('9223372036854775807'), // i64::MAX
         voterWeightRecord: PublicKey.default,
         voterWeight: new BN(0),
         voterWeightExpiry: null,
@@ -102,9 +103,9 @@ describe('create_member instruction', () => {
 
       await expect(
         program.account.root.fetch(rootTester.rootAddress[0])
-      ).resolves.toMatchObject({
-        clanCount: new BN(0),
-        memberCount: new BN(1),
+      ).resolves.toStrictEqual({
+        ...rootTester.root,
+        memberCount: rootTester.root.memberCount.addn(1),
       });
     }
   );

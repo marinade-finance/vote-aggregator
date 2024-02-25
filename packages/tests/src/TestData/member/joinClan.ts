@@ -15,6 +15,7 @@ export type JoinClanTestData = {
   member: MemberTestData;
   memberVoterWeight: VoterWeightRecordTestData;
   clan: ClanTestData;
+  shareBp?: number;
   error?: string;
 };
 

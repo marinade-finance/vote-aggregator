@@ -15,7 +15,7 @@ use crate::error::Error;
 pub struct UpdateProposalVote<'info> {
     #[account(
         has_one = root,
-        constraint = clan.is_updated() @ Error::TemporaryMembersNotUpdated 
+        constraint = clan.is_updated(&root) @ Error::TemporaryMembersNotUpdated 
     )]
     clan: Box<Account<'info, Clan>>,
     #[account(

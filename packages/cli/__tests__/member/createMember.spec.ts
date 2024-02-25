@@ -4,7 +4,6 @@ import {
   CreateMemberTestData,
   RealmTester,
   RootTester,
-  resizeBN,
   createMemberTestData,
 } from 'vote-aggregator-tests';
 import {BN} from '@coral-xyz/anchor';
@@ -87,22 +86,22 @@ describe('create-member command', () => {
         owner: member.owner.publicKey,
         delegate: PublicKey.default,
         tokenOwnerRecord,
+        membership: [],
+        nextVoterWeightResetTime: null,
         bumps: {
           address: memberAddressBump,
           tokenOwnerRecord: tokenOwnerRecordBump,
         },
-        clan: PublicKey.default,
-        clanLeavingTime: new BN('9223372036854775807'), // i64::MAX
         voterWeightRecord: PublicKey.default,
-        voterWeight: resizeBN(new BN(0)),
+        voterWeight: new BN(0),
         voterWeightExpiry: null,
       });
 
       await expect(
         sdk.root.fetchRoot(rootTester.rootAddress[0])
-      ).resolves.toMatchObject({
-        clanCount: resizeBN(new BN(0)),
-        memberCount: resizeBN(new BN(1)),
+      ).resolves.toStrictEqual({
+        ...rootTester.root,
+        memberCount: rootTester.root.memberCount.addn(1),
       });
     }
   );

@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 use spl_governance::{
     instruction::remove_token_owner_record_lock, solana_program::program::invoke_signed,
+    state::token_owner_record::get_token_owner_record_data_for_realm_and_governing_mint,
     PROGRAM_AUTHORITY_SEED,
 };
 
@@ -15,9 +16,6 @@ pub struct LeaveClan<'info> {
     #[account(
         mut,
         has_one = root,
-        has_one = clan,
-        constraint = member.clan_leaving_time != Member::NOT_LEAVING_CLAN
-            @ Error::UnexpectedLeavingClan
     )]
     member: Account<'info, Member>,
     #[account(
@@ -66,39 +64,85 @@ pub struct LeaveClan<'info> {
     /// CHECK: program
     #[account(executable)]
     governance_program: UncheckedAccount<'info>,
+
+    /// CHECK: dynamic owner
+    #[account(
+        mut,
+        seeds = [
+            PROGRAM_AUTHORITY_SEED,
+            &root.realm.to_bytes(),
+            &root.governing_token_mint.key().to_bytes(),
+            &Pubkey::create_program_address(&[
+                Clan::VOTER_AUTHORITY_SEED,
+                &clan.key().to_bytes(),
+                &[clan.bumps.voter_authority]
+            ], &crate::ID).expect("Voter authority PDA constructing").to_bytes(),
+        ],
+        seeds::program = root.governance_program,
+        bump = clan.bumps.token_owner_record
+    )]
+    clan_tor: Option<UncheckedAccount<'info>>,
 }
 
 impl<'info> LeaveClan<'info> {
     pub fn process(&mut self) -> Result<()> {
+        let (index, entry) = self
+            .member
+            .membership
+            .iter()
+            .enumerate()
+            .find(|(_, entry)| entry.clan == self.clan.key())
+            .ok_or(error!(Error::UnexpectedLeavingClan))?;
+        let leaving_time = entry
+            .leaving_time
+            .ok_or(error!(Error::UnexpectedLeavingClan))?;
         let clock = Clock::get()?;
-        require_gte!(
-            clock.unix_timestamp,
-            self.member.clan_leaving_time,
-            Error::TooEarlyToLeaveClan
-        );
 
-        self.member.clan = Member::NO_CLAN;
-        self.member.clan_leaving_time = Member::NOT_LEAVING_CLAN;
+        let safe_to_leave = if let Some(clan_tor) = self.clan_tor.as_ref() {
+            let clan_tor = get_token_owner_record_data_for_realm_and_governing_mint(
+                &self.root.governance_program,
+                &clan_tor.to_account_info(),
+                &self.root.realm,
+                &self.root.governing_token_mint,
+            )
+            .map_err(|e| ProgramErrorWithOrigin::from(e).with_account_name("clan_tor"))?;
+
+            clan_tor.unrelinquished_votes_count == 0 && clan_tor.outstanding_proposal_count == 0
+        } else {
+            false
+        };
+
+        if !safe_to_leave {
+            require_gte!(
+                clock.unix_timestamp,
+                leaving_time,
+                Error::TooEarlyToLeaveClan
+            );
+        }
+
+        self.member.membership.remove(index);
         self.clan.leaving_members -= 1;
 
-        invoke_signed(
-            &remove_token_owner_record_lock(
-                self.governance_program.key,
-                self.member_tor.key,
-                self.lock_authority.key,
-                0,
-            ),
-            &[
-                self.governance_program.to_account_info(),
-                self.member_tor.to_account_info(),
-                self.lock_authority.to_account_info(),
-            ],
-            &[&[
-                Root::LOCK_AUTHORITY_SEED,
-                &self.root.key().to_bytes(),
-                &[self.root.bumps.lock_authority],
-            ]],
-        )?;
+        if self.member.membership.is_empty() {
+            invoke_signed(
+                &remove_token_owner_record_lock(
+                    self.governance_program.key,
+                    self.member_tor.key,
+                    self.lock_authority.key,
+                    0,
+                ),
+                &[
+                    self.governance_program.to_account_info(),
+                    self.member_tor.to_account_info(),
+                    self.lock_authority.to_account_info(),
+                ],
+                &[&[
+                    Root::LOCK_AUTHORITY_SEED,
+                    &self.root.key().to_bytes(),
+                    &[self.root.bumps.lock_authority],
+                ]],
+            )?;
+        }
 
         emit!(ClanMemberLeft {
             member: self.member.key(),

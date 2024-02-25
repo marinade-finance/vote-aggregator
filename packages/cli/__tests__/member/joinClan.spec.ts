@@ -3,7 +3,6 @@ import {
   JoinClanTestData,
   RealmTester,
   RootTester,
-  resizeBN,
   joinClanTestData,
   MemberTester,
   ClanTester,
@@ -31,6 +30,7 @@ describe('join-clan command', () => {
       root,
       member,
       memberVoterWeight,
+      shareBp,
       clan,
     }: JoinClanTestData) => {
       const tokenConfig =
@@ -68,7 +68,29 @@ describe('join-clan command', () => {
         ...root,
         realm: realmTester,
       });
-      const memberTester = new MemberTester({...member, root: rootTester});
+      const memberTester = new MemberTester({
+        ...member,
+        root: rootTester,
+        membership: MemberTester.membershipTesters({
+          membership: member.membership || [],
+          root: rootTester,
+        }),
+      });
+
+      const oldClanTesters = memberTester.membership.flatMap(
+        ({clan, leavingTime}) => {
+          if (leavingTime) {
+            return [];
+          }
+
+          if (clan instanceof PublicKey) {
+            throw new Error('Clan data should be provided');
+          }
+
+          return [clan];
+        }
+      );
+
       const clanTester = new ClanTester({...clan, root: rootTester});
       const {provider} = await startTest({
         splGovernanceId: rootTester.splGovernanceId,
@@ -76,6 +98,9 @@ describe('join-clan command', () => {
           ...(await realmTester.accounts()),
           ...(await rootTester.accounts()),
           ...(await memberTester.accounts()),
+          ...(
+            await Promise.all(oldClanTesters.map(clan => clan.accounts()))
+          ).flat(),
           ...(await clanTester.accounts()),
           await realmTester.voterWeightRecord({
             ...memberVoterWeight,
@@ -104,6 +129,7 @@ describe('join-clan command', () => {
               memberVoterWeight.address.toBase58(),
               '--clan',
               clanTester.clanAddress.toBase58(),
+              ...(shareBp !== undefined ? ['--share', shareBp.toString()] : []),
             ],
             {from: 'user'}
           )
@@ -118,25 +144,27 @@ describe('join-clan command', () => {
         sdk.member.fetchMember({memberAddress: memberTester.memberAddress[0]})
       ).resolves.toStrictEqual({
         ...memberTester.member,
-        clan: clanTester.clanAddress,
+        membership: memberTester.membership.concat({
+          clan: clanTester.clanAddress,
+          shareBp:
+            shareBp ||
+            10000 -
+              memberTester.membership.reduce((a, {shareBp: b}) => a + b, 0),
+          leavingTime: null,
+        }),
         voterWeightRecord: memberVoterWeight.address,
-        voterWeight: resizeBN(memberVoterWeight.voterWeight),
-        voterWeightExpiry:
-          (memberVoterWeight.voterWeightExpiry &&
-            resizeBN(memberVoterWeight.voterWeightExpiry)) ||
-          null,
+        voterWeight: memberVoterWeight.voterWeight,
+        voterWeightExpiry: memberVoterWeight.voterWeightExpiry || null,
       });
 
       await expect(
         sdk.clan.fetchClan(clanTester.clanAddress)
       ).resolves.toStrictEqual({
         ...clanTester.clan,
-        potentialVoterWeight: resizeBN(
-          clanTester.clan.potentialVoterWeight.add(
-            memberVoterWeight.voterWeight
-          )
+        permanentVoterWeight: clanTester.clan.permanentVoterWeight.add(
+          memberVoterWeight.voterWeight
         ),
-        activeMembers: resizeBN(clanTester.clan.activeMembers.addn(1)),
+        permanentMembers: clanTester.clan.permanentMembers.addn(1),
       });
 
       await expect(
@@ -145,10 +173,8 @@ describe('join-clan command', () => {
         })
       ).resolves.toStrictEqual({
         ...clanTester.voterWeightRecord,
-        voterWeight: resizeBN(
-          clanTester.voterWeightRecord.voterWeight.add(
-            memberVoterWeight.voterWeight
-          )
+        voterWeight: clanTester.voterWeightRecord.voterWeight.add(
+          memberVoterWeight.voterWeight
         ),
       });
 
@@ -156,10 +182,8 @@ describe('join-clan command', () => {
         sdk.root.fetchMaxVoterWeight({rootAddress: rootTester.rootAddress[0]})
       ).resolves.toMatchObject({
         ...rootTester.maxVoterWeight,
-        maxVoterWeight: resizeBN(
-          rootTester.maxVoterWeight.maxVoterWeight.add(
-            memberVoterWeight.voterWeight
-          )
+        maxVoterWeight: rootTester.maxVoterWeight.maxVoterWeight.add(
+          memberVoterWeight.voterWeight
         ),
       });
 

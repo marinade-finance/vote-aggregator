@@ -4,7 +4,6 @@ import {
   CreateClanTestData,
   RealmTester,
   RootTester,
-  resizeBN,
   createClanTestData,
 } from 'vote-aggregator-tests';
 import {BN} from '@coral-xyz/anchor';
@@ -91,15 +90,20 @@ describe('create-clan command', () => {
         voterAuthority,
         tokenOwnerRecord,
         voterWeightRecord,
-        minVotingWeightToJoin: resizeBN(new BN(0)),
+        minVotingWeightToJoin: new BN(0),
         bumps: {
           voterAuthority: voterAuthorityBump,
           tokenOwnerRecord: tokenOwnerRecordBump,
           voterWeightRecord: voterWeightRecordBump,
         },
-        activeMembers: resizeBN(new BN(0)),
-        leavingMembers: resizeBN(new BN(0)),
-        permanentVoterWeight: resizeBN(new BN(0)),
+        permanentMembers: new BN(0),
+        temporaryMembers: new BN(0),
+        updatedTemporaryMembers: new BN(0),
+        leavingMembers: new BN(0),
+        permanentVoterWeight: new BN(0),
+        nextVoterWeightResetTime:
+          rootTester.root.voterWeightReset?.nextResetTime || null,
+        acceptTemporaryMembers: true,
         name: '',
         description: '',
       });
@@ -112,7 +116,7 @@ describe('create-clan command', () => {
         realm: rootTester.realm.realmAddress,
         governingTokenMint: rootTester.governingTokenMint,
         governingTokenOwner: voterAuthority,
-        governingTokenDepositAmount: resizeBN(new BN(0)),
+        governingTokenDepositAmount: new BN(0),
         unrelinquishedVotesCount: 0,
         outstandingProposalCount: 0,
         version: 1,
@@ -128,7 +132,7 @@ describe('create-clan command', () => {
         realm: rootTester.realm.realmAddress,
         governingTokenMint: rootTester.governingTokenMint,
         governingTokenOwner: voterAuthority,
-        voterWeight: resizeBN(new BN(0)),
+        voterWeight: new BN(0),
         voterWeightExpiry: null,
         weightAction: null,
         weightActionTarget: null,
@@ -137,9 +141,9 @@ describe('create-clan command', () => {
 
       await expect(
         sdk.root.fetchRoot(rootTester.rootAddress[0])
-      ).resolves.toMatchObject({
-        clanCount: resizeBN(new BN(1)),
-        memberCount: resizeBN(new BN(0)),
+      ).resolves.toStrictEqual({
+        ...rootTester.root,
+        clanCount: rootTester.root.clanCount.addn(1),
       });
     }
   );

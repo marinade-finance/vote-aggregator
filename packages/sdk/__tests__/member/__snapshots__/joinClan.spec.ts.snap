@@ -11,6 +11,8 @@ exports[`join_clan instruction Works 1`] = `
     91,
     106,
     206,
+    16,
+    39,
   ],
   "keys": [
     {
@@ -30,7 +32,7 @@ exports[`join_clan instruction Works 1`] = `
     },
     {
       "isSigner": false,
-      "isWritable": false,
+      "isWritable": true,
       "pubkey": "BzVuuiNRYp5NCkTBR7KpM64c3EJ5HjuHEzGqX1nbWWUN",
     },
     {

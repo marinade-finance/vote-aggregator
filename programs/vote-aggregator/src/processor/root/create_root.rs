@@ -75,7 +75,7 @@ pub struct CreateRoot<'info> {
 }
 
 impl<'info> CreateRoot<'info> {
-    pub fn process(&mut self, bumps: CreateRootBumps) -> Result<()> {
+    pub fn process(&mut self, max_proposal_lifetime: u64, bumps: CreateRootBumps) -> Result<()> {
         // Verify that "realm_authority" is the expected authority on "realm"
         // and that the mint matches one of the realm mints too.
         let realm = realm::get_realm_data_for_governing_token_mint(
@@ -123,9 +123,8 @@ impl<'info> CreateRoot<'info> {
             realm: self.realm.key(),
             governing_token_mint: self.governing_token_mint.key(),
             voting_weight_plugin: voting_weight_plugin.unwrap_or_default(),
-            max_proposal_lifetime: 0,
-            next_voter_weight_reset_time: 0,
-            voter_weight_reset_step: 0,
+            max_proposal_lifetime,
+            voter_weight_reset: None,
             clan_count: 0,
             member_count: 0,
             bumps: RootBumps {

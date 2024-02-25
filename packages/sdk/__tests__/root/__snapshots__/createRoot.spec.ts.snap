@@ -12,6 +12,14 @@ exports[`create_root instruction Works for community side 1`] = `
       205,
       56,
       27,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
     ],
     "keys": [
       {
@@ -243,6 +251,14 @@ exports[`create_root instruction Works for community side 2`] = `
       205,
       56,
       27,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
     ],
     "keys": [
       {
@@ -479,6 +495,14 @@ exports[`create_root instruction Works for community side 3`] = `
       205,
       56,
       27,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
     ],
     "keys": [
       {
@@ -720,6 +744,14 @@ exports[`create_root instruction Works for community side 4`] = `
       205,
       56,
       27,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
     ],
     "keys": [
       {
@@ -976,6 +1008,14 @@ exports[`create_root instruction Works for council side 1`] = `
       205,
       56,
       27,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
     ],
     "keys": [
       {
@@ -1217,6 +1257,14 @@ exports[`create_root instruction Works for council side 2`] = `
       205,
       56,
       27,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
     ],
     "keys": [
       {

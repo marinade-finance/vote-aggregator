@@ -13,7 +13,13 @@ import {Keypair, PublicKey} from '@solana/web3.js';
 describe('start_leaving_clan instruction', () => {
   it.each(leaveClanTestData.filter(({error}) => !error))(
     'Works',
-    async ({realm, root, member}: LeaveClanTestData) => {
+    async ({
+      realm,
+      root,
+      member,
+      clanIndex = 0,
+      clanLeavingTimeOffset,
+    }: LeaveClanTestData) => {
       const tokenConfig =
         (root.side === 'community'
           ? realm.communityTokenConfig
@@ -60,13 +66,22 @@ describe('start_leaving_clan instruction', () => {
         ];
       }
       const currentTime = new BN(Math.floor(Date.now() / 1000));
+      const membership = MemberTester.membershipTesters({
+        membership: member.membership || [],
+        root: rootTester,
+      });
+      membership[clanIndex].leavingTime ||= currentTime.add(
+        clanLeavingTimeOffset!
+      );
       const memberTester = new MemberTester({
         ...member,
-        clanLeavingTime: currentTime.add(member.clanLeavingTimeOffset!),
         root: rootTester,
-        clan: member.clan!.address,
+        membership,
       });
-      const clanTester = new ClanTester({...member.clan!, root: rootTester});
+      const clanTester = membership[clanIndex].clan;
+      if (!(clanTester instanceof ClanTester)) {
+        throw new Error(`Clan #${clanIndex} must be provided`);
+      }
       const {testContext, program} = await startTest({
         splGovernanceId: rootTester.splGovernanceId,
         accounts: [
@@ -86,11 +101,12 @@ describe('start_leaving_clan instruction', () => {
         .accountsStrict({
           root: rootTester.rootAddress[0],
           member: memberTester.memberAddress[0],
-          clan: memberTester.member.clan,
+          clan: clanTester.clanAddress,
           memberAuthority: memberTester.ownerAddress,
           governanceProgram: rootTester.splGovernanceId,
           lockAuthority: rootTester.lockAuthority[0],
           memberTor: memberTester.tokenOwnerRecordAddress[0],
+          clanTor: null,
         })
         .transaction();
       tx.recentBlockhash = testContext.lastBlockhash;
@@ -113,12 +129,13 @@ describe('start_leaving_clan instruction', () => {
         },
       ]);
 
+      const newMembership = [...memberTester.member.membership];
+      newMembership.splice(clanIndex, 1);
       await expect(
         program.account.member.fetch(memberTester.memberAddress[0])
       ).resolves.toStrictEqual({
         ...memberTester.member,
-        clan: PublicKey.default,
-        clanLeavingTime: new BN('9223372036854775807'), // i64::MAX
+        membership: newMembership,
       });
 
       await expect(
@@ -134,7 +151,8 @@ describe('start_leaving_clan instruction', () => {
         )
       ).resolves.toStrictEqual({
         ...memberTester.tokenOwnerRecord,
-        locks: [],
+        locks:
+          newMembership.length > 0 ? memberTester.tokenOwnerRecord.locks : [],
       });
     }
   );

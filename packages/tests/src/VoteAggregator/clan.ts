@@ -14,14 +14,16 @@ export type ClanTestData = {
   owner: PublicKey | Keypair;
   delegate?: PublicKey | Keypair;
   minVotingWeightToJoin?: BN;
-  activeMembers?: BN;
+  permanentMembers?: BN;
+  temporaryMembers?: BN;
+  updatedTemporaryMembers?: BN;
   leavingMembers?: BN;
   name: string;
   description?: string;
   voterWeight?: BN;
   acceptTemporaryMembers?: boolean;
   permanentVoterWeight?: BN;
-  nextWeightDeadline?: BN;
+  nextVoterWeightResetTime?: BN | null;
   governingTokenDepositAmount?: BN;
   unrelinquishedVotesCount?: BN;
   outstandingProposalCount?: number;
@@ -110,11 +112,13 @@ export class ClanTester {
     delegate,
     root,
     minVotingWeightToJoin = new BN(0),
-    activeMembers = new BN(0),
+    permanentMembers = new BN(0),
+    temporaryMembers = new BN(0),
+    updatedTemporaryMembers = new BN(0),
     leavingMembers = new BN(0),
     acceptTemporaryMembers = true,
     permanentVoterWeight = new BN(0),
-    nextWeightDeadline = new BN(0),
+    nextVoterWeightResetTime = null,
     name,
     description = '',
   }: ClanTestData & {root: PublicKey}): ClanAccount {
@@ -131,13 +135,15 @@ export class ClanTester {
       minVotingWeightToJoin: minVotingWeightToJoin,
       acceptTemporaryMembers,
       permanentVoterWeight,
-      nextWeightDeadline,
+      nextVoterWeightResetTime,
       bumps: {
         voterAuthority: 0,
         tokenOwnerRecord: 0,
         voterWeightRecord: 0,
       },
-      activeMembers,
+      permanentMembers,
+      temporaryMembers,
+      updatedTemporaryMembers,
       leavingMembers,
       name,
       description,
@@ -151,14 +157,16 @@ export class ClanTester {
     delegate,
     root,
     minVotingWeightToJoin = new BN(0),
-    activeMembers = new BN(0),
+    permanentMembers = new BN(0),
+    temporaryMembers = new BN(0),
+    updatedTemporaryMembers = new BN(0),
     leavingMembers = new BN(0),
     name,
     description = '',
     voterWeight = new BN(0),
     acceptTemporaryMembers = true,
     permanentVoterWeight = new BN(0),
-    nextWeightDeadline = new BN(0),
+    nextVoterWeightResetTime = null,
     governingTokenDepositAmount = new BN(0),
     unrelinquishedVotesCount = new BN(0),
     outstandingProposalCount = 0,
@@ -209,13 +217,15 @@ export class ClanTester {
       minVotingWeightToJoin,
       acceptTemporaryMembers,
       permanentVoterWeight,
-      nextWeightDeadline,
+      nextVoterWeightResetTime,
       bumps: {
         voterAuthority: voterAuthorityBump,
         tokenOwnerRecord: tokenOwnerRecordBump,
         voterWeightRecord: voterWeightRecordBump,
       },
-      activeMembers,
+      permanentMembers,
+      temporaryMembers,
+      updatedTemporaryMembers,
       leavingMembers,
       name,
       description,

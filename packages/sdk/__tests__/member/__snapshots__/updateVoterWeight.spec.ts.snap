@@ -25,7 +25,7 @@ exports[`update_voter_weight instruction Works 1`] = `
     },
     {
       "isSigner": false,
-      "isWritable": false,
+      "isWritable": true,
       "pubkey": "BGb4mNdyzg2T2k3KNikN52R97bzG1tPmYBRtwCdLdJtA",
     },
     {
@@ -73,23 +73,13 @@ exports[`update_voter_weight instruction Works 2`] = `
     },
     {
       "isSigner": false,
-      "isWritable": false,
+      "isWritable": true,
       "pubkey": "XJsEkW6fCtqaoRKdfDxFXqt2Y1VhE4HoHKJnx1QzYM7",
     },
     {
       "isSigner": false,
       "isWritable": true,
       "pubkey": "BjMnNWFodSFfU7Kdf5v5p2C1RPs1gBf3VmxEeNwdnA3W",
-    },
-    {
-      "isSigner": false,
-      "isWritable": true,
-      "pubkey": "7hcLB9waCHCurBv1syRrTQeL4x4rbvqZc4JNxmF33uD6",
-    },
-    {
-      "isSigner": false,
-      "isWritable": false,
-      "pubkey": "VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT",
     },
   ],
   "programId": "VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT",
@@ -121,23 +111,13 @@ exports[`update_voter_weight instruction Works 3`] = `
     },
     {
       "isSigner": false,
-      "isWritable": false,
+      "isWritable": true,
       "pubkey": "CAEYPc3GHKcnsekDnL51ShND6spWGCKcsFZavpqWCcdJ",
     },
     {
       "isSigner": false,
       "isWritable": true,
       "pubkey": "4dHzxVgnQUaB1RrEDAwkZuCf9aqncecCqBQtXPtBNZCq",
-    },
-    {
-      "isSigner": false,
-      "isWritable": false,
-      "pubkey": "VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT",
-    },
-    {
-      "isSigner": false,
-      "isWritable": false,
-      "pubkey": "VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT",
     },
   ],
   "programId": "VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT",

@@ -12,7 +12,7 @@ import {Keypair} from '@solana/web3.js';
 describe('start_leaving_clan instruction', () => {
   it.each(startLeavingClanTestData.filter(({error}) => !error))(
     'Works',
-    async ({realm, root, member}: StartLeavingClanTestData) => {
+    async ({realm, root, member, clanIndex = 0}: StartLeavingClanTestData) => {
       const realmTester = new RealmTester(realm);
       const rootTester = new RootTester({
         ...root,
@@ -21,9 +21,15 @@ describe('start_leaving_clan instruction', () => {
       const memberTester = new MemberTester({
         ...member,
         root: rootTester,
-        clan: member.clan!.address,
+        membership: MemberTester.membershipTesters({
+          membership: member.membership || [],
+          root: rootTester,
+        }),
       });
-      const clanTester = new ClanTester({...member.clan!, root: rootTester});
+      const clanTester = memberTester.membership[clanIndex].clan;
+      if (!(clanTester instanceof ClanTester)) {
+        throw new Error(`Clan #${clanIndex} must be provided`);
+      }
       const {testContext, program} = await startTest({
         splGovernanceId: rootTester.splGovernanceId,
         accounts: [
@@ -39,7 +45,7 @@ describe('start_leaving_clan instruction', () => {
         .accountsStrict({
           root: rootTester.rootAddress[0],
           member: memberTester.memberAddress[0],
-          clan: memberTester.member.clan,
+          clan: clanTester.clanAddress,
           memberAuthority: memberTester.ownerAddress,
           clanVwr: clanTester.voterWeightAddress[0],
         })
@@ -86,16 +92,21 @@ describe('start_leaving_clan instruction', () => {
         program.account.member.fetch(memberTester.memberAddress[0])
       ).resolves.toStrictEqual({
         ...memberTester.member,
-        clanLeavingTime: new BN(time.toString()).add(
-          rootTester.root.maxProposalLifetime
-        ),
+        membership: memberTester.member.membership.map((m, index) => {
+          if (index === clanIndex) {
+            m.leavingTime = new BN(time.toString()).add(
+              rootTester.root.maxProposalLifetime
+            );
+          }
+          return m;
+        }),
       });
 
       await expect(
         program.account.clan.fetch(clanTester.clanAddress)
       ).resolves.toStrictEqual({
         ...clanTester.clan,
-        activeMembers: clanTester.clan.activeMembers.subn(1),
+        permanentMembers: clanTester.clan.permanentMembers.subn(1),
         leavingMembers: clanTester.clan.leavingMembers.addn(1),
         permanentVoterWeight: clanTester.clan.permanentVoterWeight.sub(
           memberTester.member.voterWeight

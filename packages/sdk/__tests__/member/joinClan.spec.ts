@@ -24,7 +24,14 @@ describe('join_clan instruction', () => {
         ...root,
         realm: realmTester,
       });
-      const memberTester = new MemberTester({...member, root: rootTester});
+      const memberTester = new MemberTester({
+        ...member,
+        root: rootTester,
+        membership: MemberTester.membershipTesters({
+          membership: member.membership || [],
+          root: rootTester,
+        }),
+      });
       const clanTester = new ClanTester({...clan, root: rootTester});
       const sdk = new VoteAggregatorSdk();
       expect(
@@ -32,7 +39,7 @@ describe('join_clan instruction', () => {
           rootData: rootTester.root,
           memberData: memberTester.member,
           clanAddress: clanTester.clanAddress,
-          memberVoterWeightAddress: memberVoterWeight.address,
+          memberVwr: memberVoterWeight.address,
           payer: PublicKey.default,
         })
       ).resolves.toMatchSnapshot();
