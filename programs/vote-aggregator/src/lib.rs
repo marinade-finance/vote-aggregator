@@ -21,6 +21,23 @@ pub mod vote_aggregator {
         ctx.accounts.process()
     }
 
+    pub fn set_max_proposal_lifetime(
+        ctx: Context<ConfigureRoot>,
+        new_max_proposal_lifetime: u64,
+    ) -> Result<()> {
+        ctx.accounts
+            .set_max_proposal_lifetime(new_max_proposal_lifetime)
+    }
+
+    pub fn set_voter_weight_reset(
+        ctx: Context<ConfigureRoot>,
+        new_step: u64,
+        new_next_reset_time: Option<i64>,
+    ) -> Result<()> {
+        ctx.accounts
+            .set_voter_weight_reset(new_step, new_next_reset_time)
+    }
+
     pub fn create_clan(ctx: Context<CreateClan>, owner: Pubkey) -> Result<()> {
         ctx.accounts.process(owner, ctx.bumps)
     }

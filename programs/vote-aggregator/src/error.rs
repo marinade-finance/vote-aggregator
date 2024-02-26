@@ -68,4 +68,7 @@ pub enum Error {
     UnexpectedClan,
     MemberHasUnrelinquishedVotes,
     MemberHasOutstandingProposals,
+    CanNotChangeNextResetTime,
+    InvalidResetStep,
+    InvalidNextResetTime
 }

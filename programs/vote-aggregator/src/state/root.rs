@@ -32,16 +32,24 @@ impl Root {
     pub const LOCK_AUTHORITY_SEED: &'static [u8] = b"lock-authority";
 
     pub fn update_next_voter_weight_reset_time(&mut self, clock: &Clock) {
-        if let Some(VoterWeightReset {
-            next_reset_time,
-            step,
-        }) = &mut self.voter_weight_reset
-        {
-            if clock.unix_timestamp >= *next_reset_time {
-                *next_reset_time +=
-                    ((clock.unix_timestamp - *next_reset_time) / *step as i64 + 1) * *step as i64;
+        self.voter_weight_reset = if let Some(r) = self.voter_weight_reset.take() {
+            if clock.unix_timestamp >= r.next_reset_time {
+                if r.step > 0 {
+                    Some(VoterWeightReset {
+                        next_reset_time: r.next_reset_time
+                            + ((clock.unix_timestamp - r.next_reset_time) / r.step as i64 + 1)
+                                * r.step as i64,
+                        ..r
+                    })
+                } else {
+                    None
+                }
+            } else {
+                Some(r)
             }
-        }
+        } else {
+            None
+        };
     }
 
     pub fn next_voter_weight_reset_time(&self) -> Option<i64> {

@@ -317,4 +317,48 @@ export class RootSdk {
 
     return [createRootIx, setRealmConfigIx, setLockAuthorityIx];
   }
+
+  async setMaxProposalLifetimeInstruction({
+    maxProposalLifetime,
+    root,
+    realm,
+    realmAuthority,
+  }: {
+    maxProposalLifetime: BN;
+    root: PublicKey;
+    realm: PublicKey;
+    realmAuthority: PublicKey;
+  }) {
+    return await this.sdk.program.methods
+      .setMaxProposalLifetime(maxProposalLifetime)
+      .accountsStrict({
+        realm,
+        realmAuthority,
+        root,
+      })
+      .instruction();
+  }
+
+  async setVoterWeightResetInstruction({
+    step,
+    nextResetTime,
+    root,
+    realm,
+    realmAuthority,
+  }: {
+    step: BN;
+    nextResetTime: BN | null;
+    root: PublicKey;
+    realm: PublicKey;
+    realmAuthority: PublicKey;
+  }) {
+    return await this.sdk.program.methods
+      .setVoterWeightReset(step, nextResetTime)
+      .accountsStrict({
+        realm,
+        realmAuthority,
+        root,
+      })
+      .instruction();
+  }
 }

@@ -38,6 +38,16 @@ exports[`set_voter_weight_record instruction Works 1`] = `
       "isWritable": true,
       "pubkey": "2Cw2oHCP3VHSZcGdxJ4VECCxg79LXULQdMEv2qwG2JBf",
     },
+    {
+      "isSigner": false,
+      "isWritable": true,
+      "pubkey": "GYV657WS94UU9TRy3Pfy541vDozNzBa9aQL2YKpLpyJv",
+    },
+    {
+      "isSigner": false,
+      "isWritable": true,
+      "pubkey": "wBKR4HVxmv1Yca55u9u3Zbfwjzcao2JNcPeanPdgS4m",
+    },
   ],
   "programId": "VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT",
 }

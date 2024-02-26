@@ -122,10 +122,11 @@ export class RootTester {
       voteAggregatorId: this.voteAggregatorId,
     });
     {
-      const rootData = await program.coder.accounts.encode<RootAccount>(
+      let rootData = await program.coder.accounts.encode<RootAccount>(
         'root',
         this.root
       );
+      rootData = Buffer.concat([rootData, Buffer.alloc(256)]);
       accounts.push({
         address: this.rootAddress[0],
         info: {

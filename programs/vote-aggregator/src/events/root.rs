@@ -1,5 +1,7 @@
 use anchor_lang::prelude::*;
 
+use crate::state::VoterWeightReset;
+
 #[event]
 pub struct RootCreated {
     pub root: Pubkey,
@@ -14,4 +16,18 @@ pub struct MaxVoterWeightChanged {
     pub root: Pubkey,
     pub old_max_voter_weight: u64,
     pub new_max_voter_weight: u64,
+}
+
+#[event]
+pub struct MaxProposalLifetimeChanged {
+    pub root: Pubkey,
+    pub old_max_proposal_lifetime: u64,
+    pub new_max_proposal_lifetime: u64,
+}
+
+#[event]
+pub struct VoterWeightResetChanged {
+    pub root: Pubkey,
+    pub old_voter_weight_reset: Option<VoterWeightReset>,
+    pub new_voter_weight_reset: Option<VoterWeightReset>,
 }

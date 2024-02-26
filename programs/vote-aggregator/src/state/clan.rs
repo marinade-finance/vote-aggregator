@@ -50,6 +50,8 @@ impl Clan {
                 clan_vwr.voter_weight_expiry = None;
                 self.updated_temporary_members = 0;
             }
+        } else {
+            self.next_voter_weight_reset_time = None;
         }
     }
 
