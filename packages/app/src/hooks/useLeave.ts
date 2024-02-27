@@ -1,14 +1,11 @@
 import {useConnection, useWallet} from '@solana/wallet-adapter-react';
 import {Cluster, PublicKey, Transaction} from '@solana/web3.js';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
-import {VoteAggregatorSdk} from 'vote-aggregator-sdk';
-import {
-  clanListQueryOptions,
-  clanQueryOptions,
-  memberQueryOptions,
-} from '../queryOptions';
+import {MembershipEntry, VoteAggregatorSdk} from 'vote-aggregator-sdk';
+import {memberQueryOptions} from '../queryOptions';
+import { BN } from 'bn.js';
 
-const useStartLeavingClan = () => {
+const useLeave = () => {
   const {connection} = useConnection();
   const {publicKey, sendTransaction} = useWallet();
   const queryClient = useQueryClient();
@@ -16,12 +13,18 @@ const useStartLeavingClan = () => {
   return useMutation({
     mutationFn: async ({
       memberData,
+      rootData,
     }: {
       network: Cluster;
+      rootData: {
+        governanceProgram: PublicKey;
+        realm: PublicKey;
+        governingTokenMint: PublicKey;
+      };
       memberData: {
         root: PublicKey;
         owner: PublicKey;
-        clan: PublicKey;
+        membership: MembershipEntry[];
       };
     }) => {
       const sdk = new VoteAggregatorSdk(connection);
@@ -33,11 +36,20 @@ const useStartLeavingClan = () => {
         lastValidBlockHeight,
       });
 
-      tx.add(
-        await sdk.member.startLeavingClanInstruction({
-          memberData,
-        })
-      );
+      const currentTime = new BN(Math.floor(Date.now() / 1000));
+      const clans = [];
+      for (const {clan, leavingTime} of memberData.membership) {
+        if (leavingTime && leavingTime.lte(currentTime)) {
+          clans.push(clan);
+          tx.add(
+            await sdk.member.leaveClanInstruction({
+              rootData,
+              memberData,
+              clan,
+            })
+          );
+        }
+      }
 
       const signature = await sendTransaction(tx, connection);
       const result = await connection.confirmTransaction({
@@ -48,6 +60,7 @@ const useStartLeavingClan = () => {
       if (result.value.err) {
         throw new Error(result.value.err.toString());
       }
+      return {signature, clans};
     },
     onSuccess: (_, {network, memberData}) => {
       queryClient.invalidateQueries(
@@ -57,19 +70,8 @@ const useStartLeavingClan = () => {
           owner: memberData.owner,
         })
       );
-      queryClient.invalidateQueries(
-        clanQueryOptions({
-          network,
-          root: memberData.root,
-          clan: memberData.clan,
-          queryClient,
-        })
-      );
-      queryClient.invalidateQueries(
-        clanListQueryOptions({network, root: memberData.root})
-      );
     },
   });
 };
 
-export default useStartLeavingClan;
+export default useLeave;

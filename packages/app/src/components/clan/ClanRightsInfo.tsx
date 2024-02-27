@@ -10,11 +10,11 @@ import {ClanInfo} from '../../fetchers/fetchClanList';
 const ClanRightsInfo = ({
   network,
   root,
-  clan,
+  clanInfo,
 }: {
   network: Cluster;
   root: PublicKey;
-  clan: ClanInfo;
+  clanInfo: ClanInfo;
 }) => {
   const {publicKey} = useWallet();
   if (!publicKey) {
@@ -28,8 +28,10 @@ const ClanRightsInfo = ({
       owner: publicKey,
     })
   );
-  const isMember = memberData?.clan?.equals(clan.address);
-  const isOwner = publicKey.equals(clan.owner);
+  const isMember = memberData?.membership?.find(({clan}) =>
+    clan.equals(clanInfo.address)
+  );
+  const isOwner = publicKey.equals(clanInfo.owner);
 
   return (
     <TableCell align="right">

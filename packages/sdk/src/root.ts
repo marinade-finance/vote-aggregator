@@ -15,12 +15,12 @@ import {
 } from '@solana/spl-governance';
 import {
   AnchorProvider,
-  BN,
   IdlAccounts,
   ProgramAccount,
 } from '@coral-xyz/anchor';
 import {VoteAggregator} from './vote_aggregator';
 import {splGovernanceProgram} from '@coral-xyz/spl-governance';
+import BN from 'bn.js';
 
 export type RootAccount = IdlAccounts<VoteAggregator>['root'];
 export type MaxVoterWeightAccount =

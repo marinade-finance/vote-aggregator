@@ -1,6 +1,6 @@
 import {Box} from '@mui/material';
 import {Outlet} from '@tanstack/react-router';
-import {FileRoute} from '@tanstack/react-router';
+import {createFileRoute} from '@tanstack/react-router';
 import {useWallet} from '@solana/wallet-adapter-react';
 import MemberManagement from '../components/member/MemberManagement';
 import {PublicKey} from '@solana/web3.js';
@@ -19,7 +19,7 @@ const RootComponent = () => {
   );
 };
 
-export const Route = new FileRoute('/$rootId').createRoute({
+export const Route = createFileRoute('/$rootId')({
   component: RootComponent,
   loaderDeps: ({search: {network}}) => ({network}),
   loader: ({deps: {network}, params: {rootId}, context: {queryClient}}) =>

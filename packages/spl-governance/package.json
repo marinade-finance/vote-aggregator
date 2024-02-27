@@ -8,19 +8,27 @@
     "type": "git",
     "url": "https://github.com/solana-labs/solana-program-library.git"
   },
+  "type": "module",
   "files": [
-    "build"
+    "dist",
+    "package.json"
   ],
-  "module": "./build/src/index.js",
-  "main": "./build/src/index.js",
+  "main": "dist/bundle.cjs.js",
+  "module": "dist/bundle.esm.js",
+  "types": "dist/src/index.d.ts",
   "dependencies": {
     "@coral-xyz/anchor": "=0.29.0",
     "@native-to-anchor/buffer-layout": "=0.1.0"
   },
   "devDependencies": {
-    "@types/node": "^17.0.21"
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@types/node": "^17.0.21",
+    "rollup": "^4.12.0"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "rollup -c"
   }
 }

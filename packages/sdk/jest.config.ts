@@ -1,9 +1,9 @@
 import type {Config} from 'jest';
 
 const config: Config = {
-  verbose: true,
-  moduleFileExtensions: ['js'],
-  snapshotResolver: './snapshotResolver.js',
+  preset: 'ts-jest',
+  modulePathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/dist/'],
+  setupFilesAfterEnv: ['<rootDir>/dev/equalityTesters.ts'],
 };
 
 export default config;

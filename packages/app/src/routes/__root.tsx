@@ -1,6 +1,6 @@
 import {
   Outlet,
-  rootRouteWithContext,
+  createRootRouteWithContext,
   useNavigate,
 } from '@tanstack/react-router';
 import Header from '../components/Header';
@@ -51,7 +51,7 @@ const RootComponent = () => {
   );
 };
 
-export const Route = rootRouteWithContext<{
+export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
 }>()({
   component: RootComponent,

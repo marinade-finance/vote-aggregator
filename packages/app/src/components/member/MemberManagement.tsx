@@ -46,9 +46,14 @@ const MemberManagement = ({
           )
         )}
       </Paper>
-      {memberData && !memberData.clan.equals(PublicKey.default) && (
-        <MemberClanInfo network={network} memberData={memberData} />
-      )}
+      {memberData?.membership.map(membership => (
+        <MemberClanInfo
+          network={network}
+          root={root}
+          voterWeight={memberData.voterWeight}
+          membership={membership}
+        />
+      ))}
     </Box>
   );
 };

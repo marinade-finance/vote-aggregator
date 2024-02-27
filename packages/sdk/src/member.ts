@@ -5,10 +5,11 @@ import {
   TransactionInstruction,
 } from '@solana/web3.js';
 import {VoteAggregatorSdk} from './sdk';
-import {BN, IdlAccounts, IdlTypes} from '@coral-xyz/anchor';
+import {IdlAccounts, IdlTypes} from '@coral-xyz/anchor';
 import {VoteAggregator} from './vote_aggregator';
 import {SYSTEM_PROGRAM_ID, getRealmConfigAddress} from '@solana/spl-governance';
 import {VoterWeightAccount} from './clan';
+import BN from 'bn.js';
 
 export type MemberAccount = IdlAccounts<VoteAggregator>['member'];
 export type MembershipEntry = IdlTypes<VoteAggregator>['MembershipEntry'];

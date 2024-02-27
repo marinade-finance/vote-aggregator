@@ -2,13 +2,13 @@
   "extends": "../../node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
     "rootDir": ".",
-    "outDir": "build",
-    "preserveSymlinks": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "outDir": "dist"
   },
   "include": [
     "src/**/*.ts",
-    "__tests__/**/*.ts"
+    "__tests__/**/*.ts",
+    "dev/**/*.ts"
   ]
 }

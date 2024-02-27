@@ -1,5 +1,5 @@
 import {Box, Button, TextField} from '@mui/material';
-import {FileRoute, useNavigate} from '@tanstack/react-router';
+import {createFileRoute, useNavigate} from '@tanstack/react-router';
 import {useState} from 'react';
 import useCreateClan from '../../hooks/useCreateClan';
 import {PublicKey} from '@solana/web3.js';
@@ -60,7 +60,7 @@ const CreateClanComponent = () => {
   );
 };
 
-export const Route = new FileRoute('/$rootId/createClan').createRoute({
+export const Route = createFileRoute('/$rootId/createClan')({
   component: CreateClanComponent,
   beforeLoad: () => {
     return {

@@ -1,7 +1,7 @@
 import {useConnection, useWallet} from '@solana/wallet-adapter-react';
 import {Cluster, PublicKey, Transaction} from '@solana/web3.js';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
-import {VoteAggregatorSdk} from 'vote-aggregator-sdk';
+import {MembershipEntry, VoteAggregatorSdk} from 'vote-aggregator-sdk';
 import {clanQueryOptions, memberQueryOptions} from '../queryOptions';
 import vsrSdk from '../fetchers/vsrSdk';
 import {SYSTEM_PROGRAM_ID} from '@solana/spl-governance';
@@ -42,15 +42,31 @@ const useJoinClan = () => {
         lastValidBlockHeight,
       });
 
+      let memberData: {
+        root: PublicKey;
+        owner: PublicKey;
+        tokenOwnerRecord?: PublicKey;
+        membership: MembershipEntry[];
+      };
       if (createMember) {
         tx.add(
           await sdk.member.createMemberInstruction({
-            rootAddress: rootAddress,
+            rootAddress,
             rootData,
             owner,
             payer: publicKey!,
           })
         );
+        memberData = {
+          root: rootAddress,
+          owner,
+          membership: [],
+        };
+      } else {
+        memberData = (await sdk.member.fetchMember({
+          rootAddress,
+          owner,
+        }))!;
       }
 
       /*
@@ -69,7 +85,7 @@ const useJoinClan = () => {
         ],
         rootData.votingWeightPlugin
       );
-      const [memberVoterWeightAddress] = PublicKey.findProgramAddressSync(
+      const [memberVwr] = PublicKey.findProgramAddressSync(
         [
           registrarAddress.toBuffer(),
           Buffer.from('voter-weight-record', 'utf-8'),
@@ -91,7 +107,7 @@ const useJoinClan = () => {
           .accountsStrict({
             registrar: registrarAddress,
             voter: voterAddress,
-            voterWeightRecord: memberVoterWeightAddress,
+            voterWeightRecord: memberVwr,
             systemProgram: SYSTEM_PROGRAM_ID,
           })
           .instruction()
@@ -100,12 +116,9 @@ const useJoinClan = () => {
       tx.add(
         await sdk.member.joinClanInstruction({
           rootData,
-          memberData: {
-            root: rootAddress,
-            owner,
-          },
+          memberData,
           clanAddress,
-          memberVoterWeightAddress,
+          memberVwr,
           payer: publicKey!,
         })
       );

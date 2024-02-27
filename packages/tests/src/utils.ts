@@ -1,5 +1,5 @@
-import {BN, Idl, Program, Event} from '@coral-xyz/anchor';
-import {IdlEvent} from '@coral-xyz/anchor/dist/cjs/idl';
+import {Idl, Program, Event} from '@coral-xyz/anchor';
+import {IdlEvent} from '@coral-xyz/anchor/dist/cjs/idl.js';
 import {Keypair, PublicKey} from '@solana/web3.js';
 import assert from 'assert';
 

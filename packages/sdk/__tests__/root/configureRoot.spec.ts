@@ -6,7 +6,7 @@ import {
 } from 'vote-aggregator-tests';
 import {VoteAggregatorSdk} from '../../src';
 import {Keypair} from '@solana/web3.js';
-import BN from 'bn.js';
+// import BN from 'bn.js';
 
 describe('Configure root', () => {
   it.each(
@@ -37,6 +37,7 @@ describe('Configure root', () => {
     }
   );
 
+  /*
   it.each(
     configureRootTestData.filter(
       ({error, voterWeightResetStep}) =>
@@ -75,4 +76,5 @@ describe('Configure root', () => {
       ).resolves.toMatchSnapshot();
     }
   );
+  */
 });

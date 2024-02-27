@@ -1,11 +1,11 @@
-import {FileRoute} from '@tanstack/react-router';
+import {createFileRoute} from '@tanstack/react-router';
 import {clanQueryOptions} from '../../../../queryOptions';
 import {LAMPORTS_PER_SOL, PublicKey} from '@solana/web3.js';
 import {useQueryClient, useSuspenseQuery} from '@tanstack/react-query';
 import {useWallet} from '@solana/wallet-adapter-react';
 import {Box} from '@mui/material';
 import ClanManagement from '../../../../components/clan/ClanManagement';
-import ClanMembership from '../../../../components/clan/ClanMembership';
+// import ClanMembership from '../../../../components/clan/ClanMembership';
 
 const ClanComponent = () => {
   const {network} = Route.useSearch();
@@ -20,10 +20,7 @@ const ClanComponent = () => {
   return (
     <Box>
       <Box>
-        Clan: {clanData!.name} ({clanId}){' '}
-        {publicKey && (
-          <ClanMembership network={network} root={root} clan={clan} />
-        )}
+        Clan: {clanData!.name} ({clanId})
       </Box>
       <Box>Description: {clanData.description}</Box>
       <Box>
@@ -52,7 +49,7 @@ const ClanComponent = () => {
   );
 };
 
-export const Route = new FileRoute('/$rootId/clan/$clanId/').createRoute({
+export const Route = createFileRoute('/$rootId/clan/$clanId/')({
   component: ClanComponent,
   loaderDeps: ({search: {network}}) => ({network}),
   loader: ({
