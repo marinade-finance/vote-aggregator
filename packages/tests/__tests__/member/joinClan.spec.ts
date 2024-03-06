@@ -65,8 +65,8 @@ describe('join_clan instruction', () => {
       });
 
       const oldClanTesters = memberTester.membership.flatMap(
-        ({clan, leavingTime}) => {
-          if (leavingTime) {
+        ({clan, exitableAt}) => {
+          if (exitableAt) {
             return [];
           }
 
@@ -221,7 +221,7 @@ describe('join_clan instruction', () => {
         membership: memberTester.membership.concat({
           clan: clanTester.clanAddress,
           shareBp,
-          leavingTime: null,
+          exitableAt: null,
         }),
         voterWeightRecord: memberVoterWeight.address,
         voterWeight: memberVoterWeight.voterWeight,

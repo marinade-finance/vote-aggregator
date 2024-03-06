@@ -33,8 +33,8 @@ describe('update_voter_weight instruction', () => {
       });
 
       const clanTesters = memberTester.membership.flatMap(
-        ({clan, leavingTime}) => {
-          if (leavingTime) {
+        ({clan, exitableAt}) => {
+          if (exitableAt) {
             return [];
           }
 

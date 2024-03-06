@@ -1,9 +1,9 @@
 import {startTest} from '../../dev/startTest';
 import {
-  LeaveClanTestData,
+  ExitClanTestData,
   RealmTester,
   RootTester,
-  leaveClanTestData,
+  exitClanTestData,
   MemberTester,
   ClanTester,
   buildSplGovernanceProgram,
@@ -13,7 +13,7 @@ import {cli} from '../../src/cli';
 import {BN} from '@coral-xyz/anchor';
 import {Keypair, PublicKey} from '@solana/web3.js';
 
-describe('start-leaving-clan command', () => {
+describe('exit-clan command', () => {
   let stdout: jest.SpyInstance;
 
   beforeEach(() => {
@@ -24,7 +24,7 @@ describe('start-leaving-clan command', () => {
     stdout.mockRestore();
   });
 
-  it.each(leaveClanTestData.filter(({error}) => !error))(
+  it.each(exitClanTestData.filter(({error}) => !error))(
     'Works',
     async ({
       realm,
@@ -32,7 +32,7 @@ describe('start-leaving-clan command', () => {
       member,
       clanIndex = 0,
       clanLeavingTimeOffset,
-    }: LeaveClanTestData) => {
+    }: ExitClanTestData) => {
       const tokenConfig =
         (root.side === 'community'
           ? realm.communityTokenConfig
@@ -82,7 +82,7 @@ describe('start-leaving-clan command', () => {
         membership: member.membership || [],
         root: rootTester,
       });
-      membership[clanIndex].leavingTime ||= currentTime.add(
+      membership[clanIndex].exitableAt ||= currentTime.add(
         clanLeavingTimeOffset!
       );
       const memberTester = new MemberTester({
@@ -116,7 +116,7 @@ describe('start-leaving-clan command', () => {
           })
           .parseAsync(
             [
-              'leave-clan',
+              'exit-clan',
               '--realm',
               rootTester.realm.realmAddress.toString(),
               '--side',

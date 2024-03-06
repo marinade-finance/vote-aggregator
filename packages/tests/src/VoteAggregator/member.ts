@@ -15,13 +15,13 @@ import {
 export type MembershipTester = {
   clan: PublicKey | ClanTester;
   shareBp: number;
-  leavingTime?: BN | null;
+  exitableAt?: BN | null;
 };
 
 export type MembershipTestData = {
   clan: PublicKey | ClanTestData;
   shareBp: number;
-  leavingTime?: BN | null;
+  exitableAt?: BN | null;
 };
 
 export type MemberTestData = {
@@ -81,10 +81,10 @@ export class MemberTester {
     membership: MembershipTestData[];
     root: RootTester;
   }) {
-    return membership.map(({clan, shareBp, leavingTime}) => ({
+    return membership.map(({clan, shareBp, exitableAt}) => ({
       clan: clan instanceof PublicKey ? clan : new ClanTester({...clan, root}),
       shareBp,
-      leavingTime,
+      exitableAt,
     }));
   }
 
@@ -112,10 +112,10 @@ export class MemberTester {
       delegate = delegate.publicKey;
     }
     this.membership = membership;
-    const membershipData = membership.map(({clan, shareBp, leavingTime}) => ({
+    const membershipData = membership.map(({clan, shareBp, exitableAt}) => ({
       clan: clan instanceof ClanTester ? clan.clanAddress : clan,
       shareBp,
-      leavingTime: leavingTime || null,
+      exitableAt: exitableAt || null,
     }));
     this.root = root;
 

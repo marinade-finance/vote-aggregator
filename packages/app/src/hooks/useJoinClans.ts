@@ -4,9 +4,14 @@ import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {MembershipEntry, VoteAggregatorSdk} from 'vote-aggregator-sdk';
 import {clanQueryOptions, memberQueryOptions} from '../queryOptions';
 import vsrSdk from '../fetchers/vsrSdk';
-import {SYSTEM_PROGRAM_ID} from '@solana/spl-governance';
+import {
+  SYSTEM_PROGRAM_ID,
+  getTokenOwnerRecordAddress,
+} from '@solana/spl-governance';
+import {splGovernanceProgram} from '@coral-xyz/spl-governance';
+import {AnchorProvider} from '@coral-xyz/anchor';
 
-const useJoinClan = () => {
+const useJoinClans = () => {
   const {connection} = useConnection();
   const {publicKey, sendTransaction} = useWallet();
   const queryClient = useQueryClient();
@@ -17,7 +22,8 @@ const useJoinClan = () => {
       owner,
       rootAddress,
       rootData,
-      clanAddress,
+      clans,
+      freeShareBp,
       createMember,
     }: {
       network: Cluster;
@@ -29,11 +35,34 @@ const useJoinClan = () => {
         votingWeightPlugin: PublicKey;
       };
       rootAddress: PublicKey;
-      clanAddress: PublicKey;
+      clans: {address: PublicKey; share: number}[];
+      freeShareBp: number;
       createMember: boolean;
     }) => {
       const sdk = new VoteAggregatorSdk(connection);
       const vsr = vsrSdk({network, vsrProgram: rootData.votingWeightPlugin});
+      const splGovernance = splGovernanceProgram({
+        programId: rootData.governanceProgram,
+        provider: new AnchorProvider(
+          connection,
+          {
+            signTransaction: async t => t,
+            signAllTransactions: async t => t,
+            publicKey: owner,
+          },
+          {}
+        ),
+      });
+
+      const tor = await getTokenOwnerRecordAddress(
+        rootData.governanceProgram,
+        rootData.realm,
+        rootData.governingTokenMint,
+        publicKey!
+      );
+
+      const torInfo = await connection.getAccountInfo(tor);
+
       const {blockhash, lastValidBlockHeight} =
         await connection.getLatestBlockhash();
       const tx = new Transaction({
@@ -41,6 +70,22 @@ const useJoinClan = () => {
         blockhash,
         lastValidBlockHeight,
       });
+
+      if (!torInfo) {
+        tx.add(
+          await splGovernance.methods
+            .createTokenOwnerRecord()
+            .accountsStrict({
+              realm: rootData.realm,
+              payer: publicKey!,
+              systemProgram: SYSTEM_PROGRAM_ID,
+              governingTokenMint: rootData.governingTokenMint,
+              governingTokenOwner: publicKey!,
+              tokenOwnerRecordAddress: tor,
+            })
+            .instruction()
+        );
+      }
 
       let memberData: {
         root: PublicKey;
@@ -113,17 +158,34 @@ const useJoinClan = () => {
           .instruction()
       );
 
-      tx.add(
-        await sdk.member.joinClanInstruction({
-          rootData,
-          memberData,
-          clanAddress,
-          memberVwr,
-          payer: publicKey!,
-        })
-      );
+      const totalShare = clans.reduce((acc, {share}) => acc + share, 0);
 
-      const signature = await sendTransaction(tx, connection);
+      const membership = [...memberData.membership];
+      for (const {address, share} of clans) {
+        const shareBp = (share * freeShareBp) / totalShare;
+        tx.add(
+          await sdk.member.joinClanInstruction({
+            rootData,
+            memberData: {
+              ...memberData,
+              membership,
+            },
+            clanAddress: address,
+            memberVwr,
+            payer: publicKey!,
+            shareBp,
+          })
+        );
+        membership.push({
+          clan: address,
+          shareBp,
+          exitableAt: null,
+        });
+      }
+
+      const signature = await sendTransaction(tx, connection, {
+        skipPreflight: true,
+      });
       const result = await connection.confirmTransaction({
         signature: signature,
         blockhash: tx.recentBlockhash!,
@@ -133,7 +195,7 @@ const useJoinClan = () => {
         throw new Error(result.value.err.toString());
       }
     },
-    onSuccess: (_, {network, rootAddress, owner, clanAddress}) => {
+    onSuccess: (_, {network, rootAddress, owner, clans}) => {
       queryClient.invalidateQueries(
         memberQueryOptions({
           network,
@@ -141,16 +203,18 @@ const useJoinClan = () => {
           owner,
         })
       );
-      queryClient.invalidateQueries(
-        clanQueryOptions({
-          network,
-          root: rootAddress,
-          clan: clanAddress,
-          queryClient,
-        })
-      );
+      for (const {address} of clans) {
+        queryClient.invalidateQueries(
+          clanQueryOptions({
+            network,
+            root: rootAddress,
+            clan: address,
+            queryClient,
+          })
+        );
+      }
     },
   });
 };
 
-export default useJoinClan;
+export default useJoinClans;

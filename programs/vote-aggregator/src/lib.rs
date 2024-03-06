@@ -8,6 +8,21 @@ pub mod state;
 use processor::*;
 
 declare_id!("VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT");
+/*
+#[derive(Accounts)]
+pub struct DestroyAccount<'info> {
+    /// CHECK: The account to destroy.
+    #[account(
+        mut,
+    )]
+    pub account: UncheckedAccount<'info>,
+
+    #[account(
+        mut,
+    )]
+    pub rent_collector: SystemAccount<'info>,
+}
+*/
 
 #[program]
 pub mod vote_aggregator {
@@ -85,7 +100,7 @@ pub mod vote_aggregator {
         ctx.accounts.process()
     }
 
-    pub fn leave_clan(ctx: Context<LeaveClan>) -> Result<()> {
+    pub fn exit_clan(ctx: Context<ExitClan>) -> Result<()> {
         ctx.accounts.process()
     }
 
@@ -107,4 +122,13 @@ pub mod vote_aggregator {
     ) -> Result<()> {
         ctx.accounts.process(ctx.remaining_accounts)
     }
+
+    /*
+    pub fn destroy_account(ctx: Context<DestroyAccount>) -> Result<()> {
+        let l = ctx.accounts.account.lamports();
+        ctx.accounts.account.sub_lamports(l)?;
+        ctx.accounts.rent_collector.add_lamports(l)?;
+        Ok(())
+    }
+    */
 }

@@ -19,7 +19,11 @@ export default {
     },
   ],
   external: [
-    "@coral-xyz/anchor"
+    "@coral-xyz/anchor",
+    "bn.js",
+    "@solana/web3.js",
+    "@solana/spl-governance",
+    "bigint-buffer"
   ],
   plugins: [
     commonjs(),

@@ -44,8 +44,8 @@ describe('set-voter-weight-record command', () => {
       });
 
       const clanTesters = memberTester.membership.flatMap(
-        ({clan, leavingTime}) => {
-          if (leavingTime) {
+        ({clan, exitableAt}) => {
+          if (exitableAt) {
             return [];
           }
 

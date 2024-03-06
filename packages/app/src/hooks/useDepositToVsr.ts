@@ -16,7 +16,12 @@ import {
   getAssociatedTokenAddressSync,
 } from '@solana/spl-token';
 import {vsrVoterQueryOptions} from '../queryOptions';
-import {SYSTEM_PROGRAM_ID} from '@solana/spl-governance';
+import {
+  SYSTEM_PROGRAM_ID,
+  getTokenOwnerRecordAddress,
+} from '@solana/spl-governance';
+import {splGovernanceProgram} from '@coral-xyz/spl-governance';
+import { AnchorProvider } from '@coral-xyz/anchor';
 
 const useDepositToVsr = () => {
   const {connection} = useConnection();
@@ -35,6 +40,7 @@ const useDepositToVsr = () => {
       network: Cluster;
       rootAddress: PublicKey;
       rootData: {
+        governanceProgram: PublicKey;
         realm: PublicKey;
         governingTokenMint: PublicKey;
         votingWeightPlugin: PublicKey;
@@ -45,7 +51,19 @@ const useDepositToVsr = () => {
       depositIndex?: number;
       balance: BN;
     }) => {
-      const sdk = vsrSdk({network, vsrProgram: rootData.votingWeightPlugin});
+      const splGovernance = splGovernanceProgram({
+        programId: rootData.governanceProgram,
+        provider: new AnchorProvider(
+          connection,
+          {
+            signTransaction: async t => t,
+            signAllTransactions: async t => t,
+            publicKey: publicKey!,
+          },
+          {}
+        ),
+      });
+      const vsr = vsrSdk({network, vsrProgram: rootData.votingWeightPlugin});
       const [registrarAddress] = PublicKey.findProgramAddressSync(
         [
           rootData.realm.toBuffer(),
@@ -68,6 +86,15 @@ const useDepositToVsr = () => {
         true
       );
 
+      const tor = await getTokenOwnerRecordAddress(
+        rootData.governanceProgram,
+        rootData.realm,
+        rootData.governingTokenMint,
+        publicKey!
+      );
+
+      const torInfo = await connection.getAccountInfo(tor);
+
       const {blockhash, lastValidBlockHeight} =
         await connection.getLatestBlockhash();
       const tx = new Transaction({
@@ -75,6 +102,22 @@ const useDepositToVsr = () => {
         blockhash,
         lastValidBlockHeight,
       });
+
+      if (!torInfo) {
+        tx.add(
+          await splGovernance.methods
+            .createTokenOwnerRecord()
+            .accountsStrict({
+              realm: rootData.realm,
+              payer: publicKey!,
+              systemProgram: SYSTEM_PROGRAM_ID,
+              governingTokenMint: rootData.governingTokenMint,
+              governingTokenOwner: publicKey!,
+              tokenOwnerRecordAddress: tor,
+            })
+            .instruction()
+        );
+      }
 
       if (!vsrVoterData.voter) {
         const [voterWeightRecord, voterWeightRecordBump] =
@@ -87,7 +130,7 @@ const useDepositToVsr = () => {
             rootData.votingWeightPlugin
           );
         tx.add(
-          await sdk.methods
+          await vsr.methods
             .createVoter(voterBump, voterWeightRecordBump)
             .accountsStrict({
               registrar: registrarAddress,
@@ -119,7 +162,7 @@ const useDepositToVsr = () => {
         }
 
         tx.add(
-          await sdk.methods
+          await vsr.methods
             .createDepositEntry(depositIndex, {none: {}}, null, 0, true)
             .accountsStrict({
               registrar: registrarAddress,
@@ -137,7 +180,7 @@ const useDepositToVsr = () => {
         );
       }
       tx.add(
-        await sdk.methods
+        await vsr.methods
           .deposit(depositIndex, balance)
           .accountsStrict({
             voter: voterAddress,

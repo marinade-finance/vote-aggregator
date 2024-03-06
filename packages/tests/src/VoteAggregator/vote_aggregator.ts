@@ -617,7 +617,7 @@ export type VoteAggregator = {
       "args": []
     },
     {
-      "name": "leaveClan",
+      "name": "exitClan",
       "accounts": [
         {
           "name": "member",
@@ -641,6 +641,16 @@ export type VoteAggregator = {
         },
         {
           "name": "root",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "realm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "realmConfig",
           "isMut": false,
           "isSigner": false
         },
@@ -1168,7 +1178,7 @@ export type VoteAggregator = {
             "type": "u16"
           },
           {
-            "name": "leavingTime",
+            "name": "exitableAt",
             "type": {
               "option": "i64"
             }
@@ -1713,12 +1723,12 @@ export type VoteAggregator = {
     },
     {
       "code": 6005,
-      "name": "TooEarlyToLeaveClan",
-      "msg": "Can not leave clan waiting for the leave time"
+      "name": "TooEarlyToExitClan",
+      "msg": "Can not exit clan waiting for the leave time"
     },
     {
       "code": 6006,
-      "name": "UnexpectedLeavingClan",
+      "name": "UnexpectedExitingClan",
       "msg": "Must start leaving clan first"
     },
     {
@@ -1808,7 +1818,7 @@ export type VoteAggregator = {
     {
       "code": 6024,
       "name": "AlreadyJoinedClan",
-      "msg": "Requesting to join a clan while already participating in some clan. Must leave first"
+      "msg": "Requesting to join a clan while already participating in some clan. Must exit first"
     },
     {
       "code": 6025,
@@ -2512,7 +2522,7 @@ export const IDL: VoteAggregator = {
       "args": []
     },
     {
-      "name": "leaveClan",
+      "name": "exitClan",
       "accounts": [
         {
           "name": "member",
@@ -2536,6 +2546,16 @@ export const IDL: VoteAggregator = {
         },
         {
           "name": "root",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "realm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "realmConfig",
           "isMut": false,
           "isSigner": false
         },
@@ -3063,7 +3083,7 @@ export const IDL: VoteAggregator = {
             "type": "u16"
           },
           {
-            "name": "leavingTime",
+            "name": "exitableAt",
             "type": {
               "option": "i64"
             }
@@ -3608,12 +3628,12 @@ export const IDL: VoteAggregator = {
     },
     {
       "code": 6005,
-      "name": "TooEarlyToLeaveClan",
-      "msg": "Can not leave clan waiting for the leave time"
+      "name": "TooEarlyToExitClan",
+      "msg": "Can not exit clan waiting for the leave time"
     },
     {
       "code": 6006,
-      "name": "UnexpectedLeavingClan",
+      "name": "UnexpectedExitingClan",
       "msg": "Must start leaving clan first"
     },
     {
@@ -3703,7 +3723,7 @@ export const IDL: VoteAggregator = {
     {
       "code": 6024,
       "name": "AlreadyJoinedClan",
-      "msg": "Requesting to join a clan while already participating in some clan. Must leave first"
+      "msg": "Requesting to join a clan while already participating in some clan. Must exit first"
     },
     {
       "code": 6025,

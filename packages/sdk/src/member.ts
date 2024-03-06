@@ -295,8 +295,8 @@ export class MemberSdk {
     });
 
     const rest: AccountMeta[] = [];
-    for (const {clan, leavingTime} of memberData.membership) {
-      if (!leavingTime) {
+    for (const {clan, exitableAt} of memberData.membership) {
+      if (!exitableAt) {
         rest.push({
           pubkey: clan,
           isSigner: false,
@@ -371,7 +371,7 @@ export class MemberSdk {
       .instruction();
   }
 
-  async leaveClanInstruction({
+  async exitClanInstruction({
     rootData,
     memberData,
     memberAddress,
@@ -414,7 +414,7 @@ export class MemberSdk {
     });
 
     return await this.sdk.program.methods
-      .leaveClan()
+      .exitClan()
       .accountsStrict({
         root: memberData.root,
         member: memberAddress,
@@ -429,6 +429,11 @@ export class MemberSdk {
           splGovernanceId: rootData.governanceProgram,
           clanAddress: clan,
         })[0],
+        realm: rootData.realm,
+        realmConfig: await getRealmConfigAddress(
+          rootData.governanceProgram,
+          rootData.realm
+        ),
       })
       .instruction();
   }
@@ -453,8 +458,8 @@ export class MemberSdk {
     }
 
     const rest: AccountMeta[] = [];
-    for (const {clan, leavingTime} of memberData.membership) {
-      if (!leavingTime) {
+    for (const {clan, exitableAt} of memberData.membership) {
+      if (!exitableAt) {
         rest.push({
           pubkey: clan,
           isSigner: false,
@@ -505,8 +510,8 @@ export class MemberSdk {
     }
 
     const rest: AccountMeta[] = [];
-    for (const {clan, leavingTime} of memberData.membership) {
-      if (!leavingTime) {
+    for (const {clan, exitableAt} of memberData.membership) {
+      if (!exitableAt) {
         rest.push({
           pubkey: clan,
           isSigner: false,

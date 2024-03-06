@@ -18,7 +18,7 @@ pub struct MemberBumps {
 pub struct MembershipEntry {
     pub clan: Pubkey,
     pub share_bp: u16,
-    pub leaving_time: Option<i64>,
+    pub exitable_at: Option<i64>,
 }
 
 #[account]
@@ -107,7 +107,7 @@ impl Member {
             .membership
             .iter()
             .filter_map(|entry| {
-                if entry.leaving_time.is_none() && f(entry) {
+                if entry.exitable_at.is_none() && f(entry) {
                     Some((entry.clan, entry))
                 } else {
                     None
@@ -150,7 +150,7 @@ impl Member {
         clock: &Clock,
     ) -> Result<()> {
         assert_eq!(entry.clan, clan.key());
-        assert!(entry.leaving_time.is_none());
+        assert!(entry.exitable_at.is_none());
         clan.reset_voter_weight_if_needed(root, clan_vwr);
         Clan::update_member(
             clan,

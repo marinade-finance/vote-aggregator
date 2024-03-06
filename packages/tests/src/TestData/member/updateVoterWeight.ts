@@ -123,7 +123,7 @@ export const updateVoterWeightTestData: UpdateVoterWeightTestData[] = [
             permanentVoterWeight: new BN('43564574675566'),
           },
           shareBp: 10000,
-          leavingTime: new BN('892374238439232'),
+          exitableAt: new BN('892374238439232'),
         },
       ],
     },

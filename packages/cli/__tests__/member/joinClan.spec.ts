@@ -78,8 +78,8 @@ describe('join-clan command', () => {
       });
 
       const oldClanTesters = memberTester.membership.flatMap(
-        ({clan, leavingTime}) => {
-          if (leavingTime) {
+        ({clan, exitableAt}) => {
+          if (exitableAt) {
             return [];
           }
 
@@ -150,7 +150,7 @@ describe('join-clan command', () => {
             shareBp ||
             10000 -
               memberTester.membership.reduce((a, {shareBp: b}) => a + b, 0),
-          leavingTime: null,
+          exitableAt: null,
         }),
         voterWeightRecord: memberVoterWeight.address,
         voterWeight: memberVoterWeight.voterWeight,

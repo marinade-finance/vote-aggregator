@@ -1,16 +1,16 @@
 import {
-  LeaveClanTestData,
+  ExitClanTestData,
   MemberTester,
   RealmTester,
   RootTester,
-  leaveClanTestData,
+  exitClanTestData,
 } from 'vote-aggregator-tests';
 import {VoteAggregatorSdk} from '../../src';
 import {BN} from '@coral-xyz/anchor';
 import {PublicKey} from '@solana/web3.js';
 
-describe('start_leaving_clan instruction', () => {
-  it.each(leaveClanTestData.filter(({error}) => !error))(
+describe('exit_clan instruction', () => {
+  it.each(exitClanTestData.filter(({error}) => !error))(
     'Works',
     async ({
       realm,
@@ -18,7 +18,7 @@ describe('start_leaving_clan instruction', () => {
       member,
       clanIndex = 0,
       clanLeavingTimeOffset,
-    }: LeaveClanTestData) => {
+    }: ExitClanTestData) => {
       const realmTester = new RealmTester(realm);
       const rootTester = new RootTester({
         ...root,
@@ -29,7 +29,7 @@ describe('start_leaving_clan instruction', () => {
         membership: member.membership || [],
         root: rootTester,
       });
-      membership[clanIndex].leavingTime ||= currentTime.add(
+      membership[clanIndex].exitableAt ||= currentTime.add(
         clanLeavingTimeOffset!
       );
       const memberTester = new MemberTester({
@@ -40,7 +40,7 @@ describe('start_leaving_clan instruction', () => {
       const sdk = new VoteAggregatorSdk();
       const clan = memberTester.membership[clanIndex].clan;
       expect(
-        sdk.member.leaveClanInstruction({
+        sdk.member.exitClanInstruction({
           rootData: rootTester.root,
           memberData: memberTester.member,
           clan: clan instanceof PublicKey ? clan : clan.clanAddress,

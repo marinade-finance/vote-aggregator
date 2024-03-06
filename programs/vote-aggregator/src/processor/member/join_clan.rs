@@ -170,8 +170,8 @@ impl<'info> JoinClan<'info> {
             .find(|m| m.clan == self.clan.key())
         {
             require_gte!(share_bp, entry.share_bp, Error::InvalidShareBp);
-            let was_member = entry.leaving_time.is_none();
-            entry.leaving_time = None;
+            let was_member = entry.exitable_at.is_none();
+            entry.exitable_at = None;
             let old_share_bp = entry.share_bp;
             entry.share_bp = share_bp;
             if was_member {
@@ -188,7 +188,7 @@ impl<'info> JoinClan<'info> {
             self.member.membership.push(MembershipEntry {
                 clan: self.clan.key(),
                 share_bp,
-                leaving_time: None,
+                exitable_at: None,
             });
             None
         };
@@ -245,7 +245,7 @@ impl<'info> JoinClan<'info> {
         self.member.next_voter_weight_reset_time = self.root.next_voter_weight_reset_time();
 
         if !member_tor.locks.iter().any(|l| {
-            l.authority == self.lock_authority.key() && l.lock_type == 0 && l.expiry.is_none()
+            l.authority == self.lock_authority.key() && l.lock_id == 0 && l.expiry.is_none()
         }) {
             invoke_signed(
                 &set_token_owner_record_lock(

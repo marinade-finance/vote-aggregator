@@ -45,10 +45,10 @@ impl<'info> StartLeavingClan<'info> {
             .iter_mut()
             .find(|entry| entry.clan == self.clan.key())
             .ok_or(error!(Error::UnexpectedClan))?;
-        require!(entry.leaving_time.is_none(), Error::RerequestingLeavingClan);
+        require!(entry.exitable_at.is_none(), Error::RerequestingLeavingClan);
 
         let clock = Clock::get()?;
-        entry.leaving_time =
+        entry.exitable_at =
             Some(clock.unix_timestamp + i64::try_from(self.root.max_proposal_lifetime).unwrap());
 
         self.root.update_next_voter_weight_reset_time(&clock);

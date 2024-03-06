@@ -49,7 +49,7 @@ const startLeavingClan = async ({
   }
   const clanAddress = clan
     ? await parsePubkey(clan)
-    : memberData.membership.find(m => !m.leavingTime)?.clan;
+    : memberData.membership.find(m => !m.exitableAt)?.clan;
   if (!clanAddress) {
     throw new Error('No clan for leaving found');
   }

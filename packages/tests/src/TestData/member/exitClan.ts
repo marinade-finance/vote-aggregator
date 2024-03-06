@@ -2,7 +2,7 @@ import {PublicKey} from '@solana/web3.js';
 import {RealmTestData, MemberTestData, RootTestData, buildKeypair} from '../..';
 import {BN} from '@coral-xyz/anchor';
 
-export type LeaveClanTestData = {
+export type ExitClanTestData = {
   realm: RealmTestData;
   root: RootTestData;
   member: MemberTestData;
@@ -11,7 +11,7 @@ export type LeaveClanTestData = {
   error?: string;
 };
 
-export const leaveClanTestData: LeaveClanTestData[] = [
+export const exitClanTestData: ExitClanTestData[] = [
   {
     realm: {
       splGovernanceId: new PublicKey(

@@ -1,17 +1,17 @@
 import {startTest} from '../../dev/startTest';
 import {
-  leaveClanTestData,
+  exitClanTestData,
   RealmTester,
   parseLogsEvent,
-  LeaveClanTestData,
+  ExitClanTestData,
   buildSplGovernanceProgram,
 } from '../../src';
 import {ClanTester, MemberTester, RootTester} from '../../src/VoteAggregator';
 import {BN} from '@coral-xyz/anchor';
 import {Keypair, PublicKey} from '@solana/web3.js';
 
-describe('start_leaving_clan instruction', () => {
-  it.each(leaveClanTestData.filter(({error}) => !error))(
+describe('exit_clan instruction', () => {
+  it.each(exitClanTestData.filter(({error}) => !error))(
     'Works',
     async ({
       realm,
@@ -19,7 +19,7 @@ describe('start_leaving_clan instruction', () => {
       member,
       clanIndex = 0,
       clanLeavingTimeOffset,
-    }: LeaveClanTestData) => {
+    }: ExitClanTestData) => {
       const tokenConfig =
         (root.side === 'community'
           ? realm.communityTokenConfig
@@ -70,7 +70,7 @@ describe('start_leaving_clan instruction', () => {
         membership: member.membership || [],
         root: rootTester,
       });
-      membership[clanIndex].leavingTime ||= currentTime.add(
+      membership[clanIndex].exitableAt ||= currentTime.add(
         clanLeavingTimeOffset!
       );
       const memberTester = new MemberTester({
@@ -97,7 +97,7 @@ describe('start_leaving_clan instruction', () => {
       });
 
       const tx = await program.methods
-        .leaveClan()
+        .exitClan()
         .accountsStrict({
           root: rootTester.rootAddress[0],
           member: memberTester.memberAddress[0],
@@ -107,6 +107,8 @@ describe('start_leaving_clan instruction', () => {
           lockAuthority: rootTester.lockAuthority[0],
           memberTor: memberTester.tokenOwnerRecordAddress[0],
           clanTor: null,
+          realm: realmTester.realmAddress,
+          realmConfig: await realmTester.realmConfigId(),
         })
         .transaction();
       tx.recentBlockhash = testContext.lastBlockhash;

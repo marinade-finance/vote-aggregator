@@ -5,6 +5,7 @@ import {useWallet} from '@solana/wallet-adapter-react';
 import MemberManagement from '../components/member/MemberManagement';
 import {PublicKey} from '@solana/web3.js';
 import {voteAggregatorQueryOptions} from '../queryOptions';
+import {JoinCandidatesProvider} from '../contexts/JoinCandidatesContext';
 
 const RootComponent = () => {
   const {network} = Route.useSearch();
@@ -13,8 +14,10 @@ const RootComponent = () => {
   const root = new PublicKey(rootId);
   return (
     <Box sx={{width: '100%', ml: 10}}>
-      <Outlet />
-      {publicKey && <MemberManagement network={network} root={root} />}
+      <JoinCandidatesProvider root={root}>
+        <Outlet />
+        {publicKey && <MemberManagement network={network} root={root} />}
+      </JoinCandidatesProvider>
     </Box>
   );
 };

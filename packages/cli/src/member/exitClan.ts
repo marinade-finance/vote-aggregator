@@ -6,17 +6,17 @@ import {RealmSide} from 'vote-aggregator-sdk';
 import {getRealm} from '@solana/spl-governance';
 import BN from 'bn.js';
 
-export const installLeaveClanCLI = (program: Command) => {
+export const installExitClanCLI = (program: Command) => {
   program
-    .command('leave-clan')
+    .command('exit-clan')
     .requiredOption('--realm <pubkey>', 'Realm address')
     .option('--side <string>', 'Side', 'community')
     .option('--owner <keypair>', 'Owner')
     .option('--clan <pubkey>', 'Clan')
-    .action(leaveClan);
+    .action(exitClan);
 };
 
-const leaveClan = async ({
+const exitClan = async ({
   realm,
   side,
   owner,
@@ -52,7 +52,7 @@ const leaveClan = async ({
   const currentTime = new BN(Math.floor(Date.now() / 1000));
   const clanAddress = clan
     ? await parsePubkey(clan)
-    : memberData.membership.find(m => m.leavingTime?.lte(currentTime))?.clan;
+    : memberData.membership.find(m => m.exitableAt?.lte(currentTime))?.clan;
 
   if (!clanAddress) {
     throw new Error('No clan for leaving found');
@@ -64,7 +64,7 @@ const leaveClan = async ({
   }
   await execute({
     instructions: [
-      await sdk.member.leaveClanInstruction({
+      await sdk.member.exitClanInstruction({
         rootData,
         memberAddress,
         memberData,

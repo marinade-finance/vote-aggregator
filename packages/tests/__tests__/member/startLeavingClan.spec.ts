@@ -94,7 +94,7 @@ describe('start_leaving_clan instruction', () => {
         ...memberTester.member,
         membership: memberTester.member.membership.map((m, index) => {
           if (index === clanIndex) {
-            m.leavingTime = new BN(time.toString()).add(
+            m.exitableAt = new BN(time.toString()).add(
               rootTester.root.maxProposalLifetime
             );
           }

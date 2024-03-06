@@ -29,8 +29,11 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
+    "@coral-xyz/spl-governance": "workspace:*",
     "@solana/spl-governance": "^0.3.28",
+    "@solana/spl-token": "^0.4.1",
     "@solana/web3.js": "1.90.0",
+    "bigint-buffer": "^1.1.5",
     "bn.js": "^5.2.1",
     "commander": "^11.1.0",
     "expand-tilde": "^2.0.2",

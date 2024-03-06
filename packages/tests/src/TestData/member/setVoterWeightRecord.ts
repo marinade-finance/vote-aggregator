@@ -142,7 +142,7 @@ export const setVoterWeightRecordTestData: SetVoterWeightRecordTestData[] = [
             permanentVoterWeight: new BN('43564574675566'),
           },
           shareBp: 10000,
-          leavingTime: new BN('8923742384232'),
+          exitableAt: new BN('8923742384232'),
         },
       ],
     },
