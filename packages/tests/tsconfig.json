@@ -5,7 +5,19 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "outDir": "dist",
-    "sourceMap": true
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
   },
-  "include": ["src/**/*.ts", "dev/**/*.ts", "__tests__/**/*.ts"]
+  "ts-node": {
+    "compilerOptions": {
+      "moduleResolution": "Node"
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "dev/**/*.ts",
+    "__tests__/**/*.ts",
+    "jest.config.ts",
+    "vite.config.ts"
+  ]
 }

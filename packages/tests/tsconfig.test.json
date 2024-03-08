@@ -6,18 +6,11 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "module": "ESNext",
-    "moduleResolution": "Bundler"
-  },
-  "ts-node": {
-    "compilerOptions": {
-      "moduleResolution": "Node10"
-    }
+    "moduleResolution": "Node10"
   },
   "include": [
     "src/**/*.ts",
     "dev/**/*.ts",
-    "__tests__/**/*.ts",
-    "jest.config.ts",
-    "vite.config.ts"
+    "__tests__/**/*.ts"
   ]
 }

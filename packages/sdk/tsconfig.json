@@ -4,11 +4,20 @@
     "rootDir": ".",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
+  },
+  "ts-node": {
+    "compilerOptions": {
+      "moduleResolution": "Node10"
+    }
   },
   "include": [
     "src/**/*.ts",
+    "dev/**/*.ts",
     "__tests__/**/*.ts",
-    "dev/**/*.ts"
+    "jest.config.ts",
+    "vite.config.ts"
   ]
 }
