@@ -3,6 +3,8 @@ import {setupContext} from './context';
 import {installRootCommands} from './root';
 import {installClanCommands} from './clan';
 import {installMemberCommands} from './member';
+import { installRealmCommands } from './realms';
+// import {installDestroyAccountCLI} from './destroyAccount';
 
 export const cli = () => {
   const program = new Command();
@@ -22,6 +24,8 @@ export const cli = () => {
   installRootCommands(program);
   installClanCommands(program);
   installMemberCommands(program);
+  // installDestroyAccountCLI(program);
+  installRealmCommands(program);
 
   return program;
 };

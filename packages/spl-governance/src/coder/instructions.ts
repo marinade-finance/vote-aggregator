@@ -31,9 +31,6 @@ export class SplGovernanceInstructionCoder implements InstructionCoder {
       case "addSignatory": {
         return encodeAddSignatory(ix);
       }
-      case "removeSignatory": {
-        return encodeRemoveSignatory(ix);
-      }
       case "insertTransaction": {
         return encodeInsertTransaction(ix);
       }
@@ -90,6 +87,21 @@ export class SplGovernanceInstructionCoder implements InstructionCoder {
       }
       case "completeProposal": {
         return encodeCompleteProposal(ix);
+      }
+      case "addRequiredSignatory": {
+        return encodeAddRequiredSignatory(ix);
+      }
+      case "removeRequiredSignatory": {
+        return encodeRemoveRequiredSignatory(ix);
+      }
+      case "setTokenOwnerRecordLock": {
+        return encodeSetTokenOwnerRecordLock(ix);
+      }
+      case "removeTokenOwnerRecordLock": {
+        return encodeRemoveTokenOwnerRecordLock(ix);
+      }
+      case "setRealmConfigItem": {
+        return encodeSetRealmConfigItem(ix);
       }
 
       default: {
@@ -365,10 +377,6 @@ function encodeCreateProposal({
 
 function encodeAddSignatory({ signatory }: any): Buffer {
   return encodeData({ addSignatory: { signatory } }, 1 + 32);
-}
-
-function encodeRemoveSignatory({ signatory }: any): Buffer {
-  return encodeData({ removeSignatory: { signatory } }, 1 + 32);
 }
 
 function encodeInsertTransaction({
@@ -744,6 +752,38 @@ function encodeCompleteProposal({}: any): Buffer {
   return encodeData({ completeProposal: {} }, 1);
 }
 
+function encodeAddRequiredSignatory({ signatory }: any): Buffer {
+  return encodeData({ addRequiredSignatory: { signatory } }, 1 + 32);
+}
+
+function encodeRemoveRequiredSignatory({}: any): Buffer {
+  return encodeData({ removeRequiredSignatory: {} }, 1);
+}
+
+function encodeSetTokenOwnerRecordLock({ lockType, expiry }: any): Buffer {
+  return encodeData(
+    { setTokenOwnerRecordLock: { lockType, expiry } },
+    1 + 1 + 1 + (expiry === null ? 0 : 8)
+  );
+}
+
+function encodeRemoveTokenOwnerRecordLock({ lockType }: any): Buffer {
+  return encodeData({ removeTokenOwnerRecordLock: { lockType } }, 1 + 1);
+}
+
+function encodeSetRealmConfigItem({ args }: any): Buffer {
+  return encodeData(
+    { setRealmConfigItem: { args } },
+    1 +
+      (() => {
+        switch (Object.keys(args)[0]) {
+          case "tokenOwnerRecordLockAuthority":
+            return 2 + 32 + 32;
+        }
+      })()
+  );
+}
+
 const LAYOUT = B.union(B.u8("instruction"));
 LAYOUT.addVariant(
   0,
@@ -951,7 +991,6 @@ LAYOUT.addVariant(
   "createProposal"
 );
 LAYOUT.addVariant(7, B.struct([B.publicKey("signatory")]), "addSignatory");
-LAYOUT.addVariant(8, B.struct([B.publicKey("signatory")]), "removeSignatory");
 LAYOUT.addVariant(
   9,
   B.struct([
@@ -1241,10 +1280,46 @@ LAYOUT.addVariant(
   "setRealmConfig"
 );
 LAYOUT.addVariant(23, B.struct([]), "createTokenOwnerRecord");
-LAYOUT.addVariant(24, B.struct([]), "createNativeTreasury");
-LAYOUT.addVariant(25, B.struct([B.u64("amount")]), "revokeGoverningTokens");
-LAYOUT.addVariant(26, B.struct([]), "refundProposalDeposit");
-LAYOUT.addVariant(27, B.struct([]), "completeProposal");
+LAYOUT.addVariant(24, B.struct([]), "updateProgramMetadata");
+LAYOUT.addVariant(25, B.struct([]), "createNativeTreasury");
+LAYOUT.addVariant(26, B.struct([B.u64("amount")]), "revokeGoverningTokens");
+LAYOUT.addVariant(27, B.struct([]), "refundProposalDeposit");
+LAYOUT.addVariant(28, B.struct([]), "completeProposal");
+LAYOUT.addVariant(
+  29,
+  B.struct([B.publicKey("signatory")]),
+  "addRequiredSignatory"
+);
+LAYOUT.addVariant(30, B.struct([]), "removeRequiredSignatory");
+LAYOUT.addVariant(
+  31,
+  B.struct([B.u8("lockType"), B.option(B.i64(), "expiry")]),
+  "setTokenOwnerRecordLock"
+);
+LAYOUT.addVariant(
+  32,
+  B.struct([B.u8("lockType")]),
+  "removeTokenOwnerRecordLock"
+);
+LAYOUT.addVariant(
+  33,
+  B.struct([
+    ((p: string) => {
+      const U = B.union(B.u8("discriminator"), null, p);
+      U.addVariant(
+        0,
+        B.struct([
+          B.u8("action"),
+          B.publicKey("governingTokenMint"),
+          B.publicKey("authority"),
+        ]),
+        "tokenOwnerRecordLockAuthority"
+      );
+      return U;
+    })("args"),
+  ]),
+  "setRealmConfigItem"
+);
 
 function encodeData(ix: any, span: number): Buffer {
   const b = Buffer.alloc(span);

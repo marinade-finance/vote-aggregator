@@ -1,9 +1,12 @@
 import {Box, Button, TextField} from '@mui/material';
-import {FileRoute, useNavigate} from '@tanstack/react-router';
+import {createFileRoute, useNavigate} from '@tanstack/react-router';
 import {useState} from 'react';
 import {PublicKey} from '@solana/web3.js';
 import {useQueryClient, useSuspenseQuery} from '@tanstack/react-query';
-import {clanQueryOptions, voteAggregatorQueryOptions} from '../../../../queryOptions';
+import {
+  clanQueryOptions,
+  voteAggregatorQueryOptions,
+} from '../../../../queryOptions';
 import useSetVotingDelegate from '../../../../hooks/useSetVotingDelegate';
 
 const SetVotingDelegateComponent = () => {
@@ -35,7 +38,9 @@ const SetVotingDelegateComponent = () => {
         rootAddress: root,
         rootData,
         clan,
-        newVotingDelegate: newVotingDelegate ? new PublicKey(newVotingDelegate) : null,
+        newVotingDelegate: newVotingDelegate
+          ? new PublicKey(newVotingDelegate)
+          : null,
       },
       {
         onSuccess: () => {
@@ -64,13 +69,13 @@ const SetVotingDelegateComponent = () => {
   );
 };
 
-export const Route = new FileRoute(
-  '/$rootId/clan/$clanId/setVotingDelegate'
-).createRoute({
-  component: SetVotingDelegateComponent,
-  beforeLoad: () => {
-    return {
-      title: 'Delegate voting',
-    };
-  },
-});
+export const Route = createFileRoute('/$rootId/clan/$clanId/setVotingDelegate')(
+  {
+    component: SetVotingDelegateComponent,
+    beforeLoad: () => {
+      return {
+        title: 'Delegate voting',
+      };
+    },
+  }
+);

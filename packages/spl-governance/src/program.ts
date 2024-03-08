@@ -22,7 +22,7 @@ export function splGovernanceProgram(
 }
 
 type SplGovernance = {
-  version: "3.1.1";
+  version: "4.0.0";
   name: "spl_governance";
   instructions: [
     {
@@ -401,19 +401,14 @@ type SplGovernance = {
       name: "addSignatory";
       accounts: [
         {
+          name: "governance";
+          isMut: false;
+          isSigner: false;
+        },
+        {
           name: "proposal";
           isMut: true;
           isSigner: false;
-        },
-        {
-          name: "tokenOwnerRecord";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "governanceAuthority";
-          isMut: false;
-          isSigner: true;
         },
         {
           name: "signatoryRecordAddress";
@@ -428,42 +423,6 @@ type SplGovernance = {
         {
           name: "systemProgram";
           isMut: false;
-          isSigner: false;
-        }
-      ];
-      args: [
-        {
-          name: "signatory";
-          type: "publicKey";
-        }
-      ];
-    },
-    {
-      name: "removeSignatory";
-      accounts: [
-        {
-          name: "proposal";
-          isMut: true;
-          isSigner: false;
-        },
-        {
-          name: "tokenOwnerRecord";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "governanceAuthority";
-          isMut: false;
-          isSigner: true;
-        },
-        {
-          name: "signatoryRecordAddress";
-          isMut: true;
-          isSigner: false;
-        },
-        {
-          name: "beneficiary";
-          isMut: true;
           isSigner: false;
         }
       ];
@@ -1148,6 +1107,164 @@ type SplGovernance = {
         }
       ];
       args: [];
+    },
+    {
+      name: "addRequiredSignatory";
+      accounts: [
+        {
+          name: "governance";
+          isMut: true;
+          isSigner: true;
+        },
+        {
+          name: "requiredSignatoryAddress";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "payer";
+          isMut: true;
+          isSigner: true;
+        },
+        {
+          name: "systemProgram";
+          isMut: false;
+          isSigner: false;
+        }
+      ];
+      args: [
+        {
+          name: "signatory";
+          type: "publicKey";
+        }
+      ];
+    },
+    {
+      name: "removeRequiredSignatory";
+      accounts: [
+        {
+          name: "governance";
+          isMut: true;
+          isSigner: true;
+        },
+        {
+          name: "requiredSignatoryAddress";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "beneficiary";
+          isMut: true;
+          isSigner: false;
+        }
+      ];
+      args: [];
+    },
+    {
+      name: "setTokenOwnerRecordLock";
+      accounts: [
+        {
+          name: "realm";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "realmConfigAddress";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "tokenOwnerRecord";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "tokenOwnerRecordLockAuthority";
+          isMut: false;
+          isSigner: true;
+        },
+        {
+          name: "payer";
+          isMut: true;
+          isSigner: true;
+        },
+        {
+          name: "systemProgram";
+          isMut: false;
+          isSigner: false;
+        }
+      ];
+      args: [
+        {
+          name: "lockType";
+          type: "u8";
+        },
+        {
+          name: "expiry";
+          type: {
+            option: "i64";
+          };
+        }
+      ];
+    },
+    {
+      name: "removeTokenOwnerRecordLock";
+      accounts: [
+        {
+          name: "tokenOwnerRecord";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "tokenOwnerRecordLockAuthority";
+          isMut: false;
+          isSigner: true;
+        }
+      ];
+      args: [
+        {
+          name: "lockType";
+          type: "u8";
+        }
+      ];
+    },
+    {
+      name: "setRealmConfigItem";
+      accounts: [
+        {
+          name: "realm";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "realmConfigAddress";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "realmAuthority";
+          isMut: false;
+          isSigner: true;
+        },
+        {
+          name: "payer";
+          isMut: true;
+          isSigner: true;
+        },
+        {
+          name: "systemProgram";
+          isMut: false;
+          isSigner: false;
+        }
+      ];
+      args: [
+        {
+          name: "args";
+          type: {
+            defined: "SetRealmConfigItemArgs";
+          };
+        }
+      ];
     }
   ];
   accounts: [
@@ -1183,8 +1300,12 @@ type SplGovernance = {
           {
             name: "reservedV2";
             type: {
-              defined: "Reserved120";
+              defined: "Reserved119";
             };
+          },
+          {
+            name: "requiredSignatoriesCount";
+            type: "u8";
           },
           {
             name: "activeProposalCount";
@@ -1875,6 +1996,32 @@ type SplGovernance = {
       };
     },
     {
+      name: "requiredSignatory";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "accountType";
+            type: {
+              defined: "GovernanceAccountType";
+            };
+          },
+          {
+            name: "accountVersion";
+            type: "u8";
+          },
+          {
+            name: "governance";
+            type: "publicKey";
+          },
+          {
+            name: "signatory";
+            type: "publicKey";
+          }
+        ];
+      };
+    },
+    {
       name: "signatoryRecordV2";
       type: {
         kind: "struct";
@@ -1960,7 +2107,15 @@ type SplGovernance = {
           {
             name: "reservedV2";
             type: {
-              array: ["u8", 128];
+              array: ["u8", 124];
+            };
+          },
+          {
+            name: "locks";
+            type: {
+              vec: {
+                defined: "TokenOwnerRecordLock";
+              };
             };
           }
         ];
@@ -2346,7 +2501,35 @@ type SplGovernance = {
           {
             name: "reserved";
             type: {
-              array: ["u8", 8];
+              array: ["u8", 4];
+            };
+          },
+          {
+            name: "lockAuthorities";
+            type: {
+              vec: "publicKey";
+            };
+          }
+        ];
+      };
+    },
+    {
+      name: "TokenOwnerRecordLock";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "lockType";
+            type: "u8";
+          },
+          {
+            name: "authority";
+            type: "publicKey";
+          },
+          {
+            name: "expiry";
+            type: {
+              option: "i64";
             };
           }
         ];
@@ -2480,6 +2663,9 @@ type SplGovernance = {
           },
           {
             name: "ProposalDeposit";
+          },
+          {
+            name: "RequiredSignatory";
           }
         ];
       };
@@ -2710,6 +2896,33 @@ type SplGovernance = {
           },
           {
             name: "Remove";
+          }
+        ];
+      };
+    },
+    {
+      name: "SetRealmConfigItemArgs";
+      type: {
+        kind: "enum";
+        variants: [
+          {
+            name: "TokenOwnerRecordLockAuthority";
+            fields: [
+              {
+                name: "action";
+                type: {
+                  defined: "SetItemActionType";
+                };
+              },
+              {
+                name: "governing_token_mint";
+                type: "publicKey";
+              },
+              {
+                name: "authority";
+                type: "publicKey";
+              }
+            ];
           }
         ];
       };
@@ -3320,12 +3533,52 @@ type SplGovernance = {
       code: 620;
       name: "InvalidMultiChoiceProposalParameters";
       msg: "Invalid multi choice proposal parameters";
+    },
+    {
+      code: 621;
+      name: "InvalidGovernanceForRequiredSignatory";
+      msg: "Invalid Governance for RequiredSignatory";
+    },
+    {
+      code: 622;
+      name: "SignatoryRecordAlreadyExists";
+      msg: "Signatory Record has already been created";
+    },
+    {
+      code: 623;
+      name: "InstructionDeprecated";
+      msg: "Instruction has been removed";
+    },
+    {
+      code: 624;
+      name: "MissingRequiredSignatories";
+      msg: "Proposal is missing required signatories";
+    },
+    {
+      code: 625;
+      name: "TokenOwnerRecordLockAuthorityMustSign";
+      msg: "TokenOwnerRecordLock authority must sign";
+    },
+    {
+      code: 626;
+      name: "ExpiredTokenOwnerRecordLock";
+      msg: "TokenOwnerRecordLock is expired ";
+    },
+    {
+      code: 627;
+      name: "TokenOwnerRecordLocked";
+      msg: "TokenOwnerRecord locked";
+    },
+    {
+      code: 628;
+      name: "InvalidTokenOwnerRecordLockAuthority";
+      msg: "Invalid TokenOwnerRecordLockAuthority";
     }
   ];
 };
 
 const IDL: SplGovernance = {
-  version: "3.1.1",
+  version: "4.0.0",
   name: "spl_governance",
   instructions: [
     {
@@ -3704,19 +3957,14 @@ const IDL: SplGovernance = {
       name: "addSignatory",
       accounts: [
         {
+          name: "governance",
+          isMut: false,
+          isSigner: false,
+        },
+        {
           name: "proposal",
           isMut: true,
           isSigner: false,
-        },
-        {
-          name: "tokenOwnerRecord",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "governanceAuthority",
-          isMut: false,
-          isSigner: true,
         },
         {
           name: "signatoryRecordAddress",
@@ -3731,42 +3979,6 @@ const IDL: SplGovernance = {
         {
           name: "systemProgram",
           isMut: false,
-          isSigner: false,
-        },
-      ],
-      args: [
-        {
-          name: "signatory",
-          type: "publicKey",
-        },
-      ],
-    },
-    {
-      name: "removeSignatory",
-      accounts: [
-        {
-          name: "proposal",
-          isMut: true,
-          isSigner: false,
-        },
-        {
-          name: "tokenOwnerRecord",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "governanceAuthority",
-          isMut: false,
-          isSigner: true,
-        },
-        {
-          name: "signatoryRecordAddress",
-          isMut: true,
-          isSigner: false,
-        },
-        {
-          name: "beneficiary",
-          isMut: true,
           isSigner: false,
         },
       ],
@@ -4452,6 +4664,164 @@ const IDL: SplGovernance = {
       ],
       args: [],
     },
+    {
+      name: "addRequiredSignatory",
+      accounts: [
+        {
+          name: "governance",
+          isMut: true,
+          isSigner: true,
+        },
+        {
+          name: "requiredSignatoryAddress",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "payer",
+          isMut: true,
+          isSigner: true,
+        },
+        {
+          name: "systemProgram",
+          isMut: false,
+          isSigner: false,
+        },
+      ],
+      args: [
+        {
+          name: "signatory",
+          type: "publicKey",
+        },
+      ],
+    },
+    {
+      name: "removeRequiredSignatory",
+      accounts: [
+        {
+          name: "governance",
+          isMut: true,
+          isSigner: true,
+        },
+        {
+          name: "requiredSignatoryAddress",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "beneficiary",
+          isMut: true,
+          isSigner: false,
+        },
+      ],
+      args: [],
+    },
+    {
+      name: "setTokenOwnerRecordLock",
+      accounts: [
+        {
+          name: "realm",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "realmConfigAddress",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "tokenOwnerRecord",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "tokenOwnerRecordLockAuthority",
+          isMut: false,
+          isSigner: true,
+        },
+        {
+          name: "payer",
+          isMut: true,
+          isSigner: true,
+        },
+        {
+          name: "systemProgram",
+          isMut: false,
+          isSigner: false,
+        },
+      ],
+      args: [
+        {
+          name: "lockType",
+          type: "u8",
+        },
+        {
+          name: "expiry",
+          type: {
+            option: "i64",
+          },
+        },
+      ],
+    },
+    {
+      name: "removeTokenOwnerRecordLock",
+      accounts: [
+        {
+          name: "tokenOwnerRecord",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "tokenOwnerRecordLockAuthority",
+          isMut: false,
+          isSigner: true,
+        },
+      ],
+      args: [
+        {
+          name: "lockType",
+          type: "u8",
+        },
+      ],
+    },
+    {
+      name: "setRealmConfigItem",
+      accounts: [
+        {
+          name: "realm",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "realmConfigAddress",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "realmAuthority",
+          isMut: false,
+          isSigner: true,
+        },
+        {
+          name: "payer",
+          isMut: true,
+          isSigner: true,
+        },
+        {
+          name: "systemProgram",
+          isMut: false,
+          isSigner: false,
+        },
+      ],
+      args: [
+        {
+          name: "args",
+          type: {
+            defined: "SetRealmConfigItemArgs",
+          },
+        },
+      ],
+    },
   ],
   accounts: [
     {
@@ -4486,8 +4856,12 @@ const IDL: SplGovernance = {
           {
             name: "reservedV2",
             type: {
-              defined: "Reserved120",
+              defined: "Reserved119",
             },
+          },
+          {
+            name: "requiredSignatoriesCount",
+            type: "u8",
           },
           {
             name: "activeProposalCount",
@@ -5178,6 +5552,32 @@ const IDL: SplGovernance = {
       },
     },
     {
+      name: "requiredSignatory",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "accountType",
+            type: {
+              defined: "GovernanceAccountType",
+            },
+          },
+          {
+            name: "accountVersion",
+            type: "u8",
+          },
+          {
+            name: "governance",
+            type: "publicKey",
+          },
+          {
+            name: "signatory",
+            type: "publicKey",
+          },
+        ],
+      },
+    },
+    {
       name: "signatoryRecordV2",
       type: {
         kind: "struct",
@@ -5263,7 +5663,15 @@ const IDL: SplGovernance = {
           {
             name: "reservedV2",
             type: {
-              array: ["u8", 128],
+              array: ["u8", 124],
+            },
+          },
+          {
+            name: "locks",
+            type: {
+              vec: {
+                defined: "TokenOwnerRecordLock",
+              },
             },
           },
         ],
@@ -5649,7 +6057,35 @@ const IDL: SplGovernance = {
           {
             name: "reserved",
             type: {
-              array: ["u8", 8],
+              array: ["u8", 4],
+            },
+          },
+          {
+            name: "lockAuthorities",
+            type: {
+              vec: "publicKey",
+            },
+          },
+        ],
+      },
+    },
+    {
+      name: "TokenOwnerRecordLock",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "lockType",
+            type: "u8",
+          },
+          {
+            name: "authority",
+            type: "publicKey",
+          },
+          {
+            name: "expiry",
+            type: {
+              option: "i64",
             },
           },
         ],
@@ -5783,6 +6219,9 @@ const IDL: SplGovernance = {
           },
           {
             name: "ProposalDeposit",
+          },
+          {
+            name: "RequiredSignatory",
           },
         ],
       },
@@ -6013,6 +6452,33 @@ const IDL: SplGovernance = {
           },
           {
             name: "Remove",
+          },
+        ],
+      },
+    },
+    {
+      name: "SetRealmConfigItemArgs",
+      type: {
+        kind: "enum",
+        variants: [
+          {
+            name: "TokenOwnerRecordLockAuthority",
+            fields: [
+              {
+                name: "action",
+                type: {
+                  defined: "SetItemActionType",
+                },
+              },
+              {
+                name: "governing_token_mint",
+                type: "publicKey",
+              },
+              {
+                name: "authority",
+                type: "publicKey",
+              },
+            ],
           },
         ],
       },
@@ -6623,6 +7089,46 @@ const IDL: SplGovernance = {
       code: 620,
       name: "InvalidMultiChoiceProposalParameters",
       msg: "Invalid multi choice proposal parameters",
+    },
+    {
+      code: 621,
+      name: "InvalidGovernanceForRequiredSignatory",
+      msg: "Invalid Governance for RequiredSignatory",
+    },
+    {
+      code: 622,
+      name: "SignatoryRecordAlreadyExists",
+      msg: "Signatory Record has already been created",
+    },
+    {
+      code: 623,
+      name: "InstructionDeprecated",
+      msg: "Instruction has been removed",
+    },
+    {
+      code: 624,
+      name: "MissingRequiredSignatories",
+      msg: "Proposal is missing required signatories",
+    },
+    {
+      code: 625,
+      name: "TokenOwnerRecordLockAuthorityMustSign",
+      msg: "TokenOwnerRecordLock authority must sign",
+    },
+    {
+      code: 626,
+      name: "ExpiredTokenOwnerRecordLock",
+      msg: "TokenOwnerRecordLock is expired ",
+    },
+    {
+      code: 627,
+      name: "TokenOwnerRecordLocked",
+      msg: "TokenOwnerRecord locked",
+    },
+    {
+      code: 628,
+      name: "InvalidTokenOwnerRecordLockAuthority",
+      msg: "Invalid TokenOwnerRecordLockAuthority",
     },
   ],
 };

@@ -1,19 +1,12 @@
 import {PublicKey} from '@solana/web3.js';
-import {
-  RealmTestData,
-  MemberTestData,
-  RootTestData,
-  ClanTestData,
-  buildKeypair,
-} from '../..';
+import {RealmTestData, MemberTestData, RootTestData, buildKeypair} from '../..';
 import {BN} from '@coral-xyz/anchor';
 
 export type StartLeavingClanTestData = {
   realm: RealmTestData;
   root: RootTestData;
-  member: Omit<MemberTestData, 'clan'> & {
-    clan?: ClanTestData;
-  };
+  member: MemberTestData;
+  clanIndex?: number;
   error?: string;
 };
 
@@ -54,13 +47,23 @@ export const startLeavingClanTestData: StartLeavingClanTestData[] = [
         ]
       ),
       voterWeight: new BN('6829473823'),
-      clan: {
-        address: new PublicKey('4G4wcigQWN98PhYePHWdwHtoBEGmhQytoRfJwgeQYY8E'),
-        owner: new PublicKey('7MNfY1GZxC5GU7GMncKcyGWUS7roFw42aW1ARxvW9Esz'),
-        name: 'Marinade',
-        activeMembers: new BN(2),
-        voterWeight: new BN('845094346777'),
-      },
+      membership: [
+        {
+          clan: {
+            address: new PublicKey(
+              '4G4wcigQWN98PhYePHWdwHtoBEGmhQytoRfJwgeQYY8E'
+            ),
+            owner: new PublicKey(
+              '7MNfY1GZxC5GU7GMncKcyGWUS7roFw42aW1ARxvW9Esz'
+            ),
+            name: 'Marinade',
+            permanentMembers: new BN(2),
+            voterWeight: new BN('845094346777'),
+            permanentVoterWeight: new BN('845094346777'),
+          },
+          shareBp: 10000,
+        },
+      ],
     },
   },
 ];

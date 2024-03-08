@@ -2,7 +2,8 @@
   "scripts": {
     "lint": "gts lint",
     "clean": "gts clean",
-    "compile": "tsc",
+    "copy-idl": "copyfiles -u 2 target/types/vote_aggregator.ts packages/tests/src/VoteAggregator/ ; copyfiles -u 2 target/types/vote_aggregator.ts packages/sdk/src/",
+    "build": "anchor build --arch sbf && pnpm copy-idl",
     "fix": "gts fix",
     "test": "./scripts/runTests.sh"
   },
@@ -12,8 +13,9 @@
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
     "@types/node": "20.8.2",
+    "copyfiles": "^2.4.1",
     "gts": "^5.2.0",
-    "typescript": "~5.2.0"
+    "typescript": "~5.3.3"
   },
   "dependencies": {
     "@tanstack/react-query-devtools": "^5.17.14",
@@ -21,5 +23,15 @@
     "@tanstack/router-vite-plugin": "^1.4.6",
     "buffer": "^6.0.3",
     "zod": "^3.22.4"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "react-native"
+      ]
+    },
+    "overrides": {
+      "@solana/buffer-layout": "3.0.0"
+    }
   }
 }

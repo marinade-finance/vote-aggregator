@@ -1,19 +1,9 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  spyOn,
-  Mock,
-} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {PublicKey} from '@solana/web3.js';
 import {
   CreateClanTestData,
   RealmTester,
   RootTester,
-  resizeBN,
   createClanTestData,
 } from 'vote-aggregator-tests';
 import {BN} from '@coral-xyz/anchor';
@@ -25,11 +15,10 @@ import {
 } from '@solana/spl-governance';
 
 describe('create-clan command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
+  let stdout: jest.SpyInstance;
 
   beforeEach(() => {
-    stdout = spyOn(console, 'log').mockImplementation(() => {});
+    stdout = jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -53,7 +42,7 @@ describe('create-clan command', () => {
       });
       const {sdk} = context!;
 
-      expect(
+      await expect(
         cli()
           .exitOverride((err: Error) => {
             throw err;
@@ -92,29 +81,34 @@ describe('create-clan command', () => {
       const [voterWeightRecord, voterWeightRecordBump] =
         sdk.clan.voterWeightAddress(clan.address.publicKey);
 
-      expect(sdk.clan.fetchClan(clan.address.publicKey)).resolves.toStrictEqual(
-        {
-          root: rootTester.rootAddress[0],
-          owner: clan.owner,
-          delegate: PublicKey.default,
-          voterAuthority,
-          tokenOwnerRecord,
-          voterWeightRecord,
-          minVotingWeightToJoin: resizeBN(new BN(0)),
-          bumps: {
-            voterAuthority: voterAuthorityBump,
-            tokenOwnerRecord: tokenOwnerRecordBump,
-            voterWeightRecord: voterWeightRecordBump,
-          },
-          activeMembers: resizeBN(new BN(0)),
-          leavingMembers: resizeBN(new BN(0)),
-          potentialVoterWeight: resizeBN(new BN(0)),
-          name: '',
-          description: '',
-        }
-      );
+      await expect(
+        sdk.clan.fetchClan(clan.address.publicKey)
+      ).resolves.toStrictEqual({
+        root: rootTester.rootAddress[0],
+        owner: clan.owner,
+        delegate: PublicKey.default,
+        voterAuthority,
+        tokenOwnerRecord,
+        voterWeightRecord,
+        minVotingWeightToJoin: new BN(0),
+        bumps: {
+          voterAuthority: voterAuthorityBump,
+          tokenOwnerRecord: tokenOwnerRecordBump,
+          voterWeightRecord: voterWeightRecordBump,
+        },
+        permanentMembers: new BN(0),
+        temporaryMembers: new BN(0),
+        updatedTemporaryMembers: new BN(0),
+        leavingMembers: new BN(0),
+        permanentVoterWeight: new BN(0),
+        nextVoterWeightResetTime:
+          rootTester.root.voterWeightReset?.nextResetTime || null,
+        acceptTemporaryMembers: true,
+        name: '',
+        description: '',
+      });
 
-      expect(
+      await expect(
         getTokenOwnerRecord(provider.connection, tokenOwnerRecord).then(
           ({account}) => account
         )
@@ -122,7 +116,7 @@ describe('create-clan command', () => {
         realm: rootTester.realm.realmAddress,
         governingTokenMint: rootTester.governingTokenMint,
         governingTokenOwner: voterAuthority,
-        governingTokenDepositAmount: resizeBN(new BN(0)),
+        governingTokenDepositAmount: new BN(0),
         unrelinquishedVotesCount: 0,
         outstandingProposalCount: 0,
         version: 1,
@@ -132,24 +126,24 @@ describe('create-clan command', () => {
         reserved: new Uint8Array(6),
       });
 
-      expect(
+      await expect(
         sdk.clan.fetchVoterWeight({voterWeightAddress: voterWeightRecord})
       ).resolves.toStrictEqual({
         realm: rootTester.realm.realmAddress,
         governingTokenMint: rootTester.governingTokenMint,
         governingTokenOwner: voterAuthority,
-        voterWeight: resizeBN(new BN(0)),
+        voterWeight: new BN(0),
         voterWeightExpiry: null,
         weightAction: null,
         weightActionTarget: null,
         reserved: [0, 0, 0, 0, 0, 0, 0, 0],
       });
 
-      expect(
+      await expect(
         sdk.root.fetchRoot(rootTester.rootAddress[0])
-      ).resolves.toMatchObject({
-        clanCount: resizeBN(new BN(1)),
-        memberCount: resizeBN(new BN(0)),
+      ).resolves.toStrictEqual({
+        ...rootTester.root,
+        clanCount: rootTester.root.clanCount.addn(1),
       });
     }
   );

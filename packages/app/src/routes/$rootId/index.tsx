@@ -109,28 +109,39 @@ const ClanListComponent = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {visibleRows.map(clan => {
+              {visibleRows.map(clanInfo => {
                 return (
                   <TableRow
                     hover
-                    onClick={() => openClan(clan.address)}
                     // aria-checked={isItemSelected}
                     tabIndex={-1}
-                    key={clan.address.toBase58()}
+                    key={clanInfo.address.toBase58()}
                     // selected={isItemSelected}
                     sx={{cursor: 'pointer'}}
                   >
-                    <TableCell component="th" scope="row" sx={{ml: 1}}>
-                      {clan.address.toBase58()}
+                    <TableCell
+                      component="th"
+                      scope="row"
+                      sx={{ml: 1}}
+                      onClick={() => openClan(clanInfo.address)}
+                    >
+                      {clanInfo.address.toBase58()}
                     </TableCell>
-                    <TableCell align="right">{clan.name}</TableCell>
-                    <TableCell align="right">{clan.description}</TableCell>
-                    <TableCell align="right">{clan.owner.toBase58()}</TableCell>
+                    <TableCell
+                      align="right"
+                      onClick={() => openClan(clanInfo.address)}
+                    >
+                      {clanInfo.name}
+                    </TableCell>
+                    <TableCell align="right">{clanInfo.description}</TableCell>
+                    <TableCell align="right">
+                      {clanInfo.owner.toBase58()}
+                    </TableCell>
                     {publicKey && (
                       <ClanRightsInfo
                         network={network}
                         root={root}
-                        clan={clan}
+                        clanInfo={clanInfo}
                       />
                     )}
                   </TableRow>

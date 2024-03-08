@@ -2,25 +2,24 @@ use anchor_lang::prelude::*;
 
 use crate::{
     error::Error,
-    state::{Clan, Member, Root, VoterWeightRecord}, events::{clan::ClanVoterWeightChanged, member::StartingLeavingClan},
+    events::member::StartingLeavingClan,
+    state::{Clan, Member, Root, VoterWeightRecord},
 };
 
 #[derive(Accounts)]
 pub struct StartLeavingClan<'info> {
     #[account(
         mut,
-        has_one = clan,
         has_one = root,
-        constraint = member.clan_leaving_time == Member::NOT_LEAVING_CLAN
-            @ Error::RerequestingLeavingClan,
     )]
     member: Account<'info, Member>,
+    #[account(mut)]
+    root: Account<'info, Root>,
     #[account(
         mut,
         has_one = root,
     )]
     clan: Account<'info, Clan>,
-    root: Account<'info, Root>,
     #[account(
         mut,
         seeds = [
@@ -29,7 +28,7 @@ pub struct StartLeavingClan<'info> {
         ],
         bump = clan.bumps.voter_weight_record,
     )]
-    clan_voter_weight_record: Box<Account<'info, VoterWeightRecord>>,
+    clan_vwr: Box<Account<'info, VoterWeightRecord>>,
     #[account(
         constraint = member_authority.key() == member.owner ||
             member_authority.key() == member.delegate
@@ -40,24 +39,37 @@ pub struct StartLeavingClan<'info> {
 
 impl<'info> StartLeavingClan<'info> {
     pub fn process(&mut self) -> Result<()> {
+        let entry = self
+            .member
+            .membership
+            .iter_mut()
+            .find(|entry| entry.clan == self.clan.key())
+            .ok_or(error!(Error::UnexpectedClan))?;
+        require!(entry.exitable_at.is_none(), Error::RerequestingLeavingClan);
+
         let clock = Clock::get()?;
-        self.member.clan_leaving_time =
-            clock.unix_timestamp + i64::try_from(self.root.max_proposal_lifetime).unwrap();
-        self.clan.active_members -= 1;
+        entry.exitable_at =
+            Some(clock.unix_timestamp + i64::try_from(self.root.max_proposal_lifetime).unwrap());
+
+        self.root.update_next_voter_weight_reset_time(&clock);
+        self.clan
+            .reset_voter_weight_if_needed(&mut self.root, &mut self.clan_vwr);
+        let share_bp = entry.share_bp;
+        Clan::update_member(
+            &mut self.clan,
+            &self.member,
+            Some(share_bp),
+            None,
+            None, // Leaving the clan
+            &mut self.clan_vwr,
+            &clock,
+        )?;
         self.clan.leaving_members += 1;
-        let old_clan_voter_weight = self.clan_voter_weight_record.voter_weight;
-        self.clan_voter_weight_record.voter_weight -= self.member.voter_weight;
         emit!(StartingLeavingClan {
             member: self.member.key(),
             clan: self.clan.key(),
             root: self.root.key(),
             owner: self.member.owner,
-        });
-        emit!(ClanVoterWeightChanged {
-            clan: self.clan.key(),
-            root: self.root.key(),
-            old_voter_weight: old_clan_voter_weight,
-            new_voter_weight: self.clan_voter_weight_record.voter_weight
         });
         Ok(())
     }

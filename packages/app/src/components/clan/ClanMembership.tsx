@@ -1,3 +1,4 @@
+/*
 import {Box, Button} from '@mui/material';
 import BN from 'bn.js';
 import useJoinClan from '../../hooks/useJoinClan';
@@ -92,3 +93,4 @@ const ClanMembership = ({
 };
 
 export default ClanMembership;
+*/

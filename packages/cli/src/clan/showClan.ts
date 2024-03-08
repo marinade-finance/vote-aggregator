@@ -25,9 +25,11 @@ const clanToJson = (clan: ClanAccount) => {
     tokenOwnerRecord: clan.tokenOwnerRecord.toBase58(),
     voterWeightRecord: clan.voterWeightRecord.toBase58(),
     minVotingWeightToJoin: clan.minVotingWeightToJoin.toString(),
-    activeMembers: clan.activeMembers.toString(),
+    permanentMembers: clan.permanentMembers.toString(),
+    temporaryMembers: clan.temporaryMembers.toString(),
+    updatedTemporaryMembers: clan.updatedTemporaryMembers.toString(),
     leavingMembers: clan.leavingMembers.toString(),
-    potentialVoterWeight: clan.potentialVoterWeight.toString(),
+    permanentVoterWeight: clan.permanentVoterWeight.toString(),
     name: clan.name,
     description: clan.description,
   };

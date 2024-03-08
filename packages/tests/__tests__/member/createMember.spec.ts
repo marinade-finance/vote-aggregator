@@ -1,11 +1,9 @@
-import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {PublicKey} from '@solana/web3.js';
 import {
   CreateMemberTestData,
   RealmTester,
   parseLogsEvent,
-  resizeBN,
   createMemberTestData,
 } from '../../src';
 import {BN} from '@coral-xyz/anchor';
@@ -43,16 +41,15 @@ describe('create_member instruction', () => {
           rootTester.voteAggregatorId
         );
 
-      const [tokenOwnerRecord, tokenOwnerRecordBump] =
-        PublicKey.findProgramAddressSync(
-          [
-            Buffer.from('governance', 'utf-8'),
-            rootTester.realm.realmAddress.toBuffer(),
-            rootTester.governingTokenMint.toBuffer(),
-            member.owner.publicKey.toBuffer(),
-          ],
-          rootTester.splGovernanceId
-        );
+      const [memberTor, memberTorBump] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from('governance', 'utf-8'),
+          rootTester.realm.realmAddress.toBuffer(),
+          rootTester.governingTokenMint.toBuffer(),
+          member.owner.publicKey.toBuffer(),
+        ],
+        rootTester.splGovernanceId
+      );
 
       const tx = await program.methods
         .createMember()
@@ -61,7 +58,7 @@ describe('create_member instruction', () => {
           member: memberAddress,
           payer: program.provider.publicKey!,
           systemProgram: SYSTEM_PROGRAM_ID,
-          tokenOwnerRecord,
+          memberTor,
           owner: member.owner.publicKey,
         })
         .transaction();
@@ -69,7 +66,7 @@ describe('create_member instruction', () => {
       tx.feePayer = testContext.payer.publicKey;
       tx.sign(testContext.payer, member.owner);
 
-      expect(
+      await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
@@ -79,35 +76,36 @@ describe('create_member instruction', () => {
           data: {
             member: memberAddress,
             root: rootTester.rootAddress[0],
-            memberIndex: resizeBN(new BN(0)),
+            memberIndex: new BN(0),
             owner: member.owner.publicKey,
           },
         },
       ]);
 
-      expect(
+      await expect(
         program.account.member.fetch(memberAddress)
       ).resolves.toStrictEqual({
         root: rootTester.rootAddress[0],
         owner: member.owner.publicKey,
         delegate: PublicKey.default,
-        tokenOwnerRecord,
+        tokenOwnerRecord: memberTor,
+        nextVoterWeightResetTime:
+          rootTester.root.voterWeightReset?.nextResetTime || null,
+        membership: [],
         bumps: {
           address: memberAddressBump,
-          tokenOwnerRecord: tokenOwnerRecordBump,
+          tokenOwnerRecord: memberTorBump,
         },
-        clan: PublicKey.default,
-        clanLeavingTime: new BN('9223372036854775807'), // i64::MAX
         voterWeightRecord: PublicKey.default,
-        voterWeight: resizeBN(new BN(0)),
+        voterWeight: new BN(0),
         voterWeightExpiry: null,
       });
 
-      expect(
+      await expect(
         program.account.root.fetch(rootTester.rootAddress[0])
-      ).resolves.toMatchObject({
-        clanCount: resizeBN(new BN(0)),
-        memberCount: resizeBN(new BN(1)),
+      ).resolves.toStrictEqual({
+        ...rootTester.root,
+        memberCount: rootTester.root.memberCount.addn(1),
       });
     }
   );

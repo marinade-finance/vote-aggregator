@@ -1,4 +1,3 @@
-import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   ConfigureClanTestData,
@@ -56,7 +55,7 @@ describe('Configure clan instructions', () => {
       tx.feePayer = testContext.payer.publicKey;
       tx.sign(testContext.payer, clanAuthority);
 
-      expect(
+      await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
@@ -71,7 +70,9 @@ describe('Configure clan instructions', () => {
         },
       ]);
 
-      expect(program.account.clan.fetch(clan.address)).resolves.toStrictEqual({
+      await expect(
+        program.account.clan.fetch(clan.address)
+      ).resolves.toStrictEqual({
         ...clanAccount,
         name: newName!,
       });
@@ -126,7 +127,7 @@ describe('Configure clan instructions', () => {
       tx.feePayer = testContext.payer.publicKey;
       tx.sign(testContext.payer, clanAuthority);
 
-      expect(
+      await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
@@ -141,7 +142,9 @@ describe('Configure clan instructions', () => {
         },
       ]);
 
-      expect(program.account.clan.fetch(clan.address)).resolves.toStrictEqual({
+      await expect(
+        program.account.clan.fetch(clan.address)
+      ).resolves.toStrictEqual({
         ...clanAccount,
         description: newDescription!,
       });

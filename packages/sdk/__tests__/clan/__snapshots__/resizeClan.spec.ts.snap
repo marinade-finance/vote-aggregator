@@ -1,141 +1,43 @@
-// Bun Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`resize_clan instruction Works 1`] = `
-TransactionInstruction {
-  "data": {
-    "data": [
-      116,
-      5,
-      156,
-      164,
-      20,
-      220,
-      67,
-      58,
-      176,
-      4,
-      0,
-      0,
-    ],
-    "type": "Buffer",
-  },
+{
+  "data": [
+    116,
+    5,
+    156,
+    164,
+    20,
+    220,
+    67,
+    58,
+    176,
+    4,
+    0,
+    0,
+  ],
   "keys": [
     {
       "isSigner": false,
       "isWritable": true,
-      "pubkey": PublicKey(21h2D9KgvjsNfzbHvdyUbivGwXMVqAxr6kSh9vgBidMX) PublicKey {
-        "_bn": BN {
-          "length": 10,
-          "negative": 0,
-          "red": null,
-          "words": [
-            29110622,
-            39227048,
-            20313093,
-            65908671,
-            32417472,
-            57782200,
-            23665453,
-            51880924,
-            4926695,
-            246332,
-            0,
-          ],
-        },
-      },
+      "pubkey": "21h2D9KgvjsNfzbHvdyUbivGwXMVqAxr6kSh9vgBidMX",
     },
     {
       "isSigner": true,
       "isWritable": false,
-      "pubkey": PublicKey(ARhgofNpMqtJwT4KdFN11ELGB3op5Cfgo6APJjrhXVJV) PublicKey {
-        "_bn": BN {
-          "length": 10,
-          "negative": 0,
-          "red": null,
-          "words": [
-            16588726,
-            31580574,
-            52168799,
-            58142516,
-            61847744,
-            23749487,
-            11016727,
-            40111542,
-            3795555,
-            2294600,
-            0,
-          ],
-        },
-      },
+      "pubkey": "ARhgofNpMqtJwT4KdFN11ELGB3op5Cfgo6APJjrhXVJV",
     },
     {
       "isSigner": true,
       "isWritable": true,
-      "pubkey": PublicKey(11111111111111111111111111111111) PublicKey {
-        "_bn": BN {
-          "length": 1,
-          "negative": 0,
-          "red": null,
-          "words": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-          ],
-        },
-      },
+      "pubkey": "11111111111111111111111111111111",
     },
     {
       "isSigner": false,
       "isWritable": false,
-      "pubkey": PublicKey(11111111111111111111111111111111) PublicKey {
-        "_bn": BN {
-          "length": 1,
-          "negative": 0,
-          "red": null,
-          "words": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-          ],
-        },
-      },
+      "pubkey": "11111111111111111111111111111111",
     },
   ],
-  "programId": PublicKey(VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT) PublicKey {
-    "_bn": BN {
-      "length": 10,
-      "negative": 0,
-      "red": null,
-      "words": [
-        8873870,
-        60943108,
-        23935113,
-        33099803,
-        59555925,
-        65803128,
-        11262563,
-        66819466,
-        50754419,
-        120882,
-        0,
-      ],
-    },
-  },
+  "programId": "VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT",
 }
 `;

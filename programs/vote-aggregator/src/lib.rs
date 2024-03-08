@@ -8,17 +8,57 @@ pub mod state;
 use processor::*;
 
 declare_id!("VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT");
+/*
+#[derive(Accounts)]
+pub struct DestroyAccount<'info> {
+    /// CHECK: The account to destroy.
+    #[account(
+        mut,
+    )]
+    pub account: UncheckedAccount<'info>,
+
+    #[account(
+        mut,
+    )]
+    pub rent_collector: SystemAccount<'info>,
+}
+*/
 
 #[program]
 pub mod vote_aggregator {
     use super::*;
 
-    pub fn create_root(ctx: Context<CreateRoot>) -> Result<()> {
-        ctx.accounts.process(ctx.bumps)
+    pub fn create_root(ctx: Context<CreateRoot>, max_proposal_lifetime: u64) -> Result<()> {
+        ctx.accounts.process(max_proposal_lifetime, ctx.bumps)
+    }
+
+    pub fn update_root(ctx: Context<UpdateRoot>) -> Result<()> {
+        ctx.accounts.process()
+    }
+
+    pub fn set_max_proposal_lifetime(
+        ctx: Context<ConfigureRoot>,
+        new_max_proposal_lifetime: u64,
+    ) -> Result<()> {
+        ctx.accounts
+            .set_max_proposal_lifetime(new_max_proposal_lifetime)
+    }
+
+    pub fn set_voter_weight_reset(
+        ctx: Context<ConfigureRoot>,
+        new_step: u64,
+        new_next_reset_time: Option<i64>,
+    ) -> Result<()> {
+        ctx.accounts
+            .set_voter_weight_reset(new_step, new_next_reset_time)
     }
 
     pub fn create_clan(ctx: Context<CreateClan>, owner: Pubkey) -> Result<()> {
         ctx.accounts.process(owner, ctx.bumps)
+    }
+
+    pub fn update_clan(ctx: Context<UpdateClan>) -> Result<()> {
+        ctx.accounts.process()
     }
 
     pub fn set_clan_owner(ctx: Context<SetClanOwner>, owner: Pubkey) -> Result<()> {
@@ -49,15 +89,18 @@ pub mod vote_aggregator {
         ctx.accounts.process(ctx.bumps)
     }
 
-    pub fn join_clan(ctx: Context<JoinClan>) -> Result<()> {
-        ctx.accounts.process()
+    pub fn join_clan<'a, 'b, 'c: 'info, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, JoinClan<'info>>,
+        share_bp: u16,
+    ) -> Result<()> {
+        ctx.accounts.process(share_bp, ctx.remaining_accounts)
     }
 
     pub fn start_leaving_clan(ctx: Context<StartLeavingClan>) -> Result<()> {
         ctx.accounts.process()
     }
 
-    pub fn leave_clan(ctx: Context<LeaveClan>) -> Result<()> {
+    pub fn exit_clan(ctx: Context<ExitClan>) -> Result<()> {
         ctx.accounts.process()
     }
 
@@ -68,11 +111,24 @@ pub mod vote_aggregator {
         ctx.accounts.process(new_voting_delegate)
     }
 
-    pub fn update_voter_weight(ctx: Context<UpdateVoterWeight>) -> Result<()> {
-        ctx.accounts.process()
+    pub fn update_voter_weight<'a, 'b, 'c: 'info, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, UpdateVoterWeight<'info>>,
+    ) -> Result<()> {
+        ctx.accounts.process(ctx.remaining_accounts)
     }
 
-    pub fn set_voter_weight_record(ctx: Context<SetVoterWeightRecord>) -> Result<()> {
-        ctx.accounts.process()
+    pub fn set_voter_weight_record<'a, 'b, 'c: 'info, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, SetVoterWeightRecord<'info>>,
+    ) -> Result<()> {
+        ctx.accounts.process(ctx.remaining_accounts)
     }
+
+    /*
+    pub fn destroy_account(ctx: Context<DestroyAccount>) -> Result<()> {
+        let l = ctx.accounts.account.lamports();
+        ctx.accounts.account.sub_lamports(l)?;
+        ctx.accounts.rent_collector.add_lamports(l)?;
+        Ok(())
+    }
+    */
 }

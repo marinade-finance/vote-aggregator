@@ -49,6 +49,10 @@ pub struct ClanVoterWeightChanged {
     pub root: Pubkey,
     pub old_voter_weight: u64,
     pub new_voter_weight: u64,
+    pub old_permament_voter_weight: u64,
+    pub new_permament_voter_weight: u64,
+    pub old_is_permanent: bool,
+    pub new_is_permanent: bool,
 }
 
 #[event]

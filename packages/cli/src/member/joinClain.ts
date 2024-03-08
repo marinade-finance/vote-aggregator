@@ -3,6 +3,7 @@ import {context} from '../context';
 import {execute} from '../execute';
 import {parseKeypair, parsePubkey} from '../keyParser';
 import {PublicKey} from '@solana/web3.js';
+import {MembershipEntry} from 'vote-aggregator-sdk';
 
 export const installJoinClanCLI = (program: Command) => {
   program
@@ -10,6 +11,7 @@ export const installJoinClanCLI = (program: Command) => {
     .option('--owner <keypair>', 'Owner')
     .requiredOption('--clan <pubkey>', 'Clan')
     .option('--member-voter-weight <pubkey>', 'Member voter weight')
+    .option('--share', 'Share basis points')
     .action(joinClan);
 };
 
@@ -17,10 +19,12 @@ const joinClan = async ({
   owner,
   clan,
   memberVoterWeight,
+  share,
 }: {
   owner?: string;
   clan: string;
   memberVoterWeight?: string;
+  share?: string;
 }) => {
   const {sdk, provider} = context!;
   const ownerKp = owner ? await parseKeypair(owner) : null;
@@ -29,11 +33,11 @@ const joinClan = async ({
   const clanData = await sdk.clan.fetchClan(clanAddress);
   const rootData = await sdk.root.fetchRoot(clanData.root);
 
-  let memberVoterWeightAddress: PublicKey;
+  let memberVwr: PublicKey;
   if (memberVoterWeight) {
-    memberVoterWeightAddress = await parsePubkey(memberVoterWeight);
+    memberVwr = await parsePubkey(memberVoterWeight);
   } else {
-    memberVoterWeightAddress = (
+    memberVwr = (
       await sdk.member.findVoterWeightRecord({
         rootData,
         owner: ownerAddress,
@@ -41,25 +45,59 @@ const joinClan = async ({
     ).pubkey;
   }
 
+  const instructions = [];
+
+  const [memberAddress] = sdk.member.memberAddress({
+    rootAddress: clanData.root,
+    owner: ownerAddress,
+  });
+  let memberData: {
+    root: PublicKey;
+    owner: PublicKey;
+    tokenOwnerRecord?: PublicKey;
+    membership: MembershipEntry[];
+  } | null = await sdk.member.fetchMember({memberAddress});
+  if (!memberData) {
+    instructions.push(
+      await sdk.member.createMemberInstruction({
+        rootAddress: clanData.root,
+        rootData,
+        owner: ownerAddress,
+        payer: provider.publicKey!,
+      })
+    );
+    memberData = {
+      root: clanData.root,
+      owner: ownerAddress,
+      membership: [],
+    };
+  }
+
+  let shareBp = 10000;
+  if (share) {
+    shareBp = parseInt(share);
+  } else {
+    for (const m of memberData.membership) {
+      shareBp -= m.shareBp;
+    }
+  }
+  if (shareBp <= 0) {
+    throw new Error('No share left');
+  }
+
   const signers = [];
   if (ownerKp) {
     signers.push(ownerKp);
   }
-  const instructions = await sdk.member.createMemberInstructionIfNeeded({
-    rootAddress: clanData.root,
-    rootData,
-    owner: ownerAddress,
-    payer: provider.publicKey!,
-  });
   instructions.push(
     await sdk.member.joinClanInstruction({
       rootData,
-      memberData: {
-        root: clanData.root,
-        owner: ownerAddress,
-      },
+      memberAddress,
+      memberData,
       clanAddress,
-      memberVoterWeightAddress,
+      memberVwr,
+      shareBp,
+      payer: provider.publicKey!,
     })
   );
   await execute({

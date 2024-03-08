@@ -1,33 +1,20 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  spyOn,
-  Mock,
-} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   SetVoterWeightRecordTestData,
   RealmTester,
   RootTester,
-  resizeBN,
   setVoterWeightRecordTestData,
   MemberTester,
-  ClanTester,
 } from 'vote-aggregator-tests';
 import {context} from '../../src/context';
 import {cli} from '../../src/cli';
-import {BN} from '@coral-xyz/anchor';
-import {Keypair} from '@solana/web3.js';
+import {Keypair, PublicKey} from '@solana/web3.js';
 
 describe('set-voter-weight-record command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
+  let stdout: jest.SpyInstance;
 
   beforeEach(() => {
-    stdout = spyOn(console, 'log').mockImplementation(() => {});
+    stdout = jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -50,30 +37,45 @@ describe('set-voter-weight-record command', () => {
       const memberTester = new MemberTester({
         ...member,
         root: rootTester,
-        clan: member.clan?.address,
+        membership: MemberTester.membershipTesters({
+          membership: member.membership || [],
+          root: rootTester,
+        }),
       });
-      const clanTester =
-        member.clan && new ClanTester({...member.clan!, root: rootTester});
+
+      const clanTesters = memberTester.membership.flatMap(
+        ({clan, exitableAt}) => {
+          if (exitableAt) {
+            return [];
+          }
+
+          if (clan instanceof PublicKey) {
+            throw new Error('Clan data should be provided');
+          }
+
+          return [clan];
+        }
+      );
+
       await startTest({
         splGovernanceId: rootTester.splGovernanceId,
         accounts: [
           ...(await realmTester.accounts()),
           ...(await rootTester.accounts()),
           ...(await memberTester.accounts()),
-          ...(clanTester ? await clanTester.accounts() : []),
+          ...(
+            await Promise.all(clanTesters.map(clan => clan.accounts()))
+          ).flat(),
           await realmTester.voterWeightRecord({
             ...memberVoterWeightRecord,
             side: root.side,
-            owner:
-              member.owner instanceof Keypair
-                ? member.owner.publicKey
-                : member.owner,
+            owner: memberTester.ownerAddress,
           }),
         ],
       });
       const {sdk} = context!;
 
-      expect(
+      await expect(
         cli()
           .exitOverride((err: Error) => {
             throw err;
@@ -99,53 +101,43 @@ describe('set-voter-weight-record command', () => {
         ])
       );
 
-      expect(
+      await expect(
         sdk.member.fetchMember({memberAddress: memberTester.memberAddress[0]})
       ).resolves.toStrictEqual({
         ...memberTester.member,
         voterWeightRecord: memberVoterWeightRecord.address,
-        voterWeight: resizeBN(memberVoterWeightRecord.voterWeight),
+        voterWeight: memberVoterWeightRecord.voterWeight,
         voterWeightExpiry: memberVoterWeightRecord.voterWeightExpiry || null,
       });
 
-      expect(
+      await expect(
         sdk.root.fetchMaxVoterWeight({rootAddress: rootTester.rootAddress[0]})
       ).resolves.toMatchObject({
         ...rootTester.maxVoterWeight,
-        maxVoterWeight: resizeBN(
-          rootTester.maxVoterWeight.maxVoterWeight
-            .sub(memberTester.member.voterWeight)
-            .add(memberVoterWeightRecord.voterWeight)
-        ),
+        maxVoterWeight: rootTester.maxVoterWeight.maxVoterWeight
+          .sub(memberTester.member.voterWeight)
+          .add(memberVoterWeightRecord.voterWeight),
       });
 
-      if (clanTester) {
-        expect(
+      for (const clanTester of clanTesters) {
+        await expect(
           sdk.clan.fetchClan(clanTester.clanAddress)
         ).resolves.toStrictEqual({
           ...clanTester.clan,
-          potentialVoterWeight: resizeBN(
-            clanTester.clan.potentialVoterWeight
-              .sub(memberTester.member.voterWeight)
-              .add(memberVoterWeightRecord.voterWeight)
-          ),
+          permanentVoterWeight: clanTester.clan.permanentVoterWeight
+            .sub(memberTester.member.voterWeight)
+            .add(memberVoterWeightRecord.voterWeight),
         });
 
-        expect(
+        await expect(
           sdk.clan.fetchVoterWeight({
             clanAddress: clanTester.clanAddress,
           })
         ).resolves.toStrictEqual({
           ...clanTester.voterWeightRecord,
-          voterWeight: resizeBN(
-            memberTester.member.clanLeavingTime.eq(
-              new BN('9223372036854775807')
-            ) // i64::MAX
-              ? clanTester.voterWeightRecord.voterWeight
-                  .sub(memberTester.member.voterWeight)
-                  .add(memberVoterWeightRecord.voterWeight)
-              : clanTester.voterWeightRecord.voterWeight
-          ),
+          voterWeight: clanTester.voterWeightRecord.voterWeight
+            .sub(memberTester.member.voterWeight)
+            .add(memberVoterWeightRecord.voterWeight),
         });
       }
     }

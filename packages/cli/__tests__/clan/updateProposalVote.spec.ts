@@ -1,12 +1,3 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  spyOn,
-  Mock,
-} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   UpdateProposalVoteTestData,
@@ -14,20 +5,20 @@ import {
   RootTester,
   updateProposalVoteTestData,
   ClanTester,
-  resizeBN,
 } from 'vote-aggregator-tests';
 import {cli} from '../../src/cli';
 import {getProposal, getVoteRecord} from '@solana/spl-governance';
-import {GovernanceTester} from 'vote-aggregator-tests/src/SplGovernance/governance';
-import {ProposalTester} from 'vote-aggregator-tests/src/SplGovernance';
-import {VoteTester} from 'vote-aggregator-tests/src/SplGovernance/vote';
+import {
+  GovernanceTester,
+  ProposalTester,
+  VoteTester,
+} from 'vote-aggregator-tests';
 
 describe('update-proposal-vote command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
+  let stdout: jest.SpyInstance;
 
   beforeEach(() => {
-    stdout = spyOn(console, 'log').mockImplementation(() => {});
+    stdout = jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -80,7 +71,7 @@ describe('update-proposal-vote command', () => {
         ],
       });
 
-      expect(
+      await expect(
         cli()
           .exitOverride((err: Error) => {
             throw err;
@@ -101,24 +92,23 @@ describe('update-proposal-vote command', () => {
           expect.arrayContaining([expect.stringMatching(/^Success/)]),
         ])
       );
+      stdout.mockRestore();
 
-      expect(
+      await expect(
         getVoteRecord(provider.connection, await voteTester.voteAddress()).then(
           ({account}) => account
         )
       ).resolves.toMatchObject({
-        voterWeight: resizeBN(clanTester.voterWeightRecord.voterWeight),
+        voterWeight: clanTester.voterWeightRecord.voterWeight,
       });
-      expect(
+      await expect(
         getProposal(provider.connection, proposalTester.proposalAddress).then(
           ({account}) => account.options[0].voteWeight
         )
       ).resolves.toStrictEqual(
-        resizeBN(
-          proposalTester.proposal.options[0].voteWeight
-            .sub(voteTester.vote.voterWeight)
-            .add(clanTester.voterWeightRecord.voterWeight)
-        )
+        proposalTester.proposal.options[0].voteWeight
+          .sub(voteTester.vote.voterWeight)
+          .add(clanTester.voterWeightRecord.voterWeight)
       );
     }
   );

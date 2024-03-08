@@ -1,19 +1,9 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  spyOn,
-  Mock,
-} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {PublicKey} from '@solana/web3.js';
 import {
   CreateMemberTestData,
   RealmTester,
   RootTester,
-  resizeBN,
   createMemberTestData,
 } from 'vote-aggregator-tests';
 import {BN} from '@coral-xyz/anchor';
@@ -21,11 +11,10 @@ import {context} from '../../src/context';
 import {cli} from '../../src/cli';
 
 describe('create-member command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
+  let stdout: jest.SpyInstance;
 
   beforeEach(() => {
-    stdout = spyOn(console, 'log').mockImplementation(() => {});
+    stdout = jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -53,7 +42,7 @@ describe('create-member command', () => {
       });
       const {sdk} = context!;
 
-      expect(
+      await expect(
         cli()
           .exitOverride((err: Error) => {
             throw err;
@@ -90,27 +79,29 @@ describe('create-member command', () => {
           splGovernanceId: rootTester.splGovernanceId,
         });
 
-      expect(sdk.member.fetchMember({memberAddress})).resolves.toStrictEqual({
+      await expect(
+        sdk.member.fetchMember({memberAddress})
+      ).resolves.toStrictEqual({
         root: rootTester.rootAddress[0],
         owner: member.owner.publicKey,
         delegate: PublicKey.default,
         tokenOwnerRecord,
+        membership: [],
+        nextVoterWeightResetTime: null,
         bumps: {
           address: memberAddressBump,
           tokenOwnerRecord: tokenOwnerRecordBump,
         },
-        clan: PublicKey.default,
-        clanLeavingTime: new BN('9223372036854775807'), // i64::MAX
         voterWeightRecord: PublicKey.default,
-        voterWeight: resizeBN(new BN(0)),
+        voterWeight: new BN(0),
         voterWeightExpiry: null,
       });
 
-      expect(
+      await expect(
         sdk.root.fetchRoot(rootTester.rootAddress[0])
-      ).resolves.toMatchObject({
-        clanCount: resizeBN(new BN(0)),
-        memberCount: resizeBN(new BN(1)),
+      ).resolves.toStrictEqual({
+        ...rootTester.root,
+        memberCount: rootTester.root.memberCount.addn(1),
       });
     }
   );

@@ -1,18 +1,15 @@
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, system_program};
 use spl_governance::{
     addins::voter_weight::get_voter_weight_record_data_for_token_owner_record,
+    instruction::set_token_owner_record_lock, solana_program::program::invoke_signed,
     state::token_owner_record::get_token_owner_record_data_for_realm_and_governing_mint,
     PROGRAM_AUTHORITY_SEED,
 };
 
 use crate::{
     error::Error,
-    events::{
-        clan::{ClanMemberAdded, ClanVoterWeightChanged},
-        member::MemberVoterWeightChanged,
-        root::MaxVoterWeightChanged,
-    },
-    state::{Clan, MaxVoterWeightRecord, Member, Root, VoterWeightRecord},
+    events::clan::ClanMemberAdded,
+    state::{Clan, MaxVoterWeightRecord, Member, MembershipEntry, Root, VoterWeightRecord},
 };
 
 #[derive(Accounts)]
@@ -20,7 +17,6 @@ pub struct JoinClan<'info> {
     #[account(
         mut,
         has_one = root,
-        constraint = member.clan == Pubkey::default() @ Error::AlreadyJoinedClan
     )]
     member: Account<'info, Member>,
     #[account(
@@ -36,7 +32,40 @@ pub struct JoinClan<'info> {
     )]
     clan: Account<'info, Clan>,
 
+    #[account(
+        mut,
+        has_one = governance_program,
+        has_one = realm,
+    )]
     root: Account<'info, Root>,
+
+    /// CHECK: PDA
+    #[account(
+        seeds = [
+        Root::LOCK_AUTHORITY_SEED,
+            &root.key().to_bytes()
+        ],
+        bump = root.bumps.lock_authority,
+    )]
+    lock_authority: UncheckedAccount<'info>,
+
+    /// CHECK: dynamic owner
+    #[account(
+        owner = governance_program.key(),
+    )]
+    realm: UncheckedAccount<'info>,
+
+    /// CHECK: dynamic owner
+    #[account(
+        owner = governance_program.key(),
+        seeds = [
+            b"realm-config",
+            &realm.key.to_bytes()
+        ],
+        bump,
+        seeds::program = governance_program.key(),
+    )]
+    realm_config: UncheckedAccount<'info>,
 
     #[account(
         mut,
@@ -46,10 +75,11 @@ pub struct JoinClan<'info> {
         ],
         bump = clan.bumps.voter_weight_record,
     )]
-    clan_voter_weight_record: Box<Account<'info, VoterWeightRecord>>,
+    clan_vwr: Box<Account<'info, VoterWeightRecord>>,
 
     /// CHECK: dynamic owner
     #[account(
+        mut,
         seeds = [
             PROGRAM_AUTHORITY_SEED,
             &root.realm.to_bytes(),
@@ -58,14 +88,15 @@ pub struct JoinClan<'info> {
         ],
         seeds::program = root.governance_program,
         bump,
+        address = member.token_owner_record,
     )]
-    member_token_owner_record: UncheckedAccount<'info>,
+    member_tor: UncheckedAccount<'info>,
 
     /// CHECK: dynamic owner
     #[account(
         owner = root.voting_weight_plugin,
     )]
-    member_voter_weight_record: UncheckedAccount<'info>,
+    member_vwr: UncheckedAccount<'info>,
 
     #[account(
         mut,
@@ -75,77 +106,179 @@ pub struct JoinClan<'info> {
         ],
         bump = root.bumps.max_voter_weight,
     )]
-    max_voter_weight_record: Account<'info, MaxVoterWeightRecord>,
+    max_vwr: Account<'info, MaxVoterWeightRecord>,
+
+    #[account(
+        mut,
+        owner = system_program::ID
+    )]
+    payer: Signer<'info>,
+
+    system_program: Program<'info, System>,
+    /// CHECK: program
+    #[account(executable)]
+    governance_program: UncheckedAccount<'info>,
 }
 
 impl<'info> JoinClan<'info> {
-    pub fn process(&mut self) -> Result<()> {
-        let tor = get_token_owner_record_data_for_realm_and_governing_mint(
+    pub fn process<'c: 'info>(
+        &mut self,
+        share_bp: u16,
+        rest: &'c [AccountInfo<'info>],
+    ) -> Result<()> {
+        let member_tor = get_token_owner_record_data_for_realm_and_governing_mint(
             &self.root.governance_program,
-            &self.member_token_owner_record.to_account_info(),
+            &self.member_tor.to_account_info(),
             &self.root.realm,
             &self.root.governing_token_mint,
         )
-        .map_err(|e| {
-            ProgramErrorWithOrigin::from(e).with_account_name("member_token_owner_record")
-        })?;
-        require_keys_eq!(tor.governing_token_owner, self.member.owner);
-        let vwr = get_voter_weight_record_data_for_token_owner_record(
+        .map_err(|e| ProgramErrorWithOrigin::from(e).with_account_name("member_tor"))?;
+        require_keys_eq!(member_tor.governing_token_owner, self.member.owner);
+        require_eq!(
+            member_tor.unrelinquished_votes_count,
+            0,
+            Error::MemberHasUnrelinquishedVotes
+        );
+        require_eq!(
+            member_tor.outstanding_proposal_count,
+            0,
+            Error::MemberHasOutstandingProposals
+        );
+        let new_member_vwr = get_voter_weight_record_data_for_token_owner_record(
             &self.root.voting_weight_plugin,
-            &self.member_voter_weight_record,
-            &tor,
+            &self.member_vwr,
+            &member_tor,
         )
-        .map_err(|e| {
-            ProgramErrorWithOrigin::from(e).with_account_name("member_voter_weight_record")
-        })?;
-        /* TODO
-        require!(
-            vwr.voter_weight_expiry.is_none(),
-            Error::VoterWeightExpiryIsNotImplemented
+        .map_err(|e| ProgramErrorWithOrigin::from(e).with_account_name("member_vwr"))?;
+
+        require_gte!(
+            (new_member_vwr.voter_weight as u128 * share_bp as u128 / 10000) as u64,
+            self.clan.min_voting_weight_to_join
         );
-        */
-        require!(vwr.weight_action.is_none(), Error::UnexpectedWeightAction);
         require!(
-            vwr.weight_action_target.is_none(),
-            Error::UnexpectedWeightActionTarget
+            new_member_vwr.voter_weight_expiry.is_none() || self.clan.accept_temporary_members,
+            Error::TemporaryMembersNotAllowed,
         );
-        require_gte!(vwr.voter_weight, self.clan.min_voting_weight_to_join);
-        let old_member_voter_weight = self.member.voter_weight;
-        let old_clan_voter_weight = self.clan_voter_weight_record.voter_weight;
-        let old_max_voter_weight = self.max_voter_weight_record.max_voter_weight;
-        self.max_voter_weight_record.max_voter_weight -= old_member_voter_weight;
-        self.member.voter_weight_record = self.member_voter_weight_record.key();
-        self.member.voter_weight = vwr.voter_weight;
-        self.max_voter_weight_record.max_voter_weight += self.member.voter_weight;
-        // TODO: check expiry
-        self.member.voter_weight_expiry = vwr.voter_weight_expiry;
-        self.member.clan = self.clan.key();
-        self.clan.active_members += 1;
-        self.clan.potential_voter_weight += self.member.voter_weight;
-        self.clan_voter_weight_record.voter_weight += self.member.voter_weight;
+
+        let clock = Clock::get()?;
+        self.root.update_next_voter_weight_reset_time(&clock);
+
+        let old_share_bp = if let Some(entry) = self
+            .member
+            .membership
+            .iter_mut()
+            .find(|m| m.clan == self.clan.key())
+        {
+            require_gte!(share_bp, entry.share_bp, Error::InvalidShareBp);
+            let was_member = entry.exitable_at.is_none();
+            entry.exitable_at = None;
+            let old_share_bp = entry.share_bp;
+            entry.share_bp = share_bp;
+            if was_member {
+                Some(old_share_bp)
+            } else {
+                None
+            }
+        } else {
+            require_gt!(
+                Member::MAX_MEMBERSHIP,
+                self.member.membership.len(),
+                Error::MaxMembershipExceeded
+            );
+            self.member.membership.push(MembershipEntry {
+                clan: self.clan.key(),
+                share_bp,
+                exitable_at: None,
+            });
+            None
+        };
+        // check the shares total after joining (will be rolled back in case of error)
+        if self
+            .member
+            .membership
+            .iter()
+            .map(|m| m.share_bp)
+            .sum::<u16>()
+            > 10000
+        {
+            return err!(Error::InvalidShareBp);
+        }
+
+        // Skip the clan we are joining/updating
+        for (mut chunk, entry) in self
+            .member
+            .load_clan_chunks(rest, |e| e.clan != self.clan.key())?
+        {
+            require!(
+                new_member_vwr.voter_weight_expiry.is_none() || chunk.clan.accept_temporary_members,
+                Error::TemporaryMembersNotAllowed,
+            );
+
+            self.member.refresh_membership(
+                &mut self.root,
+                entry,
+                &mut chunk,
+                &new_member_vwr,
+                &clock,
+            )?;
+
+            chunk.exit(&crate::ID)?;
+        }
+        self.clan
+            .reset_voter_weight_if_needed(&mut self.root, &mut self.clan_vwr);
+        Clan::update_member(
+            &mut self.clan,
+            &self.member,
+            old_share_bp,
+            Some(&new_member_vwr),
+            Some(share_bp),
+            &mut self.clan_vwr,
+            &clock,
+        )?;
+
+        Member::update_voter_weight(
+            &mut self.member,
+            self.member_vwr.key(),
+            &new_member_vwr,
+            &mut self.max_vwr,
+        )?;
+        self.member.next_voter_weight_reset_time = self.root.next_voter_weight_reset_time();
+
+        if !member_tor.locks.iter().any(|l| {
+            l.authority == self.lock_authority.key() && l.lock_id == 0 && l.expiry.is_none()
+        }) {
+            invoke_signed(
+                &set_token_owner_record_lock(
+                    &self.governance_program.key(),
+                    self.realm.key,
+                    self.member_tor.key,
+                    self.lock_authority.key,
+                    self.payer.key,
+                    0,
+                    None,
+                ),
+                &[
+                    self.governance_program.to_account_info(),
+                    self.realm.to_account_info(),
+                    self.realm_config.to_account_info(),
+                    self.member_tor.to_account_info(),
+                    self.lock_authority.to_account_info(),
+                    self.payer.to_account_info(),
+                    self.system_program.to_account_info(),
+                ],
+                &[&[
+                    Root::LOCK_AUTHORITY_SEED,
+                    &self.root.key().to_bytes(),
+                    &[self.root.bumps.lock_authority],
+                ]],
+            )?;
+        }
 
         emit!(ClanMemberAdded {
             clan: self.clan.key(),
             member: self.member.key(),
             root: self.root.key(),
             owner: self.member.owner,
-        });
-        emit!(MemberVoterWeightChanged {
-            member: self.member.key(),
-            root: self.root.key(),
-            old_voter_weight: old_member_voter_weight,
-            new_voter_weight: self.member.voter_weight
-        });
-        emit!(ClanVoterWeightChanged {
-            clan: self.clan.key(),
-            root: self.root.key(),
-            old_voter_weight: old_clan_voter_weight,
-            new_voter_weight: self.clan_voter_weight_record.voter_weight
-        });
-        emit!(MaxVoterWeightChanged {
-            root: self.root.key(),
-            old_max_voter_weight,
-            new_max_voter_weight: self.max_voter_weight_record.max_voter_weight
         });
 
         Ok(())

@@ -5,6 +5,7 @@ import {BN} from '@coral-xyz/anchor';
 
 export type CreateRootTestData = {
   realm: RealmTestData;
+  maxProposalLifetime?: BN;
   error?: string;
 };
 

@@ -11,9 +11,11 @@ export type ClanInfo = {
   tokenOwnerRecord: PublicKey;
   voterWeightRecord: PublicKey;
   minVotingWeightToJoin: BN;
-  activeMembers: BN;
+  permanentMembers: BN;
+  temporaryMembers: BN;
+  updatedTemporaryMembers: BN;
   leavingMembers: BN;
-  potentialVoterWeight: BN;
+  nextVoterWeightResetTime: BN | null;
   name: string;
   description: string;
 };
@@ -38,9 +40,11 @@ const fetchClanList = async ({
     tokenOwnerRecord: clan.account.tokenOwnerRecord,
     voterWeightRecord: clan.account.voterWeightRecord,
     minVotingWeightToJoin: clan.account.minVotingWeightToJoin,
-    activeMembers: clan.account.activeMembers,
+    permanentMembers: clan.account.permanentMembers,
+    temporaryMembers: clan.account.temporaryMembers,
+    updatedTemporaryMembers: clan.account.updatedTemporaryMembers,
     leavingMembers: clan.account.leavingMembers,
-    potentialVoterWeight: clan.account.potentialVoterWeight,
+    nextVoterWeightResetTime: clan.account.nextVoterWeightResetTime,
     name: clan.account.name,
     description: clan.account.description,
   }));

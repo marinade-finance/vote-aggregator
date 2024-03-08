@@ -1,10 +1,8 @@
-import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   StartLeavingClanTestData,
   RealmTester,
   parseLogsEvent,
-  resizeBN,
   startLeavingClanTestData,
 } from '../../src';
 import {ClanTester, MemberTester, RootTester} from '../../src/VoteAggregator';
@@ -14,7 +12,7 @@ import {Keypair} from '@solana/web3.js';
 describe('start_leaving_clan instruction', () => {
   it.each(startLeavingClanTestData.filter(({error}) => !error))(
     'Works',
-    async ({realm, root, member}: StartLeavingClanTestData) => {
+    async ({realm, root, member, clanIndex = 0}: StartLeavingClanTestData) => {
       const realmTester = new RealmTester(realm);
       const rootTester = new RootTester({
         ...root,
@@ -23,9 +21,15 @@ describe('start_leaving_clan instruction', () => {
       const memberTester = new MemberTester({
         ...member,
         root: rootTester,
-        clan: member.clan!.address,
+        membership: MemberTester.membershipTesters({
+          membership: member.membership || [],
+          root: rootTester,
+        }),
       });
-      const clanTester = new ClanTester({...member.clan!, root: rootTester});
+      const clanTester = memberTester.membership[clanIndex].clan;
+      if (!(clanTester instanceof ClanTester)) {
+        throw new Error(`Clan #${clanIndex} must be provided`);
+      }
       const {testContext, program} = await startTest({
         splGovernanceId: rootTester.splGovernanceId,
         accounts: [
@@ -41,9 +45,9 @@ describe('start_leaving_clan instruction', () => {
         .accountsStrict({
           root: rootTester.rootAddress[0],
           member: memberTester.memberAddress[0],
-          clan: memberTester.member.clan,
+          clan: clanTester.clanAddress,
           memberAuthority: memberTester.ownerAddress,
-          clanVoterWeightRecord: clanTester.voterWeightAddress[0],
+          clanVwr: clanTester.voterWeightAddress[0],
         })
         .transaction();
       tx.recentBlockhash = testContext.lastBlockhash;
@@ -51,11 +55,28 @@ describe('start_leaving_clan instruction', () => {
       tx.sign(testContext.payer, member.owner as Keypair);
 
       const time = (await testContext.banksClient.getClock()).unixTimestamp;
-      expect(
+      await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
       ).resolves.toStrictEqual([
+        {
+          name: 'ClanVoterWeightChanged',
+          data: {
+            clan: clanTester.clanAddress,
+            newVoterWeight: clanTester.voterWeightRecord.voterWeight.sub(
+              memberTester.member.voterWeight
+            ),
+            oldVoterWeight: clanTester.voterWeightRecord.voterWeight,
+            oldPermamentVoterWeight: clanTester.clan.permanentVoterWeight,
+            newPermamentVoterWeight: clanTester.clan.permanentVoterWeight.sub(
+              memberTester.member.voterWeight
+            ),
+            oldIsPermanent: true,
+            newIsPermanent: true,
+            root: rootTester.rootAddress[0],
+          },
+        },
         {
           name: 'StartingLeavingClan',
           data: {
@@ -65,48 +86,41 @@ describe('start_leaving_clan instruction', () => {
             root: rootTester.rootAddress[0],
           },
         },
-        {
-          name: 'ClanVoterWeightChanged',
-          data: {
-            clan: clanTester.clanAddress,
-            newVoterWeight: resizeBN(
-              clanTester.voterWeightRecord.voterWeight.sub(
-                memberTester.member.voterWeight
-              )
-            ),
-            oldVoterWeight: resizeBN(clanTester.voterWeightRecord.voterWeight),
-            root: rootTester.rootAddress[0],
-          },
-        },
       ]);
 
-      expect(
+      await expect(
         program.account.member.fetch(memberTester.memberAddress[0])
       ).resolves.toStrictEqual({
         ...memberTester.member,
-        clanLeavingTime: new BN(time.toString()).add(
-          rootTester.root.maxProposalLifetime
-        ),
+        membership: memberTester.member.membership.map((m, index) => {
+          if (index === clanIndex) {
+            m.exitableAt = new BN(time.toString()).add(
+              rootTester.root.maxProposalLifetime
+            );
+          }
+          return m;
+        }),
       });
 
-      expect(
+      await expect(
         program.account.clan.fetch(clanTester.clanAddress)
       ).resolves.toStrictEqual({
         ...clanTester.clan,
-        activeMembers: resizeBN(clanTester.clan.activeMembers.subn(1)),
-        leavingMembers: resizeBN(clanTester.clan.leavingMembers.addn(1)),
+        permanentMembers: clanTester.clan.permanentMembers.subn(1),
+        leavingMembers: clanTester.clan.leavingMembers.addn(1),
+        permanentVoterWeight: clanTester.clan.permanentVoterWeight.sub(
+          memberTester.member.voterWeight
+        ),
       });
 
-      expect(
+      await expect(
         program.account.voterWeightRecord.fetch(
           clanTester.voterWeightAddress[0]
         )
       ).resolves.toStrictEqual({
         ...clanTester.voterWeightRecord,
-        voterWeight: resizeBN(
-          clanTester.voterWeightRecord.voterWeight.sub(
-            memberTester.member.voterWeight
-          )
+        voterWeight: clanTester.voterWeightRecord.voterWeight.sub(
+          memberTester.member.voterWeight
         ),
       });
     }

@@ -1,13 +1,15 @@
-import {describe, it, expect} from 'bun:test';
 import {VoteAggregatorSdk} from '../../src';
 import {
   ForcedCancelProposalTestData,
   RealmTester,
   forcedCancelProposalTestData,
 } from 'vote-aggregator-tests';
-import {ClanTester, RootTester} from 'vote-aggregator-tests';
-import {GovernanceTester} from 'vote-aggregator-tests/src/SplGovernance/governance';
-import {ProposalTester} from 'vote-aggregator-tests/src/SplGovernance';
+import {
+  ClanTester,
+  RootTester,
+  GovernanceTester,
+  ProposalTester,
+} from 'vote-aggregator-tests';
 
 describe('forced_cancel_proposal instruction', () => {
   it.each(forcedCancelProposalTestData.filter(({error}) => !error))(

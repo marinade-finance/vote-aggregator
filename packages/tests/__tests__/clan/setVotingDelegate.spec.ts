@@ -1,4 +1,3 @@
-import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   SetVotingDelegateTestData,
@@ -46,7 +45,7 @@ describe('set_voting_delegate instruction', () => {
         ],
         program.programId
       );
-      const [tokenOwnerRecord] = PublicKey.findProgramAddressSync(
+      const [clanTor] = PublicKey.findProgramAddressSync(
         [
           Buffer.from('governance', 'utf-8'),
           rootTester.realm.realmAddress.toBuffer(),
@@ -75,7 +74,7 @@ describe('set_voting_delegate instruction', () => {
           clan: clanTester.clanAddress,
           governanceProgram: rootTester.splGovernanceId,
           voterAuthority,
-          tokenOwnerRecord,
+          clanTor,
           clanAuthority: clanAuthority.publicKey,
         })
         .transaction();
@@ -83,7 +82,7 @@ describe('set_voting_delegate instruction', () => {
       tx.feePayer = testContext.payer.publicKey;
       tx.sign(testContext.payer, clanAuthority);
 
-      expect(
+      await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
@@ -98,8 +97,8 @@ describe('set_voting_delegate instruction', () => {
         },
       ]);
 
-      expect(
-        splGovernance.account.tokenOwnerRecordV2.fetch(tokenOwnerRecord)
+      await expect(
+        splGovernance.account.tokenOwnerRecordV2.fetch(clanTor)
       ).resolves.toStrictEqual({
         ...clanTester.tokenOwnerRecord,
         governanceDelegate: newVotingDelegate,

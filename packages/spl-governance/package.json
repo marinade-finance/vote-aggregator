@@ -8,16 +8,41 @@
     "type": "git",
     "url": "https://github.com/solana-labs/solana-program-library.git"
   },
-  "files": [
-    "src"
-  ],
-  "module": "./src/index.ts",
-  "main": "./src/index.ts",
+  "type": "module",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.cts",
+        "default": "./dist/cjs/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
   "dependencies": {
     "@coral-xyz/anchor": "=0.29.0",
     "@native-to-anchor/buffer-layout": "=0.1.0"
   },
   "devDependencies": {
-    "@types/node": "=17.0.21"
+    "@solana/web3.js": "1.90.0",
+    "@tanstack/config": "^0.6.0",
+    "@types/node": "^20.11.25",
+    "bn.js": "^5.2.1",
+    "vite": "^5.0.8",
+    "vite-plugin-node-polyfills": "^0.21.0"
+  },
+  "scripts": {
+    "build": "vite build"
+  },
+  "peerDependencies": {
+    "@solana/web3.js": "1.90.0",
+    "bn.js": "^5.2.1",
+    "vite-plugin-node-polyfills": "^0.21.0"
   }
 }

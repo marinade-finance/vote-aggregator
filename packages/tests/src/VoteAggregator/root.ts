@@ -1,8 +1,12 @@
 import {PublicKey} from '@solana/web3.js';
-import {MaxVoterWeightAccount, RootAccount} from './accounts';
+import {
+  MaxVoterWeightRecordAccount,
+  RootAccount,
+  VoterWeightReset,
+} from './accounts';
 import {RealmTester} from '../SplGovernance/realm';
 import {BN} from '@coral-xyz/anchor';
-import {getMinimumBalanceForRentExemption, resizeBN} from '../utils';
+import {getMinimumBalanceForRentExemption} from '../utils';
 import {AddedAccount} from 'solana-bankrun';
 import {buildVoteAggregatorProgram} from './program';
 
@@ -10,10 +14,11 @@ export type RootTestData = {
   side: 'community' | 'council';
   voteAggregatorId?: PublicKey;
   votingWeightPlugin?: PublicKey;
-  clanCount?: BN;
-  memberCount?: BN;
   maxVoterWeight?: BN;
   maxProposalLifetime?: BN;
+  voterWeightReset?: VoterWeightReset | null;
+  clanCount?: BN;
+  memberCount?: BN;
 };
 
 export class RootTester {
@@ -21,7 +26,7 @@ export class RootTester {
   public side: 'community' | 'council';
   public voteAggregatorId: PublicKey;
   public root: RootAccount;
-  public maxVoterWeight: MaxVoterWeightAccount;
+  public maxVoterWeight: MaxVoterWeightRecordAccount;
 
   get splGovernanceId(): PublicKey {
     return this.realm.splGovernanceId;
@@ -56,6 +61,13 @@ export class RootTester {
     }
   }
 
+  get lockAuthority(): [PublicKey, number] {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from('lock-authority', 'utf8'), this.rootAddress[0].toBuffer()],
+      this.voteAggregatorId
+    );
+  }
+
   constructor({
     realm,
     side,
@@ -63,16 +75,18 @@ export class RootTester {
       'VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT'
     ),
     votingWeightPlugin = PublicKey.default,
-    clanCount = new BN(0),
-    memberCount = new BN(0),
     maxVoterWeight = new BN(0),
     maxProposalLifetime = new BN(0),
+    voterWeightReset = null,
+    clanCount = new BN(0),
+    memberCount = new BN(0),
   }: RootTestData & {realm: RealmTester}) {
     this.realm = realm;
     this.side = side;
     this.voteAggregatorId = voteAggregatorId;
     const [, rootBump] = this.rootAddress;
     const [, maxVoterWeightBump] = this.maxVoterWeightAddress;
+    const [, lockAuthorityBump] = this.lockAuthority;
 
     this.root = {
       realm: realm.realmAddress,
@@ -81,20 +95,22 @@ export class RootTester {
         side === 'community'
           ? realm.realm.communityMint
           : realm.realm.config.councilMint!,
-      maxProposalLifetime: resizeBN(maxProposalLifetime),
+      maxProposalLifetime,
       votingWeightPlugin,
       clanCount,
       memberCount,
+      voterWeightReset,
       bumps: {
         root: rootBump,
         maxVoterWeight: maxVoterWeightBump,
+        lockAuthority: lockAuthorityBump,
       },
     };
 
     this.maxVoterWeight = {
       realm: this.realm.realmAddress,
       governingTokenMint: this.governingTokenMint,
-      maxVoterWeight: resizeBN(maxVoterWeight),
+      maxVoterWeight,
       maxVoterWeightExpiry: null, // TODO
       reserved: [0, 0, 0, 0, 0, 0, 0, 0],
     };
@@ -106,10 +122,11 @@ export class RootTester {
       voteAggregatorId: this.voteAggregatorId,
     });
     {
-      const rootData = await program.coder.accounts.encode<RootAccount>(
+      let rootData = await program.coder.accounts.encode<RootAccount>(
         'root',
         this.root
       );
+      rootData = Buffer.concat([rootData, Buffer.alloc(256)]);
       accounts.push({
         address: this.rootAddress[0],
         info: {
@@ -122,7 +139,7 @@ export class RootTester {
     }
     {
       const mvwrData =
-        await program.coder.accounts.encode<MaxVoterWeightAccount>(
+        await program.coder.accounts.encode<MaxVoterWeightRecordAccount>(
           'maxVoterWeightRecord',
           this.maxVoterWeight
         );

@@ -12,10 +12,10 @@ pub enum Error {
     WrongClanAuthority,
     #[msg("Your voting power is not enough to join this clan")]
     TooLowVotingPower,
-    #[msg("Can not leave clan waiting for the leave time")]
-    TooEarlyToLeaveClan,
+    #[msg("Can not exit clan waiting for the leave time")]
+    TooEarlyToExitClan,
     #[msg("Must start leaving clan first")]
-    UnexpectedLeavingClan,
+    UnexpectedExitingClan,
     #[msg("Proposal vote has correct weight already")]
     NoNeedToUpdateProposalVote,
     #[msg("Wrong community voter addin (must be this program ID)")]
@@ -49,8 +49,10 @@ pub enum Error {
     RerequestingLeavingClan,
     #[msg("Canceling leaving clan while not leaving")]
     CancelingNonExistentLeavingClanRequest,
-    #[msg("Requesting to join a clan while already participating in some clan. Must leave first")]
+    #[msg("Requesting to join a clan while already participating in some clan. Must exit first")]
     AlreadyJoinedClan,
+    MaxMembershipExceeded,
+    InvalidShareBp,
     UnknownGoverningTokenMint,
     InvalidCouncilMint,
     CouncilMintRequired,
@@ -60,4 +62,13 @@ pub enum Error {
     UnexpectedWeightAction,
     UnexpectedWeightActionTarget,
     NextInstructionMustBeSetRealmConfig,
+    VoterWeightExpired,
+    TemporaryMembersNotAllowed,
+    TemporaryMembersNotUpdated,
+    UnexpectedClan,
+    MemberHasUnrelinquishedVotes,
+    MemberHasOutstandingProposals,
+    CanNotChangeNextResetTime,
+    InvalidResetStep,
+    InvalidNextResetTime
 }

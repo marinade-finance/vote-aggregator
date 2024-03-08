@@ -1,7 +1,7 @@
 import {useConnection, useWallet} from '@solana/wallet-adapter-react';
 import {Cluster, PublicKey, Transaction} from '@solana/web3.js';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
-import {VoteAggregatorSdk} from 'vote-aggregator-sdk';
+import {MembershipEntry, VoteAggregatorSdk} from 'vote-aggregator-sdk';
 import {
   clanListQueryOptions,
   clanQueryOptions,
@@ -16,13 +16,15 @@ const useStartLeavingClan = () => {
   return useMutation({
     mutationFn: async ({
       memberData,
+      clan,
     }: {
       network: Cluster;
       memberData: {
         root: PublicKey;
         owner: PublicKey;
-        clan: PublicKey;
+        membership: MembershipEntry[];
       };
+      clan: PublicKey;
     }) => {
       const sdk = new VoteAggregatorSdk(connection);
       const {blockhash, lastValidBlockHeight} =
@@ -32,10 +34,10 @@ const useStartLeavingClan = () => {
         blockhash,
         lastValidBlockHeight,
       });
-
       tx.add(
         await sdk.member.startLeavingClanInstruction({
           memberData,
+          clan,
         })
       );
 
@@ -48,8 +50,9 @@ const useStartLeavingClan = () => {
       if (result.value.err) {
         throw new Error(result.value.err.toString());
       }
+      return {signature, clan};
     },
-    onSuccess: (_, {network, memberData}) => {
+    onSuccess: ({clan}, {network, memberData}) => {
       queryClient.invalidateQueries(
         memberQueryOptions({
           network,
@@ -58,12 +61,7 @@ const useStartLeavingClan = () => {
         })
       );
       queryClient.invalidateQueries(
-        clanQueryOptions({
-          network,
-          root: memberData.root,
-          clan: memberData.clan,
-          queryClient,
-        })
+        clanQueryOptions({network, root: memberData.root, clan, queryClient})
       );
       queryClient.invalidateQueries(
         clanListQueryOptions({network, root: memberData.root})

@@ -1,4 +1,3 @@
-import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   UpdateProposalVoteTestData,
@@ -6,7 +5,6 @@ import {
   parseLogsEvent,
   updateProposalVoteTestData,
   buildSplGovernanceProgram,
-  resizeBN,
 } from '../../src';
 import {ClanTester, RootTester} from '../../src/VoteAggregator';
 import {PublicKey} from '@solana/web3.js';
@@ -73,7 +71,7 @@ describe('forced_cancel_proposal instruction', () => {
         ],
         program.programId
       );
-      const [tokenOwnerRecord] = PublicKey.findProgramAddressSync(
+      const [clanTor] = PublicKey.findProgramAddressSync(
         [
           Buffer.from('governance', 'utf-8'),
           rootTester.realm.realmAddress.toBuffer(),
@@ -90,17 +88,17 @@ describe('forced_cancel_proposal instruction', () => {
           clan: clanTester.clanAddress,
           governanceProgram: rootTester.splGovernanceId,
           voterAuthority,
-          tokenOwnerRecord,
+          clanTor,
           realm: realmTester.realmAddress,
           realmConfig: await realmTester.realmConfigId(),
           governingTokenMint: proposalTester.proposal.governingTokenMint,
           systemProgram: SYSTEM_PROGRAM_ID,
           governance: governanceTester.governanceAddress,
           proposal: proposalTester.proposalAddress,
-          clanVoterWeightRecord: clanTester.voterWeightAddress[0],
+          clanVwr: clanTester.voterWeightAddress[0],
           payer: program.provider.publicKey!,
           proposalOwnerRecord: proposalTester.proposal.tokenOwnerRecord,
-          maxVoterWeight: null, // TODO
+          maxVwr: null, // TODO
           voteRecord: await voteTester.voteAddress(),
         })
         .transaction();
@@ -108,7 +106,7 @@ describe('forced_cancel_proposal instruction', () => {
       tx.feePayer = testContext.payer.publicKey;
       tx.sign(testContext.payer);
 
-      expect(
+      await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
@@ -118,29 +116,27 @@ describe('forced_cancel_proposal instruction', () => {
           data: {
             clan: clanTester.clanAddress,
             proposal: proposalTester.proposalAddress,
-            oldVotingWeight: resizeBN(voteTester.vote.voterWeight),
-            newVotingWeight: resizeBN(clanTester.voterWeightRecord.voterWeight),
+            oldVotingWeight: voteTester.vote.voterWeight,
+            newVotingWeight: clanTester.voterWeightRecord.voterWeight,
           },
         },
       ]);
 
-      expect(
+      await expect(
         splGovernance.account.voteRecordV2.fetch(await voteTester.voteAddress())
       ).resolves.toMatchObject({
-        voterWeight: resizeBN(clanTester.voterWeightRecord.voterWeight),
+        voterWeight: clanTester.voterWeightRecord.voterWeight,
       });
 
-      expect(
+      await expect(
         splGovernance.account.proposalV2.fetch(proposalTester.proposalAddress)
       ).resolves.toMatchObject({
         options: [
           {
             ...proposalTester.proposal.options[0],
-            voteWeight: resizeBN(
-              proposalTester.proposal.options[0].voteWeight
-                .sub(voteTester.vote.voterWeight)
-                .add(clanTester.voterWeightRecord.voterWeight)
-            ),
+            voteWeight: proposalTester.proposal.options[0].voteWeight
+              .sub(voteTester.vote.voterWeight)
+              .add(clanTester.voterWeightRecord.voterWeight),
           },
         ],
       });

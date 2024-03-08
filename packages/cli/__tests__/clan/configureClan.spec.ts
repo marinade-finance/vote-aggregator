@@ -1,12 +1,3 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  spyOn,
-  Mock,
-} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   configureClanTestData,
@@ -20,11 +11,10 @@ import {cli} from '../../src/cli';
 import {Keypair, PublicKey} from '@solana/web3.js';
 
 describe('set-voting-delegate command', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  let stdout: Mock<(message?: any, ...optionalParams: any[]) => void>;
+  let stdout: jest.SpyInstance;
 
   beforeEach(() => {
-    stdout = spyOn(console, 'log').mockImplementation(() => {});
+    stdout = jest.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -68,7 +58,7 @@ describe('set-voting-delegate command', () => {
       }
       const {sdk} = context!;
 
-      expect(
+      await expect(
         cli()
           .exitOverride((err: Error) => {
             throw err;
@@ -91,7 +81,7 @@ describe('set-voting-delegate command', () => {
           expect.arrayContaining([expect.stringMatching(/^Success/)]),
         ])
       );
-      expect(sdk.clan.fetchClan(clan.address)).resolves.toStrictEqual({
+      await expect(sdk.clan.fetchClan(clan.address)).resolves.toStrictEqual({
         ...clanAccount,
         name: newName!,
       });
@@ -135,7 +125,7 @@ describe('set-voting-delegate command', () => {
       }
       const {sdk} = context!;
 
-      expect(
+      await expect(
         cli()
           .exitOverride((err: Error) => {
             throw err;
@@ -158,7 +148,7 @@ describe('set-voting-delegate command', () => {
           expect.arrayContaining([expect.stringMatching(/^Success/)]),
         ])
       );
-      expect(sdk.clan.fetchClan(clan.address)).resolves.toStrictEqual({
+      await expect(sdk.clan.fetchClan(clan.address)).resolves.toStrictEqual({
         ...clanAccount,
         description: newDescription!,
       });
@@ -193,7 +183,7 @@ describe('set-voting-delegate command', () => {
       }
       const {sdk} = context!;
 
-      expect(
+      await expect(
         cli()
           .exitOverride((err: Error) => {
             throw err;
@@ -216,7 +206,7 @@ describe('set-voting-delegate command', () => {
           expect.arrayContaining([expect.stringMatching(/^Success/)]),
         ])
       );
-      expect(sdk.clan.fetchClan(clan.address)).resolves.toStrictEqual({
+      await expect(sdk.clan.fetchClan(clan.address)).resolves.toStrictEqual({
         ...clanAccount,
         owner: newOwner,
       });

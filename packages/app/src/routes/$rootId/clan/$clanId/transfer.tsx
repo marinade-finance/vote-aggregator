@@ -1,5 +1,5 @@
 import {Box, Button, TextField} from '@mui/material';
-import {FileRoute, useNavigate} from '@tanstack/react-router';
+import {createFileRoute, useNavigate} from '@tanstack/react-router';
 import {useState} from 'react';
 import {PublicKey} from '@solana/web3.js';
 import {useQueryClient, useSuspenseQuery} from '@tanstack/react-query';
@@ -53,7 +53,7 @@ const TransferClanComponent = () => {
   );
 };
 
-export const Route = new FileRoute('/$rootId/clan/$clanId/transfer').createRoute({
+export const Route = createFileRoute('/$rootId/clan/$clanId/transfer')({
   component: TransferClanComponent,
   beforeLoad: () => {
     return {

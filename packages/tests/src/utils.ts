@@ -1,5 +1,5 @@
-import {BN, Idl, Program, Event} from '@coral-xyz/anchor';
-import {IdlEvent} from '@coral-xyz/anchor/dist/cjs/idl';
+import {Idl, Program, Event} from '@coral-xyz/anchor';
+import {IdlEvent} from '@coral-xyz/anchor/dist/cjs/idl.js';
 import {Keypair, PublicKey} from '@solana/web3.js';
 import assert from 'assert';
 
@@ -10,14 +10,6 @@ export const buildKeypair: (pub: string, secret: number[]) => Keypair = (
   const keypair = Keypair.fromSecretKey(Uint8Array.from(secret));
   assert(keypair.publicKey.equals(new PublicKey(pub)));
   return keypair;
-};
-
-export const resizeBN: (bn: BN, length?: number) => BN = (bn, length = 8) => {
-  let buf = bn.toBuffer();
-  if (buf.length < length) {
-    buf = Buffer.concat([Buffer.alloc(length - buf.length), buf]);
-  }
-  return new BN(buf);
 };
 
 export function parseLogLine<P extends Idl, T>(

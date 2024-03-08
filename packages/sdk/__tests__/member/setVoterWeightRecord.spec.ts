@@ -1,4 +1,3 @@
-import {describe, it, expect} from 'bun:test';
 import {
   SetVoterWeightRecordTestData,
   MemberTester,
@@ -25,13 +24,16 @@ describe('set_voter_weight_record instruction', () => {
       const memberTester = new MemberTester({
         ...member,
         root: rootTester,
-        clan: member.clan?.address,
+        membership: MemberTester.membershipTesters({
+          membership: member.membership || [],
+          root: rootTester,
+        }),
       });
       const sdk = new VoteAggregatorSdk();
       expect(
         sdk.member.setVoterWeightRecordInstruction({
           memberData: memberTester.member,
-          voterWeightRecord: memberVoterWeightRecord.address,
+          memberVwr: memberVoterWeightRecord.address,
         })
       ).resolves.toMatchSnapshot();
     }

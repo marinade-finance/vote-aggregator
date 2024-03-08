@@ -58,7 +58,7 @@ pub struct CreateRoot<'info> {
         payer = payer,
         space = MaxVoterWeightRecord::SPACE,
     )]
-    max_voter_weight: Account<'info, MaxVoterWeightRecord>,
+    max_vwr: Account<'info, MaxVoterWeightRecord>,
 
     #[account(
         mut,
@@ -75,7 +75,7 @@ pub struct CreateRoot<'info> {
 }
 
 impl<'info> CreateRoot<'info> {
-    pub fn process(&mut self, bumps: CreateRootBumps) -> Result<()> {
+    pub fn process(&mut self, max_proposal_lifetime: u64, bumps: CreateRootBumps) -> Result<()> {
         // Verify that "realm_authority" is the expected authority on "realm"
         // and that the mint matches one of the realm mints too.
         let realm = realm::get_realm_data_for_governing_token_mint(
@@ -112,21 +112,29 @@ impl<'info> CreateRoot<'info> {
             realm_config.council_token_config.voter_weight_addin
         };
 
+        let (lock_authority, lock_authority_bump) = Pubkey::find_program_address(
+            &[Root::LOCK_AUTHORITY_SEED, &self.root.key().to_bytes()],
+            &crate::ID,
+        );
+        msg!("lock_authority: {:?}", lock_authority);
+
         self.root.set_inner(Root {
             governance_program: self.governance_program.key(),
             realm: self.realm.key(),
             governing_token_mint: self.governing_token_mint.key(),
             voting_weight_plugin: voting_weight_plugin.unwrap_or_default(),
-            max_proposal_lifetime: 0,
-            bumps: RootBumps {
-                root: bumps.root,
-                max_voter_weight: bumps.max_voter_weight,
-            },
+            max_proposal_lifetime,
+            voter_weight_reset: None,
             clan_count: 0,
             member_count: 0,
+            bumps: RootBumps {
+                root: bumps.root,
+                max_voter_weight: bumps.max_vwr,
+                lock_authority: lock_authority_bump,
+            },
         });
 
-        self.max_voter_weight.set_inner(MaxVoterWeightRecord::new(
+        self.max_vwr.set_inner(MaxVoterWeightRecord::new(
             self.realm.key(),
             self.governing_token_mint.key(),
         ));

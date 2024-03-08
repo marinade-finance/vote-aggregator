@@ -1,0 +1,42 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Configure root Runs set_max_proposal_lifetime instruction 1`] = `
+{
+  "data": [
+    134,
+    215,
+    241,
+    9,
+    69,
+    23,
+    78,
+    1,
+    246,
+    39,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+  ],
+  "keys": [
+    {
+      "isSigner": false,
+      "isWritable": true,
+      "pubkey": "E6KhZ61GXRnYNRPvfsQUghmwsrbFYRLPhquyKUskYsCS",
+    },
+    {
+      "isSigner": false,
+      "isWritable": false,
+      "pubkey": "CK1VnpRfpYmGNNNnp9MDYTpKLDrwwXVbSXSMEbTzujHv",
+    },
+    {
+      "isSigner": true,
+      "isWritable": false,
+      "pubkey": "91kqKkYveAy8JJgvLEcKQr8QLUN8uNUhcz34QwFDz8hn",
+    },
+  ],
+  "programId": "VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT",
+}
+`;

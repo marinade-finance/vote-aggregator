@@ -1,13 +1,15 @@
-import {describe, it, expect} from 'bun:test';
 import {VoteAggregatorSdk} from '../../src';
 import {
   UpdateProposalVoteTestData,
   RealmTester,
   updateProposalVoteTestData,
 } from 'vote-aggregator-tests';
-import {ClanTester, RootTester} from 'vote-aggregator-tests';
-import {GovernanceTester} from 'vote-aggregator-tests/src/SplGovernance/governance';
-import {ProposalTester} from 'vote-aggregator-tests/src/SplGovernance';
+import {
+  ClanTester,
+  RootTester,
+  GovernanceTester,
+  ProposalTester,
+} from 'vote-aggregator-tests';
 import {PublicKey} from '@solana/web3.js';
 
 describe('update_proposal_vote instruction', () => {

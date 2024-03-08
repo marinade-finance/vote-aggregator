@@ -43,7 +43,7 @@ pub struct CreateMember<'info> {
         seeds::program = root.governance_program,
         bump,
     )]
-    token_owner_record: UncheckedAccount<'info>,
+    member_tor: UncheckedAccount<'info>,
 
     system_program: Program<'info, System>,
 }
@@ -51,26 +51,26 @@ pub struct CreateMember<'info> {
 impl<'info> CreateMember<'info> {
     pub fn process(&mut self, bumps: CreateMemberBumps) -> Result<()> {
         // Check TOR
-        let tor = get_token_owner_record_data_for_realm_and_governing_mint(
+        let member_tor = get_token_owner_record_data_for_realm_and_governing_mint(
             &self.root.governance_program,
-            &self.token_owner_record.to_account_info(),
+            &self.member_tor.to_account_info(),
             &self.root.realm,
             &self.root.governing_token_mint,
         )?;
-        require_keys_eq!(tor.governing_token_owner, self.owner.key());
+        require_keys_eq!(member_tor.governing_token_owner, self.owner.key());
         self.member.set_inner(Member {
             root: self.root.key(),
             owner: self.owner.key(),
             delegate: Pubkey::default(),
-            clan: Member::NO_CLAN,
-            clan_leaving_time: Member::NOT_LEAVING_CLAN,
-            token_owner_record: self.token_owner_record.key(),
+            token_owner_record: self.member_tor.key(),
             voter_weight_record: Pubkey::default(),
             voter_weight: 0,
             voter_weight_expiry: None,
+            next_voter_weight_reset_time: self.root.next_voter_weight_reset_time(),
+            membership: vec![],
             bumps: MemberBumps {
                 address: bumps.member,
-                token_owner_record: bumps.token_owner_record,
+                token_owner_record: bumps.member_tor,
             },
         });
         emit!(MemberCreated {

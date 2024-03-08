@@ -65,10 +65,6 @@ pub mod spl_governance {
         Ok(())
     }
 
-    pub fn remove_signatory(ctx: Context<RemoveSignatory>, signatory: Pubkey) -> Result<()> {
-        Ok(())
-    }
-
     pub fn insert_transaction(
         ctx: Context<InsertTransaction>,
         option_index: u8,
@@ -165,6 +161,39 @@ pub mod spl_governance {
     }
 
     pub fn complete_proposal(ctx: Context<CompleteProposal>) -> Result<()> {
+        Ok(())
+    }
+
+    pub fn add_required_signatory(
+        ctx: Context<AddRequiredSignatory>,
+        signatory: Pubkey,
+    ) -> Result<()> {
+        Ok(())
+    }
+
+    pub fn remove_required_signatory(ctx: Context<RemoveRequiredSignatory>) -> Result<()> {
+        Ok(())
+    }
+
+    pub fn set_token_owner_record_lock(
+        ctx: Context<SetTokenOwnerRecordLock>,
+        lock_type: u8,
+        expiry: Option<i64>,
+    ) -> Result<()> {
+        Ok(())
+    }
+
+    pub fn remove_token_owner_record_lock(
+        ctx: Context<RemoveTokenOwnerRecordLock>,
+        lock_type: u8,
+    ) -> Result<()> {
+        Ok(())
+    }
+
+    pub fn set_realm_config_item(
+        ctx: Context<SetRealmConfigItem>,
+        args: SetRealmConfigItemArgs,
+    ) -> Result<()> {
         Ok(())
     }
 }
@@ -278,27 +307,17 @@ pub struct CreateProposal<'info> {
 
 #[derive(Accounts)]
 pub struct AddSignatory<'info> {
+    governance: AccountInfo<'info>,
     #[account(mut)]
     proposal: AccountInfo<'info>,
-    token_owner_record: AccountInfo<'info>,
-    governance_authority: Signer<'info>,
     #[account(mut)]
     signatory_record_address: AccountInfo<'info>,
     #[account(mut)]
     payer: Signer<'info>,
     system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct RemoveSignatory<'info> {
-    #[account(mut)]
-    proposal: AccountInfo<'info>,
-    token_owner_record: AccountInfo<'info>,
-    governance_authority: Signer<'info>,
-    #[account(mut)]
-    signatory_record_address: AccountInfo<'info>,
-    #[account(mut)]
-    beneficiary: AccountInfo<'info>,
+    // optional_token_owner_record: AccountInfo<'info>,
+    // optional_governance_authority: Signer<'info>,
+    // optional_get_required_signatory_addressprogram: Signer<'info>,
 }
 
 #[derive(Accounts)]
@@ -534,23 +553,79 @@ pub struct CompleteProposal<'info> {
     complete_proposal_authority: Signer<'info>,
 }
 
+#[derive(Accounts)]
+pub struct AddRequiredSignatory<'info> {
+    #[account(mut)]
+    governance: Signer<'info>,
+    #[account(mut)]
+    required_signatory_address: AccountInfo<'info>,
+    #[account(mut)]
+    payer: Signer<'info>,
+    system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct RemoveRequiredSignatory<'info> {
+    #[account(mut)]
+    governance: Signer<'info>,
+    #[account(mut)]
+    required_signatory_address: AccountInfo<'info>,
+    #[account(mut)]
+    beneficiary: AccountInfo<'info>,
+}
+
+#[derive(Accounts)]
+pub struct SetTokenOwnerRecordLock<'info> {
+    realm: AccountInfo<'info>,
+    realm_config_address: AccountInfo<'info>,
+    #[account(mut)]
+    token_owner_record: AccountInfo<'info>,
+    token_owner_record_lock_authority: Signer<'info>,
+    #[account(mut)]
+    payer: Signer<'info>,
+    system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct RemoveTokenOwnerRecordLock<'info> {
+    #[account(mut)]
+    token_owner_record: AccountInfo<'info>,
+    token_owner_record_lock_authority: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct SetRealmConfigItem<'info> {
+    #[account(mut)]
+    realm: AccountInfo<'info>,
+    #[account(mut)]
+    realm_config_address: AccountInfo<'info>,
+    realm_authority: Signer<'info>,
+    #[account(mut)]
+    payer: Signer<'info>,
+    system_program: Program<'info, System>,
+}
+
 #[account]
 pub struct GovernanceV2 {
-    /// Account type. It can be Uninitialized, Governance, ProgramGovernance, TokenGovernance or MintGovernance
+    /// Account type. It can be Uninitialized, Governance, ProgramGovernance,
+    /// TokenGovernance or MintGovernance
     pub account_type: GovernanceAccountType,
 
     /// Governance Realm
     pub realm: Pubkey,
 
     /// Account governed by this Governance and/or PDA identity seed
-    /// It can be Program account, Mint account, Token account or any other account
+    /// It can be Program account, Mint account, Token account or any other
+    /// account
     ///
-    /// Note: The account doesn't have to exist. In that case the field is only a PDA seed
+    /// Note: The account doesn't have to exist. In that case the field is only
+    /// a PDA seed
     ///
-    /// Note: Setting governed_account doesn't give any authority over the governed account
-    /// The relevant authorities for specific account types must still be transferred to the Governance PDA
-    /// Ex: mint_authority/freeze_authority for a Mint account
-    /// or upgrade_authority for a Program account should be transferred to the Governance PDA
+    /// Note: Setting governed_account doesn't give any authority over the
+    /// governed account The relevant authorities for specific account types
+    /// must still be transferred to the Governance PDA Ex: mint_authority/
+    /// freeze_authority for a Mint account or upgrade_authority for a
+    /// Program account should be transferred to the Governance PDA
     pub governed_account: Pubkey,
 
     /// Reserved space for future versions
@@ -561,14 +636,21 @@ pub struct GovernanceV2 {
 
     /// Reserved space for versions v2 and onwards
     /// Note 1: V1 accounts must be resized before using this space
-    /// Note 2: The reserved space should be used from the end to also allow the config to grow if needed
-    pub reserved_v2: Reserved120,
+    /// Note 2: The reserved space should be used from the end to also allow the
+    /// config to grow if needed
+    pub reserved_v2: Reserved119,
 
-    /// The number of active proposals where active means Draft, SigningOff or Voting state
+    /// The number of required signatories for proposals in the Governance
+    pub required_signatories_count: u8,
+
+    /// The number of active proposals where active means Draft, SigningOff or
+    /// Voting state
     ///
-    /// Note: The counter was introduced in program V3 and didn't exist in program V1 & V2
-    /// If the program is upgraded from program V1 or V2 while there are any outstanding active proposals
-    /// the counter won't be accurate until all proposals are transitioned to an inactive final state and the counter reset
+    /// Note: The counter was introduced in program V3 and didn't exist in
+    /// program V1 & V2 If the program is upgraded from program V1 or V2
+    /// while there are any outstanding active proposals the counter won't
+    /// be accurate until all proposals are transitioned to an inactive final
+    /// state and the counter reset
     pub active_proposal_count: u64,
 }
 
@@ -591,8 +673,9 @@ pub struct RealmV1 {
     /// and we have preserve it for V1 serialization roundtrip
     pub voting_proposal_count: u16,
 
-    /// Realm authority. The authority must sign transactions which update the realm config
-    /// The authority should be transferred to Realm Governance to make the Realm self governed through proposals
+    /// Realm authority. The authority must sign transactions which update the
+    /// realm config The authority should be transferred to Realm Governance
+    /// to make the Realm self governed through proposals
     pub authority: Option<Pubkey>,
 
     /// Governance Realm name
@@ -610,8 +693,8 @@ pub struct TokenOwnerRecordV1 {
     /// Governing Token Mint the TokenOwnerRecord holds deposit for
     pub governing_token_mint: Pubkey,
 
-    /// The owner (either single or multisig) of the deposited governing SPL Tokens
-    /// This is who can authorize a withdrawal of the tokens
+    /// The owner (either single or multisig) of the deposited governing SPL
+    /// Tokens This is who can authorize a withdrawal of the tokens
     pub governing_token_owner: Pubkey,
 
     /// The amount of governing tokens deposited into the Realm
@@ -619,13 +702,15 @@ pub struct TokenOwnerRecordV1 {
     pub governing_token_deposit_amount: u64,
 
     /// The number of votes cast by TokenOwner but not relinquished yet
-    /// Every time a vote is cast this number is increased and it's always decreased when relinquishing a vote regardless of the vote state
+    /// Every time a vote is cast this number is increased and it's always
+    /// decreased when relinquishing a vote regardless of the vote state
     pub unrelinquished_votes_count: u64,
 
     /// The number of outstanding proposals the TokenOwner currently owns
     /// The count is increased when TokenOwner creates a proposal
-    /// and decreased  once it's either voted on (Succeeded or Defeated) or Cancelled
-    /// By default it's restricted to 10 outstanding Proposal per token owner
+    /// and decreased  once it's either voted on (Succeeded or Defeated) or
+    /// Cancelled By default it's restricted to 10 outstanding Proposal per
+    /// token owner
     pub outstanding_proposal_count: u8,
 
     /// Version introduced in program V3
@@ -634,28 +719,33 @@ pub struct TokenOwnerRecordV1 {
     /// Reserved space for future versions
     pub reserved: [u8; 6],
 
-    /// A single account that is allowed to operate governance with the deposited governing tokens
-    /// It can be delegated to by the governing_token_owner or current governance_delegate
+    /// A single account that is allowed to operate governance with the
+    /// deposited governing tokens It can be delegated to by the
+    /// governing_token_owner or current governance_delegate
     pub governance_delegate: Option<Pubkey>,
 }
 
 #[account]
 pub struct GovernanceV1 {
-    /// Account type. It can be Uninitialized, Governance, ProgramGovernance, TokenGovernance or MintGovernance
+    /// Account type. It can be Uninitialized, Governance, ProgramGovernance,
+    /// TokenGovernance or MintGovernance
     pub account_type: GovernanceAccountType,
 
     /// Governance Realm
     pub realm: Pubkey,
 
     /// Account governed by this Governance and/or PDA identity seed
-    /// It can be Program account, Mint account, Token account or any other account
+    /// It can be Program account, Mint account, Token account or any other
+    /// account
     ///
-    /// Note: The account doesn't have to exist. In that case the field is only a PDA seed
+    /// Note: The account doesn't have to exist. In that case the field is only
+    /// a PDA seed
     ///
-    /// Note: Setting governed_account doesn't give any authority over the governed account
-    /// The relevant authorities for specific account types must still be transferred to the Governance PDA
-    /// Ex: mint_authority/freeze_authority for a Mint account
-    /// or upgrade_authority for a Program account should be transferred to the Governance PDA
+    /// Note: Setting governed_account doesn't give any authority over the
+    /// governed account The relevant authorities for specific account types
+    /// must still be transferred to the Governance PDA Ex: mint_authority/
+    /// freeze_authority for a Mint account or upgrade_authority for a
+    /// Program account should be transferred to the Governance PDA
     pub governed_account: Pubkey,
 
     /// Running count of proposals
@@ -674,13 +764,15 @@ pub struct ProposalV1 {
     pub governance: Pubkey,
 
     /// Indicates which Governing Token is used to vote on the Proposal
-    /// Whether the general Community token owners or the Council tokens owners vote on this Proposal
+    /// Whether the general Community token owners or the Council tokens owners
+    /// vote on this Proposal
     pub governing_token_mint: Pubkey,
 
     /// Current proposal state
     pub state: ProposalState,
 
-    /// The TokenOwnerRecord representing the user who created and owns this Proposal
+    /// The TokenOwnerRecord representing the user who created and owns this
+    /// Proposal
     pub token_owner_record: Pubkey,
 
     /// The number of signatories assigned to the Proposal
@@ -714,7 +806,8 @@ pub struct ProposalV1 {
     pub voting_at: Option<i64>,
 
     /// When the Proposal began voting as Slot
-    /// Note: The slot is not currently used but the exact slot is going to be required to support snapshot based vote weights
+    /// Note: The slot is not currently used but the exact slot is going to be
+    /// required to support snapshot based vote weights
     pub voting_at_slot: Option<u64>,
 
     /// When the Proposal ended voting and entered either Succeeded or Defeated
@@ -723,21 +816,24 @@ pub struct ProposalV1 {
     /// When the Proposal entered Executing state
     pub executing_at: Option<i64>,
 
-    /// When the Proposal entered final state Completed or Cancelled and was closed
+    /// When the Proposal entered final state Completed or Cancelled and was
+    /// closed
     pub closed_at: Option<i64>,
 
     /// Instruction execution flag for ordered and transactional instructions
     /// Note: This field is not used in the current version
     pub execution_flags: InstructionExecutionFlags,
 
-    /// The max vote weight for the Governing Token mint at the time Proposal was decided
-    /// It's used to show correct vote results for historical proposals in cases when the mint supply or max weight source changed
+    /// The max vote weight for the Governing Token mint at the time Proposal
+    /// was decided It's used to show correct vote results for historical
+    /// proposals in cases when the mint supply or max weight source changed
     /// after vote was completed.
     pub max_vote_weight: Option<u64>,
 
     /// The vote threshold percentage at the time Proposal was decided
-    /// It's used to show correct vote results for historical proposals in cases when the threshold
-    /// was changed for governance config after vote was completed.
+    /// It's used to show correct vote results for historical proposals in cases
+    /// when the threshold was changed for governance config after vote was
+    /// completed.
     pub vote_threshold: Option<VoteThreshold>,
 
     /// Proposal name
@@ -771,7 +867,8 @@ pub struct VoteRecordV1 {
     pub proposal: Pubkey,
 
     /// The user who casted this vote
-    /// This is the Governing Token Owner who deposited governing tokens into the Realm
+    /// This is the Governing Token Owner who deposited governing tokens into
+    /// the Realm
     pub governing_token_owner: Pubkey,
 
     /// Indicates whether the vote was relinquished by voter
@@ -809,14 +906,16 @@ pub struct ProposalV2 {
     pub governance: Pubkey,
 
     /// Indicates which Governing Token is used to vote on the Proposal
-    /// Whether the general Community token owners or the Council tokens owners vote on this Proposal
+    /// Whether the general Community token owners or the Council tokens owners
+    /// vote on this Proposal
     pub governing_token_mint: Pubkey,
 
     /// Current proposal state
     pub state: ProposalState,
 
     // TODO: add state_at timestamp to have single field to filter recent proposals in the UI
-    /// The TokenOwnerRecord representing the user who created and owns this Proposal
+    /// The TokenOwnerRecord representing the user who created and owns this
+    /// Proposal
     pub token_owner_record: Pubkey,
 
     /// The number of signatories assigned to the Proposal
@@ -834,11 +933,12 @@ pub struct ProposalV2 {
     /// The total weight of the Proposal rejection votes
     /// If the proposal has no deny option then the weight is None
     ///
-    /// Only proposals with the deny option can have executable instructions attached to them
-    /// Without the deny option a proposal is only non executable survey
+    /// Only proposals with the deny option can have executable instructions
+    /// attached to them Without the deny option a proposal is only non
+    /// executable survey
     ///
-    /// The deny options is also used for off-chain and/or manually executable proposal to make them binding
-    /// as opposed to survey only proposals
+    /// The deny options is also used for off-chain and/or manually executable
+    /// proposal to make them binding as opposed to survey only proposals
     pub deny_vote_weight: Option<u64>,
 
     /// Reserved space for future versions
@@ -849,8 +949,9 @@ pub struct ProposalV2 {
     /// Note: Abstain is not supported in the current version
     pub abstain_vote_weight: Option<u64>,
 
-    /// Optional start time if the Proposal should not enter voting state immediately after being signed off
-    /// Note: start_at is not supported in the current version
+    /// Optional start time if the Proposal should not enter voting state
+    /// immediately after being signed off Note: start_at is not supported
+    /// in the current version
     pub start_voting_at: Option<i64>,
 
     /// When the Proposal was created and entered Draft state
@@ -863,7 +964,8 @@ pub struct ProposalV2 {
     pub voting_at: Option<i64>,
 
     /// When the Proposal began voting as Slot
-    /// Note: The slot is not currently used but the exact slot is going to be required to support snapshot based vote weights
+    /// Note: The slot is not currently used but the exact slot is going to be
+    /// required to support snapshot based vote weights
     pub voting_at_slot: Option<u64>,
 
     /// When the Proposal ended voting and entered either Succeeded or Defeated
@@ -872,26 +974,32 @@ pub struct ProposalV2 {
     /// When the Proposal entered Executing state
     pub executing_at: Option<i64>,
 
-    /// When the Proposal entered final state Completed or Cancelled and was closed
+    /// When the Proposal entered final state Completed or Cancelled and was
+    /// closed
     pub closed_at: Option<i64>,
 
     /// Instruction execution flag for ordered and transactional instructions
     /// Note: This field is not used in the current version
     pub execution_flags: InstructionExecutionFlags,
 
-    /// The max vote weight for the Governing Token mint at the time Proposal was decided
-    /// It's used to show correct vote results for historical proposals in cases when the mint supply or max weight source changed
-    /// after vote was completed.
+    /// The max vote weight for the Governing Token mint at the time Proposal
+    /// was decided.
+    /// It's used to show correct vote results for historical proposals in
+    /// cases when the mint supply or max weight source changed after vote was
+    /// completed.
     pub max_vote_weight: Option<u64>,
 
-    /// Max voting time for the proposal if different from parent Governance  (only higher value possible)
+    /// Max voting time for the proposal if different from parent Governance
+    /// (only higher value possible).
     /// Note: This field is not used in the current version
     pub max_voting_time: Option<u32>,
 
     /// The vote threshold at the time Proposal was decided
-    /// It's used to show correct vote results for historical proposals in cases when the threshold
-    /// was changed for governance config after vote was completed.
-    /// TODO: Use this field to override the threshold from parent Governance (only higher value possible)
+    /// It's used to show correct vote results for historical proposals in cases
+    /// when the threshold was changed for governance config after vote was
+    /// completed.
+    /// TODO: Use this field to override the threshold from parent Governance
+    /// (only higher value possible)
     pub vote_threshold: Option<VoteThreshold>,
 
     /// Reserved space for future versions
@@ -936,13 +1044,15 @@ pub struct ProposalTransactionV2 {
     /// Unique transaction index within it's parent Proposal
     pub transaction_index: u16,
 
-    /// Minimum waiting time in seconds for the  instruction to be executed once proposal is voted on
+    /// Minimum waiting time in seconds for the  instruction to be executed once
+    /// proposal is voted on
     pub hold_up_time: u32,
 
     /// Instructions to execute
-    /// The instructions will be signed by Governance PDA the Proposal belongs to
-    // For example for ProgramGovernance the instruction to upgrade program will be signed by ProgramGovernance PDA
-    // All instructions will be executed within a single transaction
+    /// The instructions will be signed by Governance PDA the Proposal belongs
+    /// to
+    // For example for ProgramGovernance the instruction to upgrade program will be signed by
+    // ProgramGovernance PDA All instructions will be executed within a single transaction
     pub instructions: Vec<InstructionData>,
 
     /// Executed at flag
@@ -971,12 +1081,14 @@ pub struct RealmV2 {
     pub reserved: [u8; 6],
 
     /// Legacy field not used since program V3 any longer
-    /// Note: If the field is going to be reused in future version it must be taken under consideration
-    /// that for some Realms it might be already set to none zero because it was used as voting_proposal_count before
+    /// Note: If the field is going to be reused in future version it must be
+    /// taken under consideration that for some Realms it might be already
+    /// set to none zero because it was used as voting_proposal_count before
     pub legacy1: u16,
 
-    /// Realm authority. The authority must sign transactions which update the realm config
-    /// The authority should be transferred to Realm Governance to make the Realm self governed through proposals
+    /// Realm authority. The authority must sign transactions which update the
+    /// realm config The authority should be transferred to Realm Governance
+    /// to make the Realm self governed through proposals
     pub authority: Option<Pubkey>,
 
     /// Governance Realm name
@@ -1003,6 +1115,21 @@ pub struct RealmConfigAccount {
 
     /// Reserved
     pub reserved: Reserved110,
+}
+
+#[account]
+pub struct RequiredSignatory {
+    /// Account type
+    pub account_type: GovernanceAccountType,
+
+    /// Account version
+    pub account_version: u8,
+
+    /// Governance this required signatory belongs to
+    pub governance: Pubkey,
+
+    /// Address of required signatory
+    pub signatory: Pubkey,
 }
 
 #[account]
@@ -1035,8 +1162,8 @@ pub struct TokenOwnerRecordV2 {
     /// Governing Token Mint the TokenOwnerRecord holds deposit for
     pub governing_token_mint: Pubkey,
 
-    /// The owner (either single or multisig) of the deposited governing SPL Tokens
-    /// This is who can authorize a withdrawal of the tokens
+    /// The owner (either single or multisig) of the deposited governing SPL
+    /// Tokens This is who can authorize a withdrawal of the tokens
     pub governing_token_owner: Pubkey,
 
     /// The amount of governing tokens deposited into the Realm
@@ -1044,41 +1171,61 @@ pub struct TokenOwnerRecordV2 {
     pub governing_token_deposit_amount: u64,
 
     /// The number of votes cast by TokenOwner but not relinquished yet
-    /// Every time a vote is cast this number is increased and it's always decreased when relinquishing a vote regardless of the vote state
+    /// Every time a vote is cast this number is increased and it's always
+    /// decreased when relinquishing a vote regardless of the vote state
     pub unrelinquished_votes_count: u64,
 
     /// The number of outstanding proposals the TokenOwner currently owns
     /// The count is increased when TokenOwner creates a proposal
-    /// and decreased  once it's either voted on (Succeeded or Defeated) or Cancelled
-    /// By default it's restricted to 1 outstanding Proposal per token owner
+    /// and decreased  once it's either voted on (Succeeded or Defeated) or
+    /// Cancelled By default it's restricted to 1 outstanding Proposal per
+    /// token owner
     pub outstanding_proposal_count: u8,
 
     /// Version of the account layout
-    /// Note: In future versions (>program V3) we should introduce GovernanceAccountType::TokenOwnerRecord(version:u8) as a way to version this account (and all other accounts too)
-    /// It can't be done in program V3  because it would require to fetch another GovernanceAccountType by the UI and the RPC is already overloaded with all the existing types
-    /// The new account type and versioning scheme can be introduced once we migrate UI to use indexer to fetch all the accounts
-    /// Once the new versioning scheme is introduced this field can be migrated and removed
+    /// Note: In future versions (>program V3) we should introduce
+    /// GovernanceAccountType::TokenOwnerRecord(version:u8) as a way to version
+    /// this account (and all other accounts too) It can't be done in
+    /// program V3  because it would require to fetch another
+    /// GovernanceAccountType by the UI and the RPC is already overloaded with
+    /// all the existing types The new account type and versioning scheme
+    /// can be introduced once we migrate UI to use indexer to fetch all the
+    /// accounts Once the new versioning scheme is introduced this field can
+    /// be migrated and removed
     ///
-    /// The other issues which need to be addressed before we can cleanup the account versioning code:
-    /// 1) Remove the specific governance accounts (ProgramGovernance, TokenGovernance, MintGovernance)
-    ///    The only reason they exist is the UI which can't handle the generic use case for those assets
-    /// 2) For account layout breaking changes all plugins would have to be upgraded
-    /// 3) For account layout changes the Holaplex indexer would have to be upgraded
-    /// 4) We should migrate the UI to use the indexer for fetching data and stop using getProgramAccounts
-    /// 5) The UI would have to be upgraded to support account migration to the latest version
-    /// 6) The client sdk is already messy because of the different program/account versions and it should be cleaned up before we add even more versions.
+    /// The other issues which need to be addressed before we can cleanup the
+    /// account versioning code:
+    /// 1) Remove the specific governance accounts (ProgramGovernance,
+    ///    TokenGovernance, MintGovernance) The only reason they exist is the UI
+    ///    which can't handle the generic use case for those assets
+    /// 2) For account layout breaking changes all plugins would have to be
+    ///    upgraded
+    /// 3) For account layout changes the Holaplex indexer would have to be
+    ///    upgraded
+    /// 4) We should migrate the UI to use the indexer for fetching data and
+    ///    stop using getProgramAccounts
+    /// 5) The UI would have to be upgraded to support account migration to the
+    ///    latest version
+    /// 6) The client sdk is already messy because of the different
+    ///    program/account versions and it should be cleaned up before we add
+    ///    even more versions.
     pub version: u8,
 
     /// Reserved space for future versions
     pub reserved: [u8; 6],
 
-    /// A single account that is allowed to operate governance with the deposited governing tokens
-    /// It can be delegated to by the governing_token_owner or current governance_delegate
+    /// A single account that is allowed to operate governance with the
+    /// deposited governing tokens It can be delegated to by the
+    /// governing_token_owner or current governance_delegate
     pub governance_delegate: Option<Pubkey>,
 
     /// Reserved space for versions v2 and onwards
     /// Note: V1 accounts must be resized before using this space
-    pub reserved_v2: [u8; 128],
+    pub reserved_v2: [u8; 124],
+
+    /// A list of locks which can be issued by external authorities
+    /// to prevent token withdrawals
+    pub locks: Vec<TokenOwnerRecordLock>,
 }
 
 #[account]
@@ -1090,7 +1237,8 @@ pub struct VoteRecordV2 {
     pub proposal: Pubkey,
 
     /// The user who casted this vote
-    /// This is the Governing Token Owner who deposited governing tokens into the Realm
+    /// This is the Governing Token Owner who deposited governing tokens into
+    /// the Realm
     pub governing_token_owner: Pubkey,
 
     /// Indicates whether the vote was relinquished by voter
@@ -1109,25 +1257,29 @@ pub struct VoteRecordV2 {
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub enum VoteThreshold {
-    /// Voting threshold of Yes votes in % required to tip the vote (Approval Quorum)
-    /// It's the percentage of tokens out of the entire pool of governance tokens eligible to vote
-    /// Note: If the threshold is below or equal to 50% then an even split of votes ex: 50:50 or 40:40 is always resolved as Defeated
-    /// In other words a '+1 vote' tie breaker is always required to have a successful vote
+    /// Voting threshold of Yes votes in % required to tip the vote (Approval
+    /// Quorum) It's the percentage of tokens out of the entire pool of
+    /// governance tokens eligible to vote Note: If the threshold is below
+    /// or equal to 50% then an even split of votes ex: 50:50 or 40:40 is always
+    /// resolved as Defeated In other words a '+1 vote' tie breaker is
+    /// always required to have a successful vote
     YesVotePercentage(u8),
 
-    /// The minimum number of votes in % out of the entire pool of governance tokens eligible to vote
-    /// which must be cast for the vote to be valid
-    /// Once the quorum is achieved a simple majority (50%+1) of Yes votes is required for the vote to succeed
-    /// Note: Quorum is not implemented in the current version
+    /// The minimum number of votes in % out of the entire pool of governance
+    /// tokens eligible to vote which must be cast for the vote to be valid
+    /// Once the quorum is achieved a simple majority (50%+1) of Yes votes is
+    /// required for the vote to succeed Note: Quorum is not implemented in
+    /// the current version
     QuorumPercentage(u8),
 
-    /// Disabled vote threshold indicates the given voting population (community or council) is not allowed to vote
-    /// on proposals for the given Governance
+    /// Disabled vote threshold indicates the given voting population (community
+    /// or council) is not allowed to vote on proposals for the given
+    /// Governance
     Disabled,
     //
     // Absolute vote threshold expressed in the voting mint units
-    // It can be implemented once Solana runtime supports accounts resizing to accommodate u64 size extension
-    // Alternatively we could use the reserved space if it becomes a priority
+    // It can be implemented once Solana runtime supports accounts resizing to accommodate u64
+    // size extension Alternatively we could use the reserved space if it becomes a priority
     // Absolute(u64)
     //
     // Vote threshold which is always accepted
@@ -1138,8 +1290,9 @@ pub enum VoteThreshold {
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub enum VoteTipping {
-    /// Tip when there is no way for another option to win and the vote threshold
-    /// has been reached. This ignores voters withdrawing their votes.
+    /// Tip when there is no way for another option to win and the vote
+    /// threshold has been reached. This ignores voters withdrawing their
+    /// votes.
     ///
     /// Currently only supported for the "yes" option in single choice votes.
     Strict,
@@ -1157,31 +1310,37 @@ pub enum VoteTipping {
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct GovernanceConfig {
     /// The type of the vote threshold used for community vote
-    /// Note: In the current version only YesVotePercentage and Disabled thresholds are supported
+    /// Note: In the current version only YesVotePercentage and Disabled
+    /// thresholds are supported
     pub community_vote_threshold: VoteThreshold,
 
-    /// Minimum community weight a governance token owner must possess to be able to create a proposal
+    /// Minimum community weight a governance token owner must possess to be
+    /// able to create a proposal
     pub min_community_weight_to_create_proposal: u64,
 
-    /// Minimum waiting time in seconds for a transaction to be executed after proposal is voted on
+    /// Minimum waiting time in seconds for a transaction to be executed after
+    /// proposal is voted on
     pub min_transaction_hold_up_time: u32,
 
     /// The base voting time in seconds for proposal to be open for voting
-    /// Voting is unrestricted during the base voting time and any vote types can be cast
-    /// The base voting time can be extend by optional cool off time when only negative votes (Veto and Deny) are allowed
+    /// Voting is unrestricted during the base voting time and any vote types
+    /// can be cast The base voting time can be extend by optional cool off
+    /// time when only negative votes (Veto and Deny) are allowed
     pub voting_base_time: u32,
 
     /// Conditions under which a Community vote will complete early
     pub community_vote_tipping: VoteTipping,
 
     /// The type of the vote threshold used for council vote
-    /// Note: In the current version only YesVotePercentage and Disabled thresholds are supported
+    /// Note: In the current version only YesVotePercentage and Disabled
+    /// thresholds are supported
     pub council_vote_threshold: VoteThreshold,
 
     /// The threshold for Council Veto votes
     pub council_veto_vote_threshold: VoteThreshold,
 
-    /// Minimum council weight a governance token owner must possess to be able to create a proposal
+    /// Minimum council weight a governance token owner must possess to be able
+    /// to create a proposal
     pub min_council_weight_to_create_proposal: u64,
 
     /// Conditions under which a Council vote will complete early
@@ -1200,9 +1359,11 @@ pub struct GovernanceConfig {
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub enum GovernanceAccountType {
     /// Default uninitialized account state
+    #[default]
     Uninitialized,
 
-    /// Top level aggregation for governances with Community Token (and optional Council Token)
+    /// Top level aggregation for governances with Community Token (and optional
+    /// Council Token)
     RealmV1,
 
     /// Token Owner Record for given governing token owner within a Realm
@@ -1214,16 +1375,19 @@ pub enum GovernanceAccountType {
     /// Program Governance account
     ProgramGovernanceV1,
 
-    /// Proposal account for Governance account. A single Governance account can have multiple Proposal accounts
+    /// Proposal account for Governance account. A single Governance account can
+    /// have multiple Proposal accounts
     ProposalV1,
 
     /// Proposal Signatory account
     SignatoryRecordV1,
 
-    /// Vote record account for a given Proposal.  Proposal can have 0..n voting records
+    /// Vote record account for a given Proposal.  Proposal can have 0..n voting
+    /// records
     VoteRecordV1,
 
-    /// ProposalInstruction account which holds an instruction to execute for Proposal
+    /// ProposalInstruction account which holds an instruction to execute for
+    /// Proposal
     ProposalInstructionV1,
 
     /// Mint Governance account
@@ -1235,25 +1399,29 @@ pub enum GovernanceAccountType {
     /// Realm config account (introduced in V2)
     RealmConfig,
 
-    /// Vote record account for a given Proposal.  Proposal can have 0..n voting records
-    /// V2 adds support for multi option votes
+    /// Vote record account for a given Proposal.  Proposal can have 0..n voting
+    /// records V2 adds support for multi option votes
     VoteRecordV2,
 
-    /// ProposalTransaction account which holds instructions to execute for Proposal within a single Transaction
-    /// V2 replaces ProposalInstruction and adds index for proposal option and multiple instructions
+    /// ProposalTransaction account which holds instructions to execute for
+    /// Proposal within a single Transaction V2 replaces ProposalInstruction
+    /// and adds index for proposal option and multiple instructions
     ProposalTransactionV2,
 
-    /// Proposal account for Governance account. A single Governance account can have multiple Proposal accounts
-    /// V2 adds support for multiple vote options
+    /// Proposal account for Governance account. A single Governance account can
+    /// have multiple Proposal accounts V2 adds support for multiple vote
+    /// options
     ProposalV2,
 
     /// Program metadata account (introduced in V2)
-    /// It stores information about the particular SPL-Governance program instance
+    /// It stores information about the particular SPL-Governance program
+    /// instance
     ProgramMetadata,
 
-    /// Top level aggregation for governances with Community Token (and optional Council Token)
-    /// V2 adds the following fields:
-    /// 1) use_community_voter_weight_addin and use_max_community_voter_weight_addin to RealmConfig
+    /// Top level aggregation for governances with Community Token (and optional
+    /// Council Token) V2 adds the following fields:
+    /// 1) use_community_voter_weight_addin and
+    ///    use_max_community_voter_weight_addin to RealmConfig
     /// 2) voting_proposal_count / replaced with legacy1 in V3
     /// 3) extra reserved space reserved_v2
     RealmV2,
@@ -1284,27 +1452,34 @@ pub enum GovernanceAccountType {
 
     /// Proposal deposit account
     ProposalDeposit,
+
+    /// Required signatory account
+    RequiredSignatory,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub enum MintMaxVoterWeightSource {
-    /// Fraction (10^10 precision) of the governing mint supply is used as max vote weight
-    /// The default is 100% (10^10) to use all available mint supply for voting
+    /// Fraction (10^10 precision) of the governing mint supply is used as max
+    /// vote weight The default is 100% (10^10) to use all available mint
+    /// supply for voting
     SupplyFraction(u64),
 
-    /// Absolute value, irrelevant of the actual mint supply, is used as max voter weight
+    /// Absolute value, irrelevant of the actual mint supply, is used as max
+    /// voter weight
     Absolute(u64),
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct RealmConfig {
-    /// Legacy field introduced and used in V2 as use_community_voter_weight_addin: bool
-    /// If the field is going to be reused in future version it must be taken under consideration
+    /// Legacy field introduced and used in V2 as
+    /// use_community_voter_weight_addin: bool If the field is going to be
+    /// reused in future version it must be taken under consideration
     /// that for some Realms it might be already set to 1
     pub legacy1: u8,
 
-    /// Legacy field introduced and used in V2 as use_max_community_voter_weight_addin: bool
-    /// If the field is going to be reused in future version it must be taken under consideration
+    /// Legacy field introduced and used in V2 as
+    /// use_max_community_voter_weight_addin: bool If the field is going to
+    /// be reused in future version it must be taken under consideration
     /// that for some Realms it might be already set to 1
     pub legacy2: u8,
 
@@ -1324,10 +1499,12 @@ pub struct RealmConfig {
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub enum ProposalState {
     /// Draft - Proposal enters Draft state when it's created
+    #[default]
     Draft,
 
     /// SigningOff - The Proposal is being signed off by Signatories
-    /// Proposal enters the state when first Signatory Sings and leaves it when last Signatory signs
+    /// Proposal enters the state when first Signatory Sings and leaves it when
+    /// last Signatory signs
     SigningOff,
 
     /// Taking votes
@@ -1337,7 +1514,8 @@ pub enum ProposalState {
     Succeeded,
 
     /// Voting on Proposal succeeded and now instructions are being executed
-    /// Proposal enter this state when first instruction is executed and leaves when the last instruction is executed
+    /// Proposal enter this state when first instruction is executed and leaves
+    /// when the last instruction is executed
     Executing,
 
     /// Completed
@@ -1350,7 +1528,8 @@ pub enum ProposalState {
     Defeated,
 
     /// Same as Executing but indicates some instructions failed to execute
-    /// Proposal can't be transitioned from ExecutingWithErrors to Completed state
+    /// Proposal can't be transitioned from ExecutingWithErrors to Completed
+    /// state
     ExecutingWithErrors,
 
     /// The Proposal was vetoed
@@ -1360,17 +1539,20 @@ pub enum ProposalState {
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub enum InstructionExecutionFlags {
     /// No execution flags are specified
-    /// Instructions can be executed individually, in any order, as soon as they hold_up time expires
+    /// Instructions can be executed individually, in any order, as soon as they
+    /// hold_up time expires
     None,
 
     /// Instructions are executed in a specific order
     /// Note: Ordered execution is not supported in the current version
-    /// The implementation requires another account type to track deleted instructions
+    /// The implementation requires another account type to track deleted
+    /// instructions
     Ordered,
 
     /// Multiple instructions can be executed as a single transaction
     /// Note: Transactions are not supported in the current version
-    /// The implementation requires another account type to group instructions within a transaction
+    /// The implementation requires another account type to group instructions
+    /// within a transaction
     UseTransaction,
 }
 
@@ -1378,7 +1560,8 @@ pub enum InstructionExecutionFlags {
 pub struct AccountMetaData {
     /// An account's public key
     pub pubkey: Pubkey,
-    /// True if an Instruction requires a Transaction signature matching `pubkey`.
+    /// True if an Instruction requires a Transaction signature matching
+    /// `pubkey`.
     pub is_signer: bool,
     /// True if the `pubkey` can be loaded as a read-write account.
     pub is_writable: bool,
@@ -1417,12 +1600,14 @@ pub struct ProposalInstructionV1 {
     /// Unique instruction index within it's parent Proposal
     pub instruction_index: u16,
 
-    /// Minimum waiting time in seconds for the instruction to be executed once proposal is voted on
+    /// Minimum waiting time in seconds for the instruction to be executed once
+    /// proposal is voted on
     pub hold_up_time: u32,
 
     /// Instruction to execute
     /// The instruction will be signed by Governance PDA the Proposal belongs to
-    // For example for ProgramGovernance the instruction to upgrade program will be signed by ProgramGovernance PDA
+    // For example for ProgramGovernance the instruction to upgrade program will be signed by
+    // ProgramGovernance PDA
     pub instruction: InstructionData,
 
     /// Executed at flag
@@ -1476,11 +1661,14 @@ pub struct ProposalOption {
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub enum MultiChoiceType {
-    /// Multiple options can be approved with full weight allocated to each approved option
+    /// Multiple options can be approved with full weight allocated to each
+    /// approved option
     FullWeight,
 
-    /// Multiple options can be approved with weight allocated proportionally to the percentage of the total weight
-    /// The full weight has to be voted among the approved options, i.e., 100% of the weight has to be allocated
+    /// Multiple options can be approved with weight allocated proportionally
+    /// to the percentage of the total weight.
+    /// The full weight has to be voted among the approved options, i.e.,
+    /// 100% of the weight has to be allocated
     Weighted,
 }
 
@@ -1488,8 +1676,10 @@ pub enum MultiChoiceType {
 pub enum VoteType {
     /// Single choice vote with mutually exclusive choices
     /// In the SingeChoice mode there can ever be a single winner
-    /// If multiple options score the same highest vote then the Proposal is not resolved and considered as Failed
-    /// Note: Yes/No vote is a single choice (Yes) vote with the deny option (No)
+    /// If multiple options score the same highest vote then the Proposal is
+    /// not resolved and considered as Failed.
+    /// Note: Yes/No vote is a single choice (Yes) vote with the deny
+    /// option (No)
     SingleChoice,
 
     /// Multiple options can be selected with up to max_voter_options per voter
@@ -1503,23 +1693,26 @@ pub enum VoteType {
 
         /// The min number of options a voter must choose
         ///
-        /// Note: In the current version the limit is not supported and not enforced
-        /// and must always be set to 1
+        /// Note: In the current version the limit is not supported and not
+        /// enforced and must always be set to 1
         #[allow(dead_code)]
         min_voter_options: u8,
 
         /// The max number of options a voter can choose
         ///
-        /// Note: In the current version the limit is not supported and not enforced
-        /// and must always be set to the number of available options
+        /// Note: In the current version the limit is not supported and not
+        /// enforced and must always be set to the number of available
+        /// options
         #[allow(dead_code)]
         max_voter_options: u8,
 
         /// The max number of wining options
-        /// For executable proposals it limits how many options can be executed for a Proposal
+        /// For executable proposals it limits how many options can be executed
+        /// for a Proposal
         ///
-        /// Note: In the current version the limit is not supported and not enforced
-        /// and must always be set to the number of available options
+        /// Note: In the current version the limit is not supported and not
+        /// enforced and must always be set to the number of available
+        /// options
         #[allow(dead_code)]
         max_winning_options: u8,
     },
@@ -1527,42 +1720,54 @@ pub enum VoteType {
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub enum GoverningTokenType {
-    /// Liquid token is a token which is fully liquid and the token owner retains full authority over it
+    /// Liquid token is a token which is fully liquid and the token owner
+    /// retains full authority over it.
     /// Deposit - Yes
     /// Withdraw - Yes
     /// Revoke - No, Realm authority cannot revoke liquid tokens
     Liquid,
 
     /// Membership token is a token controlled by Realm authority
-    /// Deposit - Yes, membership tokens can be deposited to gain governance power
-    ///           The membership tokens are conventionally minted into the holding account to keep them out of members possession
-    /// Withdraw - No, after membership tokens are deposited they are no longer transferable and can't be withdrawn
-    /// Revoke - Yes, Realm authority can Revoke (burn) membership tokens
+    /// Deposit - Yes, membership tokens can be deposited to gain governance
+    /// power.
+    /// The membership tokens are conventionally minted into the holding
+    /// account to keep them out of members possession.
+    /// Withdraw - No, after membership tokens are deposited they are no longer
+    /// transferable and can't be withdrawn.
+    /// Revoke - Yes, Realm authority can Revoke (burn) membership tokens.
     Membership,
 
-    /// Dormant token is a token which is only a placeholder and its deposits are not accepted and not used for governance power within the Realm
+    /// Dormant token is a token which is only a placeholder and its deposits
+    /// are not accepted and not used for governance power within the Realm
     ///
-    /// The Dormant token type is used when only a single voting population is operational. For example a Multisig starter DAO uses Council only
-    /// and sets Community as Dormant to indicate its not utilized for any governance power.
-    /// Once the starter DAO decides to decentralise then it can change the Community token to Liquid
+    /// The Dormant token type is used when only a single voting population is
+    /// operational. For example a Multisig starter DAO uses Council only
+    /// and sets Community as Dormant to indicate its not utilized for any
+    /// governance power. Once the starter DAO decides to decentralise then
+    /// it can change the Community token to Liquid
     ///
-    /// Note: When an external voter weight plugin which takes deposits of the token is used then the type should be set to Dormant
-    /// to make the intention explicit
+    /// Note: When an external voter weight plugin which takes deposits of the
+    /// token is used then the type should be set to Dormant to make the
+    /// intention explicit
     ///
     /// Deposit - No, dormant tokens can't be deposited into the Realm
-    /// Withdraw - Yes, tokens can still be withdrawn from Realm to support scenario where the config is changed while some tokens are still deposited
+    /// Withdraw - Yes, tokens can still be withdrawn from Realm to support
+    /// scenario where the config is changed while some tokens are still
+    /// deposited.
     /// Revoke - No, Realm authority cannot revoke dormant tokens
     Dormant,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct GoverningTokenConfigArgs {
-    /// Indicates whether an external addin program should be used to provide voters weights
-    /// If yes then the voters weight program account must be passed to the instruction
+    /// Indicates whether an external addin program should be used to provide
+    /// voters weights If yes then the voters weight program account must be
+    /// passed to the instruction
     pub use_voter_weight_addin: bool,
 
-    /// Indicates whether an external addin program should be used to provide max voters weight for the token
-    /// If yes then the max voter weight program account must be passed to the instruction
+    /// Indicates whether an external addin program should be used to provide
+    /// max voters weight for the token If yes then the max voter weight
+    /// program account must be passed to the instruction
     pub use_max_voter_weight_addin: bool,
 
     /// Governing token type defines how the token is used for governance
@@ -1590,12 +1795,12 @@ pub struct RealmConfigArgs {
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct GoverningTokenConfigAccountArgs {
-    /// Specifies an external plugin program which should be used to provide voters weights
-    /// for the given governing token
+    /// Specifies an external plugin program which should be used to provide
+    /// voters weights for the given governing token
     pub voter_weight_addin: Option<Pubkey>,
 
-    /// Specifies an external an external plugin program should be used to provide max voters weight
-    /// for the given governing token
+    /// Specifies an external an external plugin program should be used to
+    /// provide max voters weight for the given governing token
     pub max_voter_weight_addin: Option<Pubkey>,
 
     /// Governing token type defines how the token is used for governance power
@@ -1614,7 +1819,23 @@ pub struct GoverningTokenConfig {
     pub token_type: GoverningTokenType,
 
     /// Reserved space for future versions
-    pub reserved: [u8; 8],
+    pub reserved: [u8; 4],
+
+    /// Lock authorities for TokenOwnerRecords
+    pub lock_authorities: Vec<Pubkey>,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct TokenOwnerRecordLock {
+    /// Custom lock type id which can be used by the authority to issue
+    /// different lock types
+    pub lock_type: u8,
+
+    /// The authority issuing the lock
+    pub authority: Pubkey,
+
+    /// The timestamp when the lock expires or None if it never expires
+    pub expiry: Option<i64>,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -1647,7 +1868,7 @@ pub enum Vote {
 pub enum GovernanceError {
     /// Invalid instruction passed to program
     #[msg("Invalid instruction passed to program")]
-    InvalidInstruction = 500, // Start Governance custom errors from 500 to avoid conflicts with programs invoked via CPI
+    InvalidInstruction = 500,
 
     /// Realm with the given name and governing mints already exists
     #[msg("Realm with the given name and governing mints already exists")]
@@ -1717,7 +1938,8 @@ pub enum GovernanceError {
     #[msg("Invalid Governance config: Vote threshold percentage out of range")]
     InvalidVoteThresholdPercentage, // 517
 
-    /// Proposal for the given Governance, Governing Token Mint and index already exists
+    /// Proposal for the given Governance, Governing Token Mint and index
+    /// already exists
     #[msg("Proposal for the given Governance, Governing Token Mint and index already exists")]
     ProposalAlreadyExists, // 518
 
@@ -1861,7 +2083,8 @@ pub enum GovernanceError {
     #[msg("Invalid ProgramData account Data")]
     InvalidProgramDataAccountData, // 552
 
-    /// Provided upgrade authority doesn't match current program upgrade authority
+    /// Provided upgrade authority doesn't match current program upgrade
+    /// authority
     #[msg("Provided upgrade authority doesn't match current program upgrade authority")]
     InvalidUpgradeAuthority, // 553
 
@@ -2132,19 +2355,71 @@ pub enum GovernanceError {
     /// Invalid multi choice proposal parameters
     #[msg("Invalid multi choice proposal parameters")]
     InvalidMultiChoiceProposalParameters, // 620
+
+    /// Invalid Governance for RequiredSignatory
+    #[msg("Invalid Governance for RequiredSignatory")]
+    InvalidGovernanceForRequiredSignatory, // 621
+
+    /// SignatoryRecord already exists
+    #[msg("Signatory Record has already been created")]
+    SignatoryRecordAlreadyExists, // 622
+
+    /// Instruction has been removed
+    #[msg("Instruction has been removed")]
+    InstructionDeprecated, // 623
+
+    /// Proposal is missing signatories required by its governance
+    #[msg("Proposal is missing required signatories")]
+    MissingRequiredSignatories, // 624
+
+    /// TokenOwnerRecordLock authority must sign
+    #[msg("TokenOwnerRecordLock authority must sign")]
+    TokenOwnerRecordLockAuthorityMustSign, // 625
+
+    /// TokenOwnerRecordLock is expired
+    #[msg("TokenOwnerRecordLock is expired ")]
+    ExpiredTokenOwnerRecordLock, // 626
+
+    /// TokenOwnerRecordLocked locked
+    #[msg("TokenOwnerRecord locked")]
+    TokenOwnerRecordLocked, // 627
+
+    /// Invalid TokenOwnerRecordLockAuthority
+    #[msg("Invalid TokenOwnerRecordLockAuthority")]
+    InvalidTokenOwnerRecordLockAuthority, // 628
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub enum SetRealmAuthorityAction {
     /// Sets realm authority without any checks
-    /// Uncheck option allows to set the realm authority to non governance accounts
+    /// Uncheck option allows to set the realm authority to non governance
+    /// accounts
     SetUnchecked,
 
-    /// Sets realm authority and checks the new new authority is one of the realm's governances
-    // Note: This is not a security feature because governance creation is only gated with min_community_weight_to_create_governance
-    //       The check is done to prevent scenarios where the authority could be accidentally set to a wrong or none existing account
+    /// Sets realm authority and checks the new new authority is one of the
+    /// realm's governances
+    // Note: This is not a security feature because governance creation is only
+    // gated with min_community_weight_to_create_governance.
+    // The check is done to prevent scenarios where the authority could be
+    // accidentally set to a wrong or none existing account.
     SetChecked,
 
     /// Removes realm authority
     Remove,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub enum SetRealmConfigItemArgs {
+    /// Set TokenOwnerRecord lock authority
+    TokenOwnerRecordLockAuthority {
+        /// Action indicating whether to add or remove the lock authority
+        #[allow(dead_code)]
+        action: SetItemActionType,
+        /// Mint of the token to  the lock authority for
+        #[allow(dead_code)]
+        governing_token_mint: Pubkey,
+        /// Authority to change
+        #[allow(dead_code)]
+        authority: Pubkey,
+    },
 }

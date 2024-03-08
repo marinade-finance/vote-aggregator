@@ -1,3 +1,3 @@
-export * from './root';
-export * from './clan';
-export * from './member';
+export * from './root/index';
+export * from './clan/index';
+export * from './member/index';

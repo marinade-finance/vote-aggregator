@@ -1,11 +1,18 @@
-import {PublicKey, TransactionInstruction} from '@solana/web3.js';
+import {
+  AccountMeta,
+  PublicKey,
+  SystemProgram,
+  TransactionInstruction,
+} from '@solana/web3.js';
 import {VoteAggregatorSdk} from './sdk';
-import {BN, IdlAccounts} from '@coral-xyz/anchor';
+import {IdlAccounts, IdlTypes} from '@coral-xyz/anchor';
 import {VoteAggregator} from './vote_aggregator';
-import {SYSTEM_PROGRAM_ID} from '@solana/spl-governance';
+import {SYSTEM_PROGRAM_ID, getRealmConfigAddress} from '@solana/spl-governance';
 import {VoterWeightAccount} from './clan';
+import BN from 'bn.js';
 
 export type MemberAccount = IdlAccounts<VoteAggregator>['member'];
+export type MembershipEntry = IdlTypes<VoteAggregator>['MembershipEntry'];
 
 export class MemberSdk {
   constructor(public readonly sdk: VoteAggregatorSdk) {}
@@ -190,7 +197,7 @@ export class MemberSdk {
     owner: PublicKey;
     payer?: PublicKey;
   }) {
-    const [tokenOwnerRecord] = this.tokenOwnerRecordAddress({
+    const [memberTor] = this.tokenOwnerRecordAddress({
       realmAddress: rootData.realm,
       governingTokenMint: rootData.governingTokenMint,
       owner,
@@ -204,7 +211,7 @@ export class MemberSdk {
         member,
         payer,
         systemProgram: SYSTEM_PROGRAM_ID,
-        tokenOwnerRecord,
+        memberTor,
         owner,
       })
       .instruction();
@@ -235,16 +242,18 @@ export class MemberSdk {
   }
 
   async joinClanInstruction({
-    rootData = {},
+    rootData,
     memberAddress,
     memberData,
     clanAddress,
-    memberVoterWeightAddress,
+    memberVwr,
+    shareBp = 10000,
+    payer,
     memberAuthority = memberData.owner,
   }: {
-    rootData?: {
-      governanceProgram?: PublicKey;
-      realm?: PublicKey;
+    rootData: {
+      governanceProgram: PublicKey;
+      realm: PublicKey;
       governingTokenMint?: PublicKey;
     };
     memberAddress?: PublicKey;
@@ -252,9 +261,12 @@ export class MemberSdk {
       root: PublicKey;
       owner: PublicKey;
       tokenOwnerRecord?: PublicKey;
+      membership: MembershipEntry[];
     };
     clanAddress: PublicKey;
-    memberVoterWeightAddress: PublicKey;
+    memberVwr: PublicKey;
+    shareBp?: number;
+    payer: PublicKey;
     memberAuthority?: PublicKey;
   }) {
     if (!memberAddress) {
@@ -264,39 +276,64 @@ export class MemberSdk {
       });
     }
 
-    let memberTokenOwnerRecord = memberData.tokenOwnerRecord;
-    if (!memberTokenOwnerRecord) {
-      if (!rootData.realm) {
-        throw new Error('rootData.realm is required');
-      }
+    let memberTor = memberData.tokenOwnerRecord;
+    if (!memberTor) {
       if (!rootData.governingTokenMint) {
         throw new Error('rootData.governingTokenMint is required');
       }
-      if (!rootData.governanceProgram) {
-        throw new Error('rootData.governanceProgram is required');
-      }
 
-      [memberTokenOwnerRecord] = this.tokenOwnerRecordAddress({
+      [memberTor] = this.tokenOwnerRecordAddress({
         realmAddress: rootData.realm,
         governingTokenMint: rootData.governingTokenMint,
         owner: memberData.owner,
         splGovernanceId: rootData.governanceProgram,
       });
     }
+
+    const [lockAuthority] = this.sdk.root.lockAuthority({
+      rootAddress: memberData.root,
+    });
+
+    const rest: AccountMeta[] = [];
+    for (const {clan, exitableAt} of memberData.membership) {
+      if (!exitableAt) {
+        rest.push({
+          pubkey: clan,
+          isSigner: false,
+          isWritable: true,
+        });
+        rest.push({
+          pubkey: this.sdk.clan.voterWeightAddress(clan)[0],
+          isSigner: false,
+          isWritable: true,
+        });
+      }
+    }
+
     return await this.sdk.program.methods
-      .joinClan()
+      .joinClan(shareBp)
       .accountsStrict({
         root: memberData.root,
         member: memberAddress,
         clan: clanAddress,
         memberAuthority,
-        clanVoterWeightRecord: this.sdk.clan.voterWeightAddress(clanAddress)[0],
-        memberTokenOwnerRecord,
-        memberVoterWeightRecord: memberVoterWeightAddress,
-        maxVoterWeightRecord: this.sdk.root.maxVoterWieghtAddress({
+        clanVwr: this.sdk.clan.voterWeightAddress(clanAddress)[0],
+        memberTor,
+        memberVwr,
+        maxVwr: this.sdk.root.maxVoterWieghtAddress({
           rootAddress: memberData.root,
         })[0],
+        payer,
+        realm: rootData.realm,
+        realmConfig: await getRealmConfigAddress(
+          rootData.governanceProgram,
+          rootData.realm
+        ),
+        lockAuthority,
+        governanceProgram: rootData.governanceProgram,
+        systemProgram: SystemProgram.programId,
       })
+      .remainingAccounts(rest)
       .instruction();
   }
 
@@ -304,15 +341,16 @@ export class MemberSdk {
     memberData,
     memberAddress,
     memberAuthority = memberData.owner,
+    clan,
   }: {
     memberData: {
       root: PublicKey;
       owner: PublicKey;
       // delegate: PublicKey;
-      clan: PublicKey;
     };
     memberAddress?: PublicKey;
     memberAuthority?: PublicKey;
+    clan: PublicKey;
   }) {
     if (!memberAddress) {
       [memberAddress] = this.memberAddress({
@@ -320,33 +358,39 @@ export class MemberSdk {
         owner: memberData.owner,
       });
     }
-    const [clanVoterWeightRecord] = this.sdk.clan.voterWeightAddress(
-      memberData.clan
-    );
+    const [clanVwr] = this.sdk.clan.voterWeightAddress(clan);
     return await this.sdk.program.methods
       .startLeavingClan()
       .accountsStrict({
         root: memberData.root,
         member: memberAddress,
-        clan: memberData.clan,
+        clan,
         memberAuthority,
-        clanVoterWeightRecord,
+        clanVwr,
       })
       .instruction();
   }
 
-  async leaveClanInstruction({
+  async exitClanInstruction({
+    rootData,
     memberData,
     memberAddress,
     memberAuthority = memberData.owner,
+    clan,
   }: {
+    rootData: {
+      governanceProgram: PublicKey;
+      realm: PublicKey;
+      governingTokenMint: PublicKey;
+    };
     memberData: {
       root: PublicKey;
       owner: PublicKey;
-      clan: PublicKey;
+      tokenOwnerRecord?: PublicKey;
     };
     memberAddress?: PublicKey;
     memberAuthority?: PublicKey;
+    clan: PublicKey;
   }) {
     if (!memberAddress) {
       [memberAddress] = this.memberAddress({
@@ -354,13 +398,42 @@ export class MemberSdk {
         owner: memberData.owner,
       });
     }
+
+    let memberTor = memberData.tokenOwnerRecord;
+    if (!memberTor) {
+      [memberTor] = this.tokenOwnerRecordAddress({
+        realmAddress: rootData.realm,
+        governingTokenMint: rootData.governingTokenMint,
+        owner: memberData.owner,
+        splGovernanceId: rootData.governanceProgram,
+      });
+    }
+
+    const [lockAuthority] = this.sdk.root.lockAuthority({
+      rootAddress: memberData.root,
+    });
+
     return await this.sdk.program.methods
-      .leaveClan()
+      .exitClan()
       .accountsStrict({
         root: memberData.root,
         member: memberAddress,
-        clan: memberData.clan,
+        clan,
         memberAuthority,
+        lockAuthority,
+        memberTor,
+        governanceProgram: rootData.governanceProgram,
+        clanTor: this.sdk.clan.tokenOwnerRecordAddress({
+          realmAddress: rootData.realm,
+          governingTokenMint: rootData.governingTokenMint,
+          splGovernanceId: rootData.governanceProgram,
+          clanAddress: clan,
+        })[0],
+        realm: rootData.realm,
+        realmConfig: await getRealmConfigAddress(
+          rootData.governanceProgram,
+          rootData.realm
+        ),
       })
       .instruction();
   }
@@ -372,9 +445,8 @@ export class MemberSdk {
     memberData: {
       root: PublicKey;
       owner: PublicKey;
-      clan: PublicKey;
       voterWeightRecord: PublicKey;
-      clanLeavingTime: BN;
+      membership: MembershipEntry[];
     };
     memberAddress?: PublicKey;
   }) {
@@ -385,24 +457,33 @@ export class MemberSdk {
       });
     }
 
+    const rest: AccountMeta[] = [];
+    for (const {clan, exitableAt} of memberData.membership) {
+      if (!exitableAt) {
+        rest.push({
+          pubkey: clan,
+          isSigner: false,
+          isWritable: true,
+        });
+        rest.push({
+          pubkey: this.sdk.clan.voterWeightAddress(clan)[0],
+          isSigner: false,
+          isWritable: true,
+        });
+      }
+    }
+
     return await this.sdk.program.methods
       .updateVoterWeight()
       .accountsStrict({
         root: memberData.root,
         member: memberAddress,
-        clan: !memberData.clan.equals(PublicKey.default)
-          ? memberData.clan
-          : null,
-        clanVoterWeightRecord:
-          !memberData.clan.equals(PublicKey.default) &&
-          memberData.clanLeavingTime.eq(new BN('9223372036854775807'))
-            ? this.sdk.clan.voterWeightAddress(memberData.clan)[0]
-            : null,
-        memberVoterWeightRecord: memberData.voterWeightRecord,
-        maxVoterWeightRecord: this.sdk.root.maxVoterWieghtAddress({
+        memberVwr: memberData.voterWeightRecord,
+        maxVwr: this.sdk.root.maxVoterWieghtAddress({
           rootAddress: memberData.root,
         })[0],
       })
+      .remainingAccounts(rest)
       .instruction();
   }
 
@@ -410,24 +491,38 @@ export class MemberSdk {
     memberData,
     memberAddress,
     memberAuthority = memberData.owner,
-    voterWeightRecord,
+    memberVwr,
   }: {
     memberData: {
       root: PublicKey;
       owner: PublicKey;
-      clan: PublicKey;
-      voterWeightRecord: PublicKey;
-      clanLeavingTime: BN;
+      membership: MembershipEntry[];
     };
     memberAddress?: PublicKey;
     memberAuthority?: PublicKey;
-    voterWeightRecord: PublicKey;
+    memberVwr: PublicKey;
   }) {
     if (!memberAddress) {
       [memberAddress] = this.memberAddress({
         rootAddress: memberData.root,
         owner: memberData.owner,
       });
+    }
+
+    const rest: AccountMeta[] = [];
+    for (const {clan, exitableAt} of memberData.membership) {
+      if (!exitableAt) {
+        rest.push({
+          pubkey: clan,
+          isSigner: false,
+          isWritable: true,
+        });
+        rest.push({
+          pubkey: this.sdk.clan.voterWeightAddress(clan)[0],
+          isSigner: false,
+          isWritable: true,
+        });
+      }
     }
 
     return await this.sdk.program.methods
@@ -436,19 +531,12 @@ export class MemberSdk {
         root: memberData.root,
         member: memberAddress,
         memberAuthority,
-        clan: !memberData.clan.equals(PublicKey.default)
-          ? memberData.clan
-          : null,
-        clanVoterWeightRecord:
-          !memberData.clan.equals(PublicKey.default) &&
-          memberData.clanLeavingTime.eq(new BN('9223372036854775807'))
-            ? this.sdk.clan.voterWeightAddress(memberData.clan)[0]
-            : null,
-        memberVoterWeightRecord: voterWeightRecord,
-        maxVoterWeightRecord: this.sdk.root.maxVoterWieghtAddress({
+        memberVwr,
+        maxVwr: this.sdk.root.maxVoterWieghtAddress({
           rootAddress: memberData.root,
         })[0],
       })
+      .remainingAccounts(rest)
       .instruction();
   }
 }

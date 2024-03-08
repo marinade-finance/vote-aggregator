@@ -1,15 +1,16 @@
 import BN from 'bn.js';
-import {ClanTestData, MemberTestData, RootTestData} from '../../VoteAggregator';
-import {RealmTestData, VoterWeightRecordTestData} from '../../SplGovernance/realm';
+import {MemberTestData, RootTestData} from '../../VoteAggregator';
+import {
+  RealmTestData,
+  VoterWeightRecordTestData,
+} from '../../SplGovernance/realm';
 import {PublicKey} from '@solana/web3.js';
 import {buildKeypair} from '../../utils';
 
 export type SetVoterWeightRecordTestData = {
   realm: RealmTestData;
   root: RootTestData;
-  member: Omit<MemberTestData, 'clan'> & {
-    clan?: ClanTestData;
-  };
+  member: MemberTestData;
   memberVoterWeightRecord: VoterWeightRecordTestData;
   error?: string;
 };
@@ -58,13 +59,23 @@ export const setVoterWeightRecordTestData: SetVoterWeightRecordTestData[] = [
       voterWeightRecord: new PublicKey(
         'EUGQWWk5B7mSUz3fe246AmzBQv8Myr4LCagH1pDZ36St'
       ),
-      clan: {
-        address: new PublicKey('GYV657WS94UU9TRy3Pfy541vDozNzBa9aQL2YKpLpyJv'),
-        owner: new PublicKey('E37eVKwMqnwgTJaVYJcYCprm9w89E1H3DU4C4ARqZkG8'),
-        name: 'Marinade',
-        activeMembers: new BN(2),
-        voterWeight: new BN('43564574675566'),
-      },
+      membership: [
+        {
+          clan: {
+            address: new PublicKey(
+              'GYV657WS94UU9TRy3Pfy541vDozNzBa9aQL2YKpLpyJv'
+            ),
+            owner: new PublicKey(
+              'E37eVKwMqnwgTJaVYJcYCprm9w89E1H3DU4C4ARqZkG8'
+            ),
+            name: 'Marinade',
+            permanentMembers: new BN(2),
+            voterWeight: new BN('43564574675566'),
+            permanentVoterWeight: new BN('43564574675566'),
+          },
+          shareBp: 10000,
+        },
+      ],
     },
     memberVoterWeightRecord: {
       voterWeight: new BN('7489342343'),
@@ -116,14 +127,24 @@ export const setVoterWeightRecordTestData: SetVoterWeightRecordTestData[] = [
       voterWeightRecord: new PublicKey(
         'QvTnnh5pQrYAwZieL4G8a2TmqUGsg9Fj3Sb8NQjBmjQ'
       ),
-      clan: {
-        address: new PublicKey('DdRA96x57UUBNEKgjmxohYEMUQhzZZ4PD2tNCzc7Cimt'),
-        owner: new PublicKey('7gMLxHEDuafTnJMY1M3GzQfqiMMVjv5Zc8u7aUxNjSw7'),
-        name: 'Marinade',
-        activeMembers: new BN(2),
-        voterWeight: new BN('43564574675566'),
-      },
-      clanLeavingTime: new BN('8923742384232'),
+      membership: [
+        {
+          clan: {
+            address: new PublicKey(
+              'DdRA96x57UUBNEKgjmxohYEMUQhzZZ4PD2tNCzc7Cimt'
+            ),
+            owner: new PublicKey(
+              '7gMLxHEDuafTnJMY1M3GzQfqiMMVjv5Zc8u7aUxNjSw7'
+            ),
+            name: 'Marinade',
+            permanentMembers: new BN(2),
+            voterWeight: new BN('43564574675566'),
+            permanentVoterWeight: new BN('43564574675566'),
+          },
+          shareBp: 10000,
+          exitableAt: new BN('8923742384232'),
+        },
+      ],
     },
     memberVoterWeightRecord: {
       voterWeight: new BN('7489342343'),

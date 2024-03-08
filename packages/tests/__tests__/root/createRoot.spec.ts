@@ -1,4 +1,3 @@
-import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {Keypair, SystemProgram} from '@solana/web3.js';
 import {PublicKey} from '@solana/web3.js';
@@ -7,7 +6,6 @@ import {
   CreateRootTestData,
   RealmTester,
   parseLogsEvent,
-  resizeBN,
   createRootTestData,
 } from '../../src';
 import {BN} from '@coral-xyz/anchor';
@@ -21,7 +19,7 @@ import {
 describe('create_root instruction', () => {
   it.each(createRootTestData.filter(({error}) => !error))(
     'Works for community side',
-    async ({realm}: CreateRootTestData) => {
+    async ({realm, maxProposalLifetime = new BN(0)}: CreateRootTestData) => {
       const realmTester = new RealmTester(realm);
       const {program, testContext} = await startTest({
         splGovernanceId: realmTester.splGovernanceId,
@@ -39,11 +37,10 @@ describe('create_root instruction', () => {
         ],
         program.programId
       );
-      const [maxVoterWeightAddress, maxVoterWeightBump] =
-        PublicKey.findProgramAddressSync(
-          [Buffer.from('max-voter-weight', 'utf-8'), rootAddress.toBuffer()],
-          program.programId
-        );
+      const [maxVwr, maxVwrBump] = PublicKey.findProgramAddressSync(
+        [Buffer.from('max-voter-weight', 'utf-8'), rootAddress.toBuffer()],
+        program.programId
+      );
 
       const communityTokenConfigArgs = {
         voterWeightAddin: new PublicKey(
@@ -84,15 +81,21 @@ describe('create_root instruction', () => {
           }
         : undefined;
 
+      const [lockAuthority, lockAuthorityBump] =
+        PublicKey.findProgramAddressSync(
+          [Buffer.from('lock-authority', 'utf8'), rootAddress.toBuffer()],
+          program.programId
+        );
+
       const tx = await program.methods
-        .createRoot()
+        .createRoot(maxProposalLifetime)
         .accountsStrict({
           root: rootAddress,
           realm: realmTester.realmAddress,
           realmConfig: await realmTester.realmConfigId(),
           governingTokenMint: realmTester.realm.communityMint,
           realmAuthority: realmTester.realm.authority!,
-          maxVoterWeight: maxVoterWeightAddress,
+          maxVwr: maxVwr,
           payer: program.provider.publicKey!,
           governanceProgram: realmTester.splGovernanceId,
           systemProgram: SystemProgram.programId,
@@ -120,13 +123,31 @@ describe('create_root instruction', () => {
             councilTokenConfigArgs,
             program.provider.publicKey!
           ),
+          await splGovernance.methods
+            .setRealmConfigItem({
+              tokenOwnerRecordLockAuthority: {
+                action: {
+                  add: {},
+                },
+                governingTokenMint: realmTester.realm.communityMint,
+                authority: lockAuthority,
+              },
+            })
+            .accountsStrict({
+              realm: realmTester.realmAddress,
+              realmAuthority: realmTester.realm.authority!,
+              payer: program.provider.publicKey!,
+              systemProgram: SystemProgram.programId,
+              realmConfigAddress: await realmTester.realmConfigId(),
+            })
+            .instruction(),
         ])
         .transaction();
       tx.recentBlockhash = testContext.lastBlockhash;
       tx.feePayer = testContext.payer.publicKey;
       tx.sign(testContext.payer, realmTester.authority as Keypair);
 
-      expect(
+      await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
@@ -144,25 +165,29 @@ describe('create_root instruction', () => {
         },
       ]);
 
-      expect(program.account.root.fetch(rootAddress)).resolves.toStrictEqual({
+      await expect(
+        program.account.root.fetch(rootAddress)
+      ).resolves.toStrictEqual({
         realm: realmTester.realmAddress,
         governanceProgram: realmTester.splGovernanceId,
         governingTokenMint: realmTester.realm.communityMint,
         votingWeightPlugin:
           realmTester.config.communityTokenConfig.voterWeightAddin ||
           PublicKey.default,
-        maxProposalLifetime: resizeBN(new BN(0)),
+        maxProposalLifetime,
+        voterWeightReset: null,
         bumps: {
           root: rootBump,
-          maxVoterWeight: maxVoterWeightBump,
+          maxVoterWeight: maxVwrBump,
+          lockAuthority: lockAuthorityBump,
         },
-        clanCount: resizeBN(new BN(0)),
-        memberCount: resizeBN(new BN(0)),
+        clanCount: new BN(0),
+        memberCount: new BN(0),
       });
-      expect(
+      await expect(
         splGovernance.account.realmV2.fetch(realmTester.realmAddress)
       ).resolves.toStrictEqual(realmTester.realm);
-      expect(
+      await expect(
         splGovernance.account.realmConfigAccount.fetch(
           await realmTester.realmConfigId()
         )
@@ -171,15 +196,16 @@ describe('create_root instruction', () => {
         communityTokenConfig: {
           ...realmTester.config.communityTokenConfig,
           voterWeightAddin: program.programId,
+          lockAuthorities: [lockAuthority],
         },
       });
 
-      expect(
-        program.account.maxVoterWeightRecord.fetch(maxVoterWeightAddress)
+      await expect(
+        program.account.maxVoterWeightRecord.fetch(maxVwr)
       ).resolves.toStrictEqual({
         realm: realmTester.realmAddress,
         governingTokenMint: realmTester.realm.communityMint,
-        maxVoterWeight: resizeBN(new BN(0)),
+        maxVoterWeight: new BN(0),
         maxVoterWeightExpiry: null,
         reserved: [0, 0, 0, 0, 0, 0, 0, 0],
       });
@@ -188,163 +214,195 @@ describe('create_root instruction', () => {
 
   it.each(
     createRootTestData.filter(({realm, error}) => !error && realm.councilMint)
-  )('Works for council side', async ({realm}: CreateRootTestData) => {
-    const realmTester = new RealmTester(realm);
-    const {program, testContext} = await startTest({
-      splGovernanceId: realmTester.splGovernanceId,
-      accounts: await realmTester.accounts(),
-    });
-    const splGovernance = buildSplGovernanceProgram({
-      splGovernanceId: realmTester.splGovernanceId,
-      connection: program.provider.connection,
-    });
-    const [rootAddress, rootBump] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from('root', 'utf-8'),
-        realmTester.realmAddress.toBuffer(),
-        realmTester.realm.config.councilMint!.toBuffer(),
-      ],
-      program.programId
-    );
-    const [maxVoterWeightAddress, maxVoterWeightBump] =
-      PublicKey.findProgramAddressSync(
+  )(
+    'Works for council side',
+    async ({realm, maxProposalLifetime = new BN(0)}: CreateRootTestData) => {
+      const realmTester = new RealmTester(realm);
+      const {program, testContext} = await startTest({
+        splGovernanceId: realmTester.splGovernanceId,
+        accounts: await realmTester.accounts(),
+      });
+      const splGovernance = buildSplGovernanceProgram({
+        splGovernanceId: realmTester.splGovernanceId,
+        connection: program.provider.connection,
+      });
+      const [rootAddress, rootBump] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from('root', 'utf-8'),
+          realmTester.realmAddress.toBuffer(),
+          realmTester.realm.config.councilMint!.toBuffer(),
+        ],
+        program.programId
+      );
+      const [maxVwr, maxVwrBump] = PublicKey.findProgramAddressSync(
         [Buffer.from('max-voter-weight', 'utf-8'), rootAddress.toBuffer()],
         program.programId
       );
 
-    const communityTokenConfigArgs = {
-      voterWeightAddin:
-        realmTester.config.communityTokenConfig.voterWeightAddin || undefined,
-      maxVoterWeightAddin:
-        realmTester.config.communityTokenConfig.maxVoterWeightAddin ||
-        undefined,
-      tokenType: realmTester.config.communityTokenConfig.tokenType.liquid
-        ? GoverningTokenType.Liquid
-        : realmTester.config.communityTokenConfig.tokenType.membership
-        ? GoverningTokenType.Membership
-        : GoverningTokenType.Dormant,
-      useVoterWeightAddin: Boolean(
-        realmTester.config.communityTokenConfig.voterWeightAddin
-      ),
-      useMaxVoterWeightAddin: Boolean(
-        realmTester.config.communityTokenConfig.maxVoterWeightAddin
-      ),
-    };
-    const councilTokenConfigArgs = {
-      voterWeightAddin: new PublicKey(
-        'VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT'
-      ),
-      maxVoterWeightAddin:
-        realmTester.config.councilTokenConfig.maxVoterWeightAddin || undefined,
-      tokenType: realmTester.config.councilTokenConfig.tokenType.liquid
-        ? GoverningTokenType.Liquid
-        : realmTester.config.councilTokenConfig.tokenType.membership
-        ? GoverningTokenType.Membership
-        : GoverningTokenType.Dormant,
-      useVoterWeightAddin: true,
-      useMaxVoterWeightAddin: Boolean(
-        realmTester.config.councilTokenConfig.maxVoterWeightAddin
-      ),
-    };
-
-    const tx = await program.methods
-      .createRoot()
-      .accountsStrict({
-        root: rootAddress,
-        realm: realmTester.realmAddress,
-        realmConfig: await realmTester.realmConfigId(),
-        governingTokenMint: realmTester.realm.config.councilMint!,
-        realmAuthority: realmTester.realm.authority!,
-        maxVoterWeight: maxVoterWeightAddress,
-        payer: program.provider.publicKey!,
-        governanceProgram: realmTester.splGovernanceId,
-        systemProgram: SystemProgram.programId,
-        voteAggregatorProgram: program.programId,
-      })
-      .postInstructions([
-        await createSetRealmConfig(
-          realmTester.splGovernanceId,
-          3,
-          realmTester.realmAddress,
-          realmTester.realm.authority!,
-          realmTester.realm.config.councilMint!,
-          new MintMaxVoteWeightSource({
-            type: realmTester.realm.config.communityMintMaxVoterWeightSource
-              .absolute
-              ? MintMaxVoteWeightSourceType.Absolute
-              : MintMaxVoteWeightSourceType.SupplyFraction,
-            value: (realmTester.realm.config.communityMintMaxVoterWeightSource
-              .absolute ||
-              realmTester.realm.config.communityMintMaxVoterWeightSource
-                .supplyFraction) as unknown as BN,
-          }),
-          realmTester.realm.config.minCommunityWeightToCreateGovernance,
-          communityTokenConfigArgs,
-          councilTokenConfigArgs,
-          program.provider.publicKey!
+      const communityTokenConfigArgs = {
+        voterWeightAddin:
+          realmTester.config.communityTokenConfig.voterWeightAddin || undefined,
+        maxVoterWeightAddin:
+          realmTester.config.communityTokenConfig.maxVoterWeightAddin ||
+          undefined,
+        tokenType: realmTester.config.communityTokenConfig.tokenType.liquid
+          ? GoverningTokenType.Liquid
+          : realmTester.config.communityTokenConfig.tokenType.membership
+          ? GoverningTokenType.Membership
+          : GoverningTokenType.Dormant,
+        useVoterWeightAddin: Boolean(
+          realmTester.config.communityTokenConfig.voterWeightAddin
         ),
-      ])
-      .transaction();
-    tx.recentBlockhash = testContext.lastBlockhash;
-    tx.feePayer = testContext.payer.publicKey;
-    tx.sign(testContext.payer, realmTester.authority as Keypair);
+        useMaxVoterWeightAddin: Boolean(
+          realmTester.config.communityTokenConfig.maxVoterWeightAddin
+        ),
+      };
+      const councilTokenConfigArgs = {
+        voterWeightAddin: new PublicKey(
+          'VoTaGDreyne7jk59uwbgRRbaAzxvNbyNipaJMrRXhjT'
+        ),
+        maxVoterWeightAddin:
+          realmTester.config.councilTokenConfig.maxVoterWeightAddin ||
+          undefined,
+        tokenType: realmTester.config.councilTokenConfig.tokenType.liquid
+          ? GoverningTokenType.Liquid
+          : realmTester.config.councilTokenConfig.tokenType.membership
+          ? GoverningTokenType.Membership
+          : GoverningTokenType.Dormant,
+        useVoterWeightAddin: true,
+        useMaxVoterWeightAddin: Boolean(
+          realmTester.config.councilTokenConfig.maxVoterWeightAddin
+        ),
+      };
 
-    expect(
-      testContext.banksClient
-        .processTransaction(tx)
-        .then(meta => parseLogsEvent(program, meta.logMessages))
-    ).resolves.toStrictEqual([
-      {
-        name: 'RootCreated',
-        data: {
+      const [lockAuthority, lockAuthorityBump] =
+        PublicKey.findProgramAddressSync(
+          [Buffer.from('lock-authority', 'utf8'), rootAddress.toBuffer()],
+          program.programId
+        );
+
+      const tx = await program.methods
+        .createRoot(maxProposalLifetime)
+        .accountsStrict({
           root: rootAddress,
-          governanceProgram: realmTester.splGovernanceId,
           realm: realmTester.realmAddress,
+          realmConfig: await realmTester.realmConfigId(),
           governingTokenMint: realmTester.realm.config.councilMint!,
-          votingWeightPlugin:
-            realmTester.config.councilTokenConfig.voterWeightAddin,
+          realmAuthority: realmTester.realm.authority!,
+          maxVwr: maxVwr,
+          payer: program.provider.publicKey!,
+          governanceProgram: realmTester.splGovernanceId,
+          systemProgram: SystemProgram.programId,
+          voteAggregatorProgram: program.programId,
+        })
+        .postInstructions([
+          await createSetRealmConfig(
+            realmTester.splGovernanceId,
+            3,
+            realmTester.realmAddress,
+            realmTester.realm.authority!,
+            realmTester.realm.config.councilMint!,
+            new MintMaxVoteWeightSource({
+              type: realmTester.realm.config.communityMintMaxVoterWeightSource
+                .absolute
+                ? MintMaxVoteWeightSourceType.Absolute
+                : MintMaxVoteWeightSourceType.SupplyFraction,
+              value: (realmTester.realm.config.communityMintMaxVoterWeightSource
+                .absolute ||
+                realmTester.realm.config.communityMintMaxVoterWeightSource
+                  .supplyFraction) as unknown as BN,
+            }),
+            realmTester.realm.config.minCommunityWeightToCreateGovernance,
+            communityTokenConfigArgs,
+            councilTokenConfigArgs,
+            program.provider.publicKey!
+          ),
+          await splGovernance.methods
+            .setRealmConfigItem({
+              tokenOwnerRecordLockAuthority: {
+                action: {
+                  add: {},
+                },
+                governingTokenMint: realmTester.realm.config.councilMint!,
+                authority: lockAuthority,
+              },
+            })
+            .accountsStrict({
+              realm: realmTester.realmAddress,
+              realmAuthority: realmTester.realm.authority!,
+              payer: program.provider.publicKey!,
+              systemProgram: SystemProgram.programId,
+              realmConfigAddress: await realmTester.realmConfigId(),
+            })
+            .instruction(),
+        ])
+        .transaction();
+      tx.recentBlockhash = testContext.lastBlockhash;
+      tx.feePayer = testContext.payer.publicKey;
+      tx.sign(testContext.payer, realmTester.authority as Keypair);
+
+      await expect(
+        testContext.banksClient
+          .processTransaction(tx)
+          .then(meta => parseLogsEvent(program, meta.logMessages))
+      ).resolves.toStrictEqual([
+        {
+          name: 'RootCreated',
+          data: {
+            root: rootAddress,
+            governanceProgram: realmTester.splGovernanceId,
+            realm: realmTester.realmAddress,
+            governingTokenMint: realmTester.realm.config.councilMint!,
+            votingWeightPlugin:
+              realmTester.config.councilTokenConfig.voterWeightAddin,
+          },
         },
-      },
-    ]);
+      ]);
 
-    expect(program.account.root.fetch(rootAddress)).resolves.toStrictEqual({
-      realm: realmTester.realmAddress,
-      governanceProgram: realmTester.splGovernanceId,
-      governingTokenMint: realmTester.realm.config.councilMint!,
-      votingWeightPlugin:
-        realmTester.config.councilTokenConfig.voterWeightAddin ||
-        PublicKey.default,
-      maxProposalLifetime: resizeBN(new BN(0)),
-      bumps: {
-        root: rootBump,
-        maxVoterWeight: maxVoterWeightBump,
-      },
-      clanCount: resizeBN(new BN(0)),
-      memberCount: resizeBN(new BN(0)),
-    });
-    expect(
-      splGovernance.account.realmV2.fetch(realmTester.realmAddress)
-    ).resolves.toStrictEqual(realmTester.realm);
-    expect(
-      splGovernance.account.realmConfigAccount.fetch(
-        await realmTester.realmConfigId()
-      )
-    ).resolves.toStrictEqual({
-      ...realmTester.config,
-      councilTokenConfig: {
-        ...realmTester.config.councilTokenConfig,
-        voterWeightAddin: program.programId,
-      },
-    });
+      await expect(
+        program.account.root.fetch(rootAddress)
+      ).resolves.toStrictEqual({
+        realm: realmTester.realmAddress,
+        governanceProgram: realmTester.splGovernanceId,
+        governingTokenMint: realmTester.realm.config.councilMint!,
+        votingWeightPlugin:
+          realmTester.config.councilTokenConfig.voterWeightAddin ||
+          PublicKey.default,
+        maxProposalLifetime,
+        voterWeightReset: null,
+        bumps: {
+          root: rootBump,
+          maxVoterWeight: maxVwrBump,
+          lockAuthority: lockAuthorityBump,
+        },
+        clanCount: new BN(0),
+        memberCount: new BN(0),
+      });
+      await expect(
+        splGovernance.account.realmV2.fetch(realmTester.realmAddress)
+      ).resolves.toStrictEqual(realmTester.realm);
+      await expect(
+        splGovernance.account.realmConfigAccount.fetch(
+          await realmTester.realmConfigId()
+        )
+      ).resolves.toStrictEqual({
+        ...realmTester.config,
+        councilTokenConfig: {
+          ...realmTester.config.councilTokenConfig,
+          voterWeightAddin: program.programId,
+          lockAuthorities: [lockAuthority],
+        },
+      });
 
-    expect(
-      program.account.maxVoterWeightRecord.fetch(maxVoterWeightAddress)
-    ).resolves.toStrictEqual({
-      realm: realmTester.realmAddress,
-      governingTokenMint: realmTester.realm.config.councilMint!,
-      maxVoterWeight: resizeBN(new BN(0)),
-      maxVoterWeightExpiry: null,
-      reserved: [0, 0, 0, 0, 0, 0, 0, 0],
-    });
-  });
+      await expect(
+        program.account.maxVoterWeightRecord.fetch(maxVwr)
+      ).resolves.toStrictEqual({
+        realm: realmTester.realmAddress,
+        governingTokenMint: realmTester.realm.config.councilMint!,
+        maxVoterWeight: new BN(0),
+        maxVoterWeightExpiry: null,
+        reserved: [0, 0, 0, 0, 0, 0, 0, 0],
+      });
+    }
+  );
 });

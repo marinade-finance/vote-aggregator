@@ -1,28 +1,42 @@
 import {Keypair, PublicKey} from '@solana/web3.js';
-import {getMinimumBalanceForRentExemption, resizeBN} from '../utils';
+import {getMinimumBalanceForRentExemption} from '../utils';
 import {BN} from '@coral-xyz/anchor';
 import {MemberAccount} from './accounts';
 import {RootTester} from './root';
 import {AddedAccount} from 'solana-bankrun';
 import {buildVoteAggregatorProgram} from './program';
-import {ClanTester} from './clan';
+import {ClanTestData, ClanTester} from './clan';
+import {buildSplGovernanceProgram} from '../SplGovernance/program';
 import {
   TokenOwnerRecordAccount,
-  buildSplGovernanceProgram,
-} from '../SplGovernance/program';
+  TokenOwnerRecordLock,
+} from '../SplGovernance/accounts';
+
+export type MembershipTester = {
+  clan: PublicKey | ClanTester;
+  shareBp: number;
+  exitableAt?: BN | null;
+};
+
+export type MembershipTestData = {
+  clan: PublicKey | ClanTestData;
+  shareBp: number;
+  exitableAt?: BN | null;
+};
 
 export type MemberTestData = {
   owner: PublicKey | Keypair;
   delegate?: PublicKey | Keypair;
-  clan?: PublicKey;
-  clanLeavingTime?: BN;
   voterWeightRecord?: PublicKey;
   voterWeight?: BN;
   voterWeightExpiry?: BN | null;
+  nextVoterWeightResetTime?: BN | null;
+  membership?: MembershipTestData[];
   governingTokenDepositAmount?: BN;
   unrelinquishedVotesCount?: BN;
   outstandingProposalCount?: number;
   governanceDelegate?: PublicKey | null;
+  locks?: TokenOwnerRecordLock[];
 };
 
 export class MemberTester {
@@ -30,7 +44,7 @@ export class MemberTester {
   public delegate?: Keypair;
   public root: RootTester;
   public member: MemberAccount;
-  public clan?: ClanTester | PublicKey;
+  public membership: MembershipTester[];
   public tokenOwnerRecord: TokenOwnerRecordAccount;
 
   get ownerAddress(): PublicKey {
@@ -60,32 +74,49 @@ export class MemberTester {
     );
   }
 
+  static membershipTesters({
+    membership,
+    root,
+  }: {
+    membership: MembershipTestData[];
+    root: RootTester;
+  }) {
+    return membership.map(({clan, shareBp, exitableAt}) => ({
+      clan: clan instanceof PublicKey ? clan : new ClanTester({...clan, root}),
+      shareBp,
+      exitableAt,
+    }));
+  }
+
   constructor({
     owner,
     delegate,
     root,
-    clan,
-    clanLeavingTime = new BN('9223372036854775807'), // i64::MAX
     voterWeightRecord = PublicKey.default,
     voterWeight = new BN(0),
     voterWeightExpiry = null,
+    nextVoterWeightResetTime = null,
+    membership = [],
     governingTokenDepositAmount = new BN(0),
     unrelinquishedVotesCount = new BN(0),
     outstandingProposalCount = 0,
     governanceDelegate = null,
-  }: Omit<MemberTestData, 'clan'> & {
+    locks = [],
+  }: Omit<MemberTestData, 'membership'> & {
     root: RootTester;
-    clan?: ClanTester | PublicKey;
+    membership?: MembershipTester[];
   }) {
     this.owner = owner;
     if (delegate instanceof Keypair) {
       this.delegate = delegate;
       delegate = delegate.publicKey;
     }
-    this.clan = clan;
-    if (clan instanceof ClanTester) {
-      clan = clan.clanAddress;
-    }
+    this.membership = membership;
+    const membershipData = membership.map(({clan, shareBp, exitableAt}) => ({
+      clan: clan instanceof ClanTester ? clan.clanAddress : clan,
+      shareBp,
+      exitableAt: exitableAt || null,
+    }));
     this.root = root;
 
     const [, addressBump] = PublicKey.findProgramAddressSync(
@@ -112,12 +143,12 @@ export class MemberTester {
       owner: this.ownerAddress,
       delegate: delegate || PublicKey.default,
       root: root.rootAddress[0],
-      clan: clan || PublicKey.default,
-      clanLeavingTime,
-      voterWeight: resizeBN(voterWeight),
-      voterWeightExpiry: voterWeightExpiry && resizeBN(voterWeightExpiry),
+      voterWeight,
+      voterWeightExpiry: voterWeightExpiry,
       tokenOwnerRecord,
       voterWeightRecord,
+      nextVoterWeightResetTime,
+      membership: membershipData,
       bumps: {
         address: addressBump,
         tokenOwnerRecord: tokenOwnerRecordBump,
@@ -129,13 +160,14 @@ export class MemberTester {
       realm: root.realm.realmAddress,
       governingTokenMint: root.governingTokenMint,
       governingTokenOwner: this.ownerAddress,
-      governingTokenDepositAmount: resizeBN(governingTokenDepositAmount),
-      unrelinquishedVotesCount: resizeBN(unrelinquishedVotesCount),
+      governingTokenDepositAmount,
+      unrelinquishedVotesCount,
       outstandingProposalCount,
       version: 1,
       reserved: [0, 0, 0, 0, 0, 0],
       governanceDelegate,
-      reservedV2: Array(128).fill(0),
+      reservedV2: Array(124).fill(0),
+      locks,
     };
   }
 
@@ -148,10 +180,12 @@ export class MemberTester {
       splGovernanceId: this.root.splGovernanceId,
     });
     {
-      const memberData = await program.coder.accounts.encode<MemberAccount>(
+      let memberData = await program.coder.accounts.encode<MemberAccount>(
         'member',
         this.member
       );
+      memberData = Buffer.concat([memberData, Buffer.alloc(1024)]);
+
       accounts.push({
         address: this.memberAddress[0],
         info: {

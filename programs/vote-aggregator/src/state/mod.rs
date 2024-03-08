@@ -1,11 +1,11 @@
 pub mod clan;
-pub mod max_voter_weight;
+pub mod clan_vwr;
+pub mod max_vwr;
 pub mod member;
 pub mod root;
-pub mod voter_weight;
 
 pub use clan::*;
-pub use max_voter_weight::*;
+pub use clan_vwr::*;
+pub use max_vwr::*;
 pub use member::*;
 pub use root::*;
-pub use voter_weight::*;

@@ -11,6 +11,7 @@ export const installStartLeavingClanCLI = (program: Command) => {
     .requiredOption('--realm <pubkey>', 'Realm address')
     .option('--side <string>', 'Side', 'community')
     .option('--owner <keypair>', 'Owner')
+    .option('--clan <pubkey>', 'Clan')
     .action(startLeavingClan);
 };
 
@@ -18,10 +19,12 @@ const startLeavingClan = async ({
   realm,
   side,
   owner,
+  clan,
 }: {
   realm: string;
   side: RealmSide;
   owner?: string;
+  clan?: string;
 }) => {
   const {sdk, provider} = context!;
   const ownerKp = owner ? await parseKeypair(owner) : null;
@@ -44,6 +47,12 @@ const startLeavingClan = async ({
   if (!memberData) {
     throw new Error(`Member ${memberAddress} does not exist`);
   }
+  const clanAddress = clan
+    ? await parsePubkey(clan)
+    : memberData.membership.find(m => !m.exitableAt)?.clan;
+  if (!clanAddress) {
+    throw new Error('No clan for leaving found');
+  }
 
   const signers = [];
   if (ownerKp) {
@@ -54,6 +63,7 @@ const startLeavingClan = async ({
       await sdk.member.startLeavingClanInstruction({
         memberAddress,
         memberData,
+        clan: clanAddress,
       }),
     ],
     signers,

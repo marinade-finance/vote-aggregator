@@ -1,4 +1,3 @@
-import {describe, it, expect} from 'bun:test';
 import {startTest} from '../../dev/startTest';
 import {
   ResizeClanTestData,
@@ -55,7 +54,7 @@ describe('resize_clan instruction', () => {
       tx.feePayer = testContext.payer.publicKey;
       tx.sign(testContext.payer, clanAuthority);
 
-      expect(
+      await expect(
         testContext.banksClient
           .processTransaction(tx)
           .then(meta => parseLogsEvent(program, meta.logMessages))
@@ -69,7 +68,7 @@ describe('resize_clan instruction', () => {
         },
       ]);
 
-      expect(
+      await expect(
         program.provider.connection
           .getAccountInfo(clan.address)
           .then(a => a?.data.length)

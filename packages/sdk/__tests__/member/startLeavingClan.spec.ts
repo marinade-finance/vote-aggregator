@@ -1,4 +1,3 @@
-import {describe, it, expect} from 'bun:test';
 import {
   StartLeavingClanTestData,
   MemberTester,
@@ -7,11 +6,12 @@ import {
   startLeavingClanTestData,
 } from 'vote-aggregator-tests';
 import {VoteAggregatorSdk} from '../../src';
+import {PublicKey} from '@solana/web3.js';
 
 describe('start_leaving_clan instruction', () => {
   it.each(startLeavingClanTestData.filter(({error}) => !error))(
     'Works',
-    async ({realm, root, member}: StartLeavingClanTestData) => {
+    async ({realm, root, member, clanIndex = 0}: StartLeavingClanTestData) => {
       const realmTester = new RealmTester(realm);
       const rootTester = new RootTester({
         ...root,
@@ -20,12 +20,17 @@ describe('start_leaving_clan instruction', () => {
       const memberTester = new MemberTester({
         ...member,
         root: rootTester,
-        clan: member.clan!.address,
+        membership: MemberTester.membershipTesters({
+          membership: member.membership || [],
+          root: rootTester,
+        }),
       });
       const sdk = new VoteAggregatorSdk();
+      const clan = memberTester.membership[clanIndex].clan;
       expect(
         sdk.member.startLeavingClanInstruction({
           memberData: memberTester.member,
+          clan: clan instanceof PublicKey ? clan : clan.clanAddress,
         })
       ).resolves.toMatchSnapshot();
     }

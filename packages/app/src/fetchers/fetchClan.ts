@@ -39,14 +39,16 @@ const fetchClan = async ({
     tokenOwnerRecord: clanData.tokenOwnerRecord,
     voterWeightRecord: clanData.voterWeightRecord,
     minVotingWeightToJoin: clanData.minVotingWeightToJoin,
-    activeMembers: clanData.activeMembers,
+    permanentMembers: clanData.permanentMembers,
+    temporaryMembers: clanData.temporaryMembers,
+    updatedTemporaryMembers: clanData.updatedTemporaryMembers,
     leavingMembers: clanData.leavingMembers,
-    potentialVoterWeight: clanData.potentialVoterWeight,
+    nextVoterWeightResetTime: clanData.nextVoterWeightResetTime,
     name: clanData.name,
     description: clanData.description,
     voterWeight: vwr.voterWeight,
     voterWeightExpiry: vwr.voterWeightExpiry,
-    governanceDelegate: tor.governanceDelegate || null,
+    governanceDelegate: tor.account.governanceDelegate || null,
   };
 };
 
