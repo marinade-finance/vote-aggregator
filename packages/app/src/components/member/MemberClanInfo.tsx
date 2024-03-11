@@ -84,7 +84,7 @@ const MemberClanInfo = ({
     </IconButton>
   );
   return (
-    <ListItem key={membership.clan.toBase58()} secondaryAction={action}>
+    <ListItem secondaryAction={action}>
       <Box>
         {!membership.exitableAt ? 'Member of' : 'Leaving'} clan:{' '}
         <Link

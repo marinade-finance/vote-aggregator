@@ -1,4 +1,4 @@
-import {Box, Button, List, ListItem, Paper} from '@mui/material';
+import {Box, Button, List, Paper} from '@mui/material';
 import {Cluster, PublicKey} from '@solana/web3.js';
 import {useQueryClient, useSuspenseQuery} from '@tanstack/react-query';
 import {
@@ -106,14 +106,13 @@ const MemberManagement = ({
         Clan membership:
         <List>
           {memberData?.membership.map(membership => (
-            <ListItem key={membership.clan.toBase58()}>
-              <MemberClanInfo
-                network={network}
-                root={root}
-                voterWeight={memberData.voterWeight}
-                membership={membership}
-              />
-            </ListItem>
+            <MemberClanInfo
+              key={membership.clan.toBase58()}
+              network={network}
+              root={root}
+              voterWeight={memberData.voterWeight}
+              membership={membership}
+            />
           ))}
         </List>
       </Paper>

@@ -6,6 +6,7 @@ import useDepositToVsr from '../../hooks/useDepositToVsr';
 import {useSuspenseQuery} from '@tanstack/react-query';
 import {voteAggregatorQueryOptions} from '../../queryOptions';
 import useWithdrawFromVsr from '../../hooks/useWithdrawFromVsr';
+import Airdrop from './Airdrop';
 
 const VsrTokenStatus = ({
   network,
@@ -88,6 +89,7 @@ const VsrTokenStatus = ({
           <Button onClick={handleDeposit}>Deposit</Button>
         </Box>
       )}
+      {network === 'devnet' && <Airdrop mint={mint}/>}
     </Card>
   );
 };

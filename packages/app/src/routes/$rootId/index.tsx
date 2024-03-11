@@ -10,7 +10,7 @@ import {
   TablePagination,
   TableRow,
 } from '@mui/material';
-import {FileRoute, Link, useNavigate} from '@tanstack/react-router';
+import {Link, createFileRoute, useNavigate} from '@tanstack/react-router';
 import {useMemo, useState} from 'react';
 import {clanListQueryOptions} from '../../queryOptions';
 import {PublicKey} from '@solana/web3.js';
@@ -178,7 +178,7 @@ const ClanListComponent = () => {
   );
 };
 
-export const Route = new FileRoute('/$rootId/').createRoute({
+export const Route = createFileRoute('/$rootId/')({
   component: ClanListComponent,
   loaderDeps: ({search: {network}}) => ({network}),
   loader: ({deps: {network}, params: {rootId}, context: {queryClient}}) =>
