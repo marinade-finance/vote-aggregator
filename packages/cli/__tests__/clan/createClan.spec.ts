@@ -13,6 +13,7 @@ import {
   GovernanceAccountType,
   getTokenOwnerRecord,
 } from '@solana/spl-governance';
+import { RootAccount } from 'vote-aggregator-sdk';
 
 describe('create-clan command', () => {
   let stdout: jest.SpyInstance;
@@ -141,7 +142,7 @@ describe('create-clan command', () => {
 
       await expect(
         sdk.root.fetchRoot(rootTester.rootAddress[0])
-      ).resolves.toStrictEqual({
+      ).resolves.toStrictEqual<RootAccount>({
         ...rootTester.root,
         clanCount: rootTester.root.clanCount.addn(1),
       });

@@ -9,6 +9,7 @@ import {
 import {BN} from '@coral-xyz/anchor';
 import {context} from '../../src/context';
 import {cli} from '../../src/cli';
+import {RootAccount} from 'vote-aggregator-sdk';
 
 describe('create-root command', () => {
   let stdout: jest.SpyInstance;
@@ -75,7 +76,9 @@ describe('create-root command', () => {
         rootAddress,
       });
 
-      await expect(sdk.root.fetchRoot(rootAddress)).resolves.toStrictEqual({
+      await expect(
+        sdk.root.fetchRoot(rootAddress)
+      ).resolves.toStrictEqual<RootAccount>({
         realm: realmTester.realmAddress,
         governanceProgram: realmTester.splGovernanceId,
         governingTokenMint: realmTester.realm.communityMint,
@@ -84,6 +87,7 @@ describe('create-root command', () => {
           PublicKey.default,
         maxProposalLifetime: new BN(maxProposalLifetime || '0'),
         voterWeightReset: null,
+        paused: false,
         bumps: {
           root: rootBump,
           maxVoterWeight: maxVoterWeightBump,
@@ -177,7 +181,9 @@ describe('create-root command', () => {
         rootAddress,
       });
 
-      await expect(sdk.root.fetchRoot(rootAddress)).resolves.toStrictEqual({
+      await expect(
+        sdk.root.fetchRoot(rootAddress)
+      ).resolves.toStrictEqual<RootAccount>({
         realm: realmTester.realmAddress,
         governanceProgram: realmTester.splGovernanceId,
         governingTokenMint: realmTester.realm.config.councilMint!,
@@ -186,6 +192,7 @@ describe('create-root command', () => {
           PublicKey.default,
         maxProposalLifetime: new BN(maxProposalLifetime || '0'),
         voterWeightReset: null,
+        paused: false,
         bumps: {
           root: rootBump,
           maxVoterWeight: maxVoterWeightBump,

@@ -9,6 +9,7 @@ import {
 import {BN} from '@coral-xyz/anchor';
 import {context} from '../../src/context';
 import {cli} from '../../src/cli';
+import { RootAccount } from 'vote-aggregator-sdk';
 
 describe('Configure root', () => {
   let stdout: jest.SpyInstance;
@@ -74,7 +75,7 @@ describe('Configure root', () => {
 
       await expect(
         sdk.root.fetchRoot(rootTester.rootAddress[0])
-      ).resolves.toStrictEqual({
+      ).resolves.toStrictEqual<RootAccount>({
         ...rootTester.root,
         maxProposalLifetime: maxProposalLifetime!,
       });
@@ -87,7 +88,7 @@ describe('Configure root', () => {
         !error && voterWeightResetStep !== undefined
     )
   )(
-    'Works for council side',
+    'Sets voter weight reset step',
     async ({
       realm,
       root,
@@ -149,14 +150,132 @@ describe('Configure root', () => {
       const newVoterWeightReset = {
         nextResetTime:
           newNextResetTime || rootTester.root.voterWeightReset!.nextResetTime,
-        step: voterWeightResetStep,
+        step: voterWeightResetStep!,
       };
 
       await expect(
         sdk.root.fetchRoot(rootTester.rootAddress[0])
-      ).resolves.toStrictEqual({
+      ).resolves.toStrictEqual<RootAccount>({
         ...rootTester.root,
         voterWeightReset: newVoterWeightReset,
+      });
+    }
+  );
+
+  it.each(
+    configureRootTestData.filter(
+      ({error, paused}) =>
+        !error && paused !== undefined
+    )
+  )(
+    'Pauses/resumes',
+    async ({root, realm, paused}: ConfigureRootTestData) => {
+      const realmTester = new RealmTester(realm);
+      if (!(realmTester.authority instanceof Keypair)) {
+        throw new Error('Realm authority keypair is required');
+      }
+      const rootTester = new RootTester({
+        ...root,
+        realm: realmTester,
+      });
+      await startTest({
+        splGovernanceId: realmTester.splGovernanceId,
+        accounts: [
+          ...(await realmTester.accounts()),
+          ...(await rootTester.accounts()),
+        ],
+      });
+      const {sdk} = context!;
+
+      await expect(
+        cli()
+          .exitOverride((err: Error) => {
+            throw err;
+          })
+          .parseAsync(
+            [
+              paused ? 'pause' : 'resume',
+              '--root',
+              rootTester.rootAddress[0].toString(),
+              '--realm-authority',
+              '[' +
+                (realmTester.authority as Keypair).secretKey.toString() +
+                ']',
+            ],
+            {from: 'user'}
+          )
+      ).resolves.toBeTruthy();
+      expect(stdout.mock.calls).toEqual(
+        expect.arrayContaining([
+          expect.arrayContaining([expect.stringMatching(/^Success/)]),
+        ])
+      );
+
+      await expect(
+        sdk.root.fetchRoot(rootTester.rootAddress[0])
+      ).resolves.toStrictEqual<RootAccount>({
+        ...rootTester.root,
+        paused: paused!,
+      });
+    }
+  );
+
+  it.each(
+    configureRootTestData.filter(
+      ({error, votingWeightPlugin}) =>
+        !error && votingWeightPlugin !== undefined
+    )
+  )(
+    'Sets voting weight plugin',
+    async ({root, realm, votingWeightPlugin}: ConfigureRootTestData) => {
+      const realmTester = new RealmTester(realm);
+      if (!(realmTester.authority instanceof Keypair)) {
+        throw new Error('Realm authority keypair is required');
+      }
+      const rootTester = new RootTester({
+        ...root,
+        realm: realmTester,
+      });
+      await startTest({
+        splGovernanceId: realmTester.splGovernanceId,
+        accounts: [
+          ...(await realmTester.accounts()),
+          ...(await rootTester.accounts()),
+        ],
+      });
+      const {sdk} = context!;
+
+      await expect(
+        cli()
+          .exitOverride((err: Error) => {
+            throw err;
+          })
+          .parseAsync(
+            [
+              'set-voting-weight-plugin',
+              '--root',
+              rootTester.rootAddress[0].toString(),
+              '--realm-authority',
+              '[' +
+                (realmTester.authority as Keypair).secretKey.toString() +
+                ']',
+              '--voting-weight-plugin',
+              votingWeightPlugin!.toString(),
+            ],
+            {from: 'user'}
+          )
+      ).resolves.toBeTruthy();
+      expect(stdout.mock.calls).toEqual(
+        expect.arrayContaining([
+          expect.arrayContaining([expect.stringMatching(/^Success/)]),
+        ])
+      );
+
+      await expect(
+        sdk.root.fetchRoot(rootTester.rootAddress[0])
+      ).resolves.toStrictEqual<RootAccount>({
+        ...rootTester.root,
+        votingWeightPlugin: votingWeightPlugin!,
       });
     }
   );

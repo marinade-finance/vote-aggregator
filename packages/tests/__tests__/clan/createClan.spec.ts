@@ -9,7 +9,7 @@ import {
 } from '../../src';
 import {BN} from '@coral-xyz/anchor';
 import {SYSTEM_PROGRAM_ID} from '@solana/spl-governance';
-import {RootTester} from '../../src/VoteAggregator';
+import {RootAccount, RootTester} from '../../src/VoteAggregator';
 
 describe('create_clan instruction', () => {
   it.each(createClanTestData.filter(({error}) => !error))(
@@ -151,7 +151,7 @@ describe('create_clan instruction', () => {
 
       await expect(
         program.account.root.fetch(rootTester.rootAddress[0])
-      ).resolves.toStrictEqual({
+      ).resolves.toStrictEqual<RootAccount>({
         ...rootTester.root,
         clanCount: rootTester.root.clanCount.addn(1),
       });

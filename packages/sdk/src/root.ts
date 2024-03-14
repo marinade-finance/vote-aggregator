@@ -13,11 +13,7 @@ import {
   getRealmConfig,
   getRealmConfigAddress,
 } from '@solana/spl-governance';
-import {
-  AnchorProvider,
-  IdlAccounts,
-  ProgramAccount,
-} from '@coral-xyz/anchor';
+import {AnchorProvider, IdlAccounts, ProgramAccount} from '@coral-xyz/anchor';
 import {VoteAggregator} from './vote_aggregator';
 import {splGovernanceProgram} from '@coral-xyz/spl-governance';
 import BN from 'bn.js';
@@ -358,6 +354,68 @@ export class RootSdk {
         realm,
         realmAuthority,
         root,
+      })
+      .instruction();
+  }
+
+  async pauseInstruction({
+    root,
+    realm,
+    realmAuthority,
+  }: {
+    root: PublicKey;
+    realm: PublicKey;
+    realmAuthority: PublicKey;
+  }) {
+    return await this.sdk.program.methods
+      .pause()
+      .accountsStrict({
+        root,
+        realm,
+        realmAuthority,
+      })
+      .instruction();
+  }
+
+  async resumeInstruction({
+    root,
+    realm,
+    realmAuthority,
+  }: {
+    root: PublicKey;
+    realm: PublicKey;
+    realmAuthority: PublicKey;
+  }) {
+    return await this.sdk.program.methods
+      .resume()
+      .accountsStrict({
+        root,
+        realm,
+        realmAuthority,
+      })
+      .instruction();
+  }
+
+  async setVotingWeightPluginInstruction({
+    votingWeightPlugin,
+    root,
+    realm,
+    realmAuthority,
+  }: {
+    votingWeightPlugin: PublicKey;
+    root: PublicKey;
+    realm: PublicKey;
+    realmAuthority: PublicKey;
+  }) {
+    return await this.sdk.program.methods
+      .setVoterWeightPlugin(votingWeightPlugin)
+      .accountsStrict({
+        configureRoot: {
+          root,
+          realm,
+          realmAuthority,
+        },
+        maxVwr: this.maxVoterWieghtAddress({rootAddress: root})[0],
       })
       .instruction();
   }

@@ -136,6 +136,84 @@ export type VoteAggregator = {
       ]
     },
     {
+      "name": "pause",
+      "accounts": [
+        {
+          "name": "root",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "realm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "realmAuthority",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "resume",
+      "accounts": [
+        {
+          "name": "root",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "realm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "realmAuthority",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "setVoterWeightPlugin",
+      "accounts": [
+        {
+          "name": "configureRoot",
+          "accounts": [
+            {
+              "name": "root",
+              "isMut": true,
+              "isSigner": false
+            },
+            {
+              "name": "realm",
+              "isMut": false,
+              "isSigner": false
+            },
+            {
+              "name": "realmAuthority",
+              "isMut": false,
+              "isSigner": true
+            }
+          ]
+        },
+        {
+          "name": "maxVwr",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "newVotingWeightPlugin",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
       "name": "createClan",
       "accounts": [
         {
@@ -725,7 +803,8 @@ export type VoteAggregator = {
         {
           "name": "memberVwr",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "isOptional": true
         },
         {
           "name": "root",
@@ -1122,6 +1201,10 @@ export type VoteAggregator = {
             "type": {
               "defined": "RootBumps"
             }
+          },
+          {
+            "name": "paused",
+            "type": "bool"
           }
         ]
       }
@@ -1693,6 +1776,46 @@ export type VoteAggregator = {
           "index": false
         }
       ]
+    },
+    {
+      "name": "Paused",
+      "fields": [
+        {
+          "name": "root",
+          "type": "publicKey",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "Resumed",
+      "fields": [
+        {
+          "name": "root",
+          "type": "publicKey",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "VoterWeightPluginChanged",
+      "fields": [
+        {
+          "name": "root",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "oldVotingWeightPlugin",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "newVotingWeightPlugin",
+          "type": "publicKey",
+          "index": false
+        }
+      ]
     }
   ],
   "errors": [
@@ -1899,6 +2022,18 @@ export type VoteAggregator = {
     {
       "code": 6044,
       "name": "InvalidNextResetTime"
+    },
+    {
+      "code": 6045,
+      "name": "Paused"
+    },
+    {
+      "code": 6046,
+      "name": "MemberVwrRequired"
+    },
+    {
+      "code": 6047,
+      "name": "ResetAllVoterWeightsFirst"
     }
   ]
 };
@@ -2041,6 +2176,84 @@ export const IDL: VoteAggregator = {
       ]
     },
     {
+      "name": "pause",
+      "accounts": [
+        {
+          "name": "root",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "realm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "realmAuthority",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "resume",
+      "accounts": [
+        {
+          "name": "root",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "realm",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "realmAuthority",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "setVoterWeightPlugin",
+      "accounts": [
+        {
+          "name": "configureRoot",
+          "accounts": [
+            {
+              "name": "root",
+              "isMut": true,
+              "isSigner": false
+            },
+            {
+              "name": "realm",
+              "isMut": false,
+              "isSigner": false
+            },
+            {
+              "name": "realmAuthority",
+              "isMut": false,
+              "isSigner": true
+            }
+          ]
+        },
+        {
+          "name": "maxVwr",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "newVotingWeightPlugin",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
       "name": "createClan",
       "accounts": [
         {
@@ -2630,7 +2843,8 @@ export const IDL: VoteAggregator = {
         {
           "name": "memberVwr",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "isOptional": true
         },
         {
           "name": "root",
@@ -3027,6 +3241,10 @@ export const IDL: VoteAggregator = {
             "type": {
               "defined": "RootBumps"
             }
+          },
+          {
+            "name": "paused",
+            "type": "bool"
           }
         ]
       }
@@ -3598,6 +3816,46 @@ export const IDL: VoteAggregator = {
           "index": false
         }
       ]
+    },
+    {
+      "name": "Paused",
+      "fields": [
+        {
+          "name": "root",
+          "type": "publicKey",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "Resumed",
+      "fields": [
+        {
+          "name": "root",
+          "type": "publicKey",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "VoterWeightPluginChanged",
+      "fields": [
+        {
+          "name": "root",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "oldVotingWeightPlugin",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "newVotingWeightPlugin",
+          "type": "publicKey",
+          "index": false
+        }
+      ]
     }
   ],
   "errors": [
@@ -3804,6 +4062,18 @@ export const IDL: VoteAggregator = {
     {
       "code": 6044,
       "name": "InvalidNextResetTime"
+    },
+    {
+      "code": 6045,
+      "name": "Paused"
+    },
+    {
+      "code": 6046,
+      "name": "MemberVwrRequired"
+    },
+    {
+      "code": 6047,
+      "name": "ResetAllVoterWeightsFirst"
     }
   ]
 };

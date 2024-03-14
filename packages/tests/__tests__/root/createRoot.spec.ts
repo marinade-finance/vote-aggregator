@@ -7,6 +7,7 @@ import {
   RealmTester,
   parseLogsEvent,
   createRootTestData,
+  RootAccount,
 } from '../../src';
 import {BN} from '@coral-xyz/anchor';
 import {
@@ -167,7 +168,7 @@ describe('create_root instruction', () => {
 
       await expect(
         program.account.root.fetch(rootAddress)
-      ).resolves.toStrictEqual({
+      ).resolves.toStrictEqual<RootAccount>({
         realm: realmTester.realmAddress,
         governanceProgram: realmTester.splGovernanceId,
         governingTokenMint: realmTester.realm.communityMint,
@@ -176,6 +177,7 @@ describe('create_root instruction', () => {
           PublicKey.default,
         maxProposalLifetime,
         voterWeightReset: null,
+        paused: false,
         bumps: {
           root: rootBump,
           maxVoterWeight: maxVwrBump,
@@ -361,7 +363,7 @@ describe('create_root instruction', () => {
 
       await expect(
         program.account.root.fetch(rootAddress)
-      ).resolves.toStrictEqual({
+      ).resolves.toStrictEqual<RootAccount>({
         realm: realmTester.realmAddress,
         governanceProgram: realmTester.splGovernanceId,
         governingTokenMint: realmTester.realm.config.councilMint!,
@@ -370,6 +372,7 @@ describe('create_root instruction', () => {
           PublicKey.default,
         maxProposalLifetime,
         voterWeightReset: null,
+        paused: false,
         bumps: {
           root: rootBump,
           maxVoterWeight: maxVwrBump,

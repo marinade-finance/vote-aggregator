@@ -6,7 +6,7 @@ import {
   parseLogsEvent,
   configureRootTestData,
 } from '../../src';
-import {RootTester} from '../../src/VoteAggregator';
+import {RootAccount, RootTester} from '../../src/VoteAggregator';
 import BN from 'bn.js';
 
 describe('Configure root', () => {
@@ -63,9 +63,9 @@ describe('Configure root', () => {
 
       await expect(
         program.account.root.fetch(rootTester.rootAddress[0])
-      ).resolves.toStrictEqual({
+      ).resolves.toStrictEqual<RootAccount>({
         ...rootTester.root,
-        maxProposalLifetime,
+        maxProposalLifetime: maxProposalLifetime!,
       });
     }
   );
@@ -120,7 +120,7 @@ describe('Configure root', () => {
       const newVoterWeightReset = {
         nextResetTime:
           newNextResetTime || rootTester.root.voterWeightReset!.nextResetTime,
-        step: voterWeightResetStep,
+        step: voterWeightResetStep!,
       };
       await expect(
         testContext.banksClient
@@ -139,9 +139,78 @@ describe('Configure root', () => {
 
       await expect(
         program.account.root.fetch(rootTester.rootAddress[0])
-      ).resolves.toStrictEqual({
+      ).resolves.toStrictEqual<RootAccount>({
         ...rootTester.root,
         voterWeightReset: newVoterWeightReset,
+      });
+    }
+  );
+
+  it.each(
+    configureRootTestData.filter(
+      ({error, paused}) => !error && paused !== undefined
+    )
+  )(
+    'Runs pause/resume instruction',
+    async ({realm, root, paused}: ConfigureRootTestData) => {
+      const realmTester = new RealmTester(realm);
+      if (!(realmTester.authority instanceof Keypair)) {
+        throw new Error('Realm authority keypair is required');
+      }
+      const rootTester = new RootTester({
+        ...root,
+        realm: realmTester,
+      });
+      const {testContext, program} = await startTest({
+        splGovernanceId: rootTester.splGovernanceId,
+        accounts: [
+          ...(await realmTester.accounts()),
+          ...(await rootTester.accounts()),
+        ],
+      });
+
+      const tx = await (paused
+        ? program.methods.pause()
+        : program.methods.resume()
+      )
+        .accountsStrict({
+          root: rootTester.rootAddress[0],
+          realm: rootTester.root.realm,
+          realmAuthority: realmTester.authorityAddress!,
+        })
+        .transaction();
+      tx.recentBlockhash = testContext.lastBlockhash;
+      tx.feePayer = testContext.payer.publicKey;
+      tx.sign(testContext.payer, realmTester.authority! as Keypair);
+
+      const events = [];
+      if (!rootTester.root.paused && paused) {
+        events.push({
+          name: 'Paused',
+          data: {
+            root: rootTester.rootAddress[0],
+          },
+        });
+      }
+      else if (rootTester.root.paused && !paused) {
+        events.push({
+          name: 'Resumed',
+          data: {
+            root: rootTester.rootAddress[0],
+          },
+        });
+      }
+      await expect(
+        testContext.banksClient
+          .processTransaction(tx)
+          .then(meta => parseLogsEvent(program, meta.logMessages))
+      ).resolves.toStrictEqual(events);
+
+      await expect(
+        program.account.root.fetch(rootTester.rootAddress[0])
+      ).resolves.toStrictEqual<RootAccount>({
+        ...rootTester.root,
+        paused: paused!,
       });
     }
   );

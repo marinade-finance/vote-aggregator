@@ -19,6 +19,25 @@ export const installConfigureRootCLI = (program: Command) => {
     .requiredOption('--step <number>', 'Step')
     .option('--next-reset-time <number>', 'Next voter weight reset time')
     .action(setVoterWeightReset);
+
+  program
+    .command('pause')
+    .requiredOption('--root <pubkey>', 'Root')
+    .option('--realm-authority <keypair>', 'Realm authority')
+    .action(pause);
+
+  program
+    .command('resume')
+    .requiredOption('--root <pubkey>', 'Root')
+    .option('--realm-authority <keypair>', 'Realm authority')
+    .action(resume);
+
+  program
+    .command('set-voting-weight-plugin')
+    .requiredOption('--root <pubkey>', 'Root')
+    .option('--realm-authority <keypair>', 'Realm authority')
+    .requiredOption('--voting-weight-plugin <pubkey>', 'Voting weight plugin')
+    .action(setVotingWeightPlugin);
 };
 
 const setMaxProposalLifetime = async ({
@@ -44,7 +63,7 @@ const setMaxProposalLifetime = async ({
   await execute({
     instructions: [
       await sdk.root.setMaxProposalLifetimeInstruction({
-        root: await parsePubkey(root),
+        root: rootAddress,
         realm: rootData.realm,
         realmAuthority: realmAuthorityAddress,
         maxProposalLifetime:
@@ -80,12 +99,105 @@ const setVoterWeightReset = async ({
   await execute({
     instructions: [
       await sdk.root.setVoterWeightResetInstruction({
-        root: await parsePubkey(root),
+        root: rootAddress,
         realm: rootData.realm,
         realmAuthority: realmAuthorityAddress,
         step: new BN(step),
         nextResetTime:
           nextResetTime === undefined ? null : new BN(nextResetTime),
+      }),
+    ],
+    signers,
+  });
+};
+
+const pause = async ({
+  root,
+  realmAuthority,
+}: {
+  root: string;
+  realmAuthority?: string;
+}) => {
+  const {sdk, provider} = context!;
+  const signers = [];
+  let realmAuthorityAddress = provider.publicKey!;
+  if (realmAuthority) {
+    const realmAuthorityKP = await parseKeypair(realmAuthority);
+    signers.push(realmAuthorityKP);
+    realmAuthorityAddress = realmAuthorityKP.publicKey;
+  }
+
+  const rootAddress = await parsePubkey(root);
+  const rootData = await sdk.root.fetchRoot(rootAddress);
+  await execute({
+    instructions: [
+      await sdk.root.pauseInstruction({
+        root: rootAddress,
+        realm: rootData.realm,
+        realmAuthority: realmAuthorityAddress,
+      }),
+    ],
+    signers,
+  });
+};
+
+const resume = async ({
+  root,
+  realmAuthority,
+}: {
+  root: string;
+  realmAuthority?: string;
+}) => {
+  const {sdk, provider} = context!;
+  const signers = [];
+  let realmAuthorityAddress = provider.publicKey!;
+  if (realmAuthority) {
+    const realmAuthorityKP = await parseKeypair(realmAuthority);
+    signers.push(realmAuthorityKP);
+    realmAuthorityAddress = realmAuthorityKP.publicKey;
+  }
+
+  const rootAddress = await parsePubkey(root);
+  const rootData = await sdk.root.fetchRoot(rootAddress);
+  await execute({
+    instructions: [
+      await sdk.root.resumeInstruction({
+        root: rootAddress,
+        realm: rootData.realm,
+        realmAuthority: realmAuthorityAddress,
+      }),
+    ],
+    signers,
+  });
+};
+
+const setVotingWeightPlugin = async ({
+  root,
+  realmAuthority,
+  votingWeightPlugin,
+}: {
+  root: string;
+  realmAuthority?: string;
+  votingWeightPlugin: string;
+}) => {
+  const {sdk, provider} = context!;
+  const signers = [];
+  let realmAuthorityAddress = provider.publicKey!;
+  if (realmAuthority) {
+    const realmAuthorityKP = await parseKeypair(realmAuthority);
+    signers.push(realmAuthorityKP);
+    realmAuthorityAddress = realmAuthorityKP.publicKey;
+  }
+
+  const rootAddress = await parsePubkey(root);
+  const rootData = await sdk.root.fetchRoot(rootAddress);
+  await execute({
+    instructions: [
+      await sdk.root.setVotingWeightPluginInstruction({
+        root: rootAddress,
+        realm: rootData.realm,
+        realmAuthority: realmAuthorityAddress,
+        votingWeightPlugin: await parsePubkey(votingWeightPlugin),
       }),
     ],
     signers,

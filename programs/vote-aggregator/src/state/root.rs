@@ -24,6 +24,7 @@ pub struct Root {
     pub clan_count: u64,
     pub member_count: u64,
     pub bumps: RootBumps,
+    pub paused: bool,
 }
 
 impl Root {

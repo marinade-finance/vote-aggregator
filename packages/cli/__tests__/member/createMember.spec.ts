@@ -9,6 +9,7 @@ import {
 import {BN} from '@coral-xyz/anchor';
 import {context} from '../../src/context';
 import {cli} from '../../src/cli';
+import { RootAccount } from 'vote-aggregator-sdk';
 
 describe('create-member command', () => {
   let stdout: jest.SpyInstance;
@@ -99,7 +100,7 @@ describe('create-member command', () => {
 
       await expect(
         sdk.root.fetchRoot(rootTester.rootAddress[0])
-      ).resolves.toStrictEqual({
+      ).resolves.toStrictEqual<RootAccount>({
         ...rootTester.root,
         memberCount: rootTester.root.memberCount.addn(1),
       });

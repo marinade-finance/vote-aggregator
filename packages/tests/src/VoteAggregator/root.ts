@@ -17,6 +17,7 @@ export type RootTestData = {
   maxVoterWeight?: BN;
   maxProposalLifetime?: BN;
   voterWeightReset?: VoterWeightReset | null;
+  paused?: boolean;
   clanCount?: BN;
   memberCount?: BN;
 };
@@ -78,6 +79,7 @@ export class RootTester {
     maxVoterWeight = new BN(0),
     maxProposalLifetime = new BN(0),
     voterWeightReset = null,
+    paused = false,
     clanCount = new BN(0),
     memberCount = new BN(0),
   }: RootTestData & {realm: RealmTester}) {
@@ -97,9 +99,10 @@ export class RootTester {
           : realm.realm.config.councilMint!,
       maxProposalLifetime,
       votingWeightPlugin,
+      voterWeightReset,
+      paused,
       clanCount,
       memberCount,
-      voterWeightReset,
       bumps: {
         root: rootBump,
         maxVoterWeight: maxVoterWeightBump,

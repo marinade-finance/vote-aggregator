@@ -40,6 +40,7 @@ pub struct SetVoterWeightRecord<'info> {
 
 impl<'info> SetVoterWeightRecord<'info> {
     pub fn process<'c: 'info>(&mut self, rest: &'c [AccountInfo<'info>]) -> Result<()> {
+        require!(!self.root.paused, Error::Paused);
         let new_member_vwr =
             get_voter_weight_record_data(&self.root.voting_weight_plugin, &self.member_vwr)
                 .map_err(|e| {

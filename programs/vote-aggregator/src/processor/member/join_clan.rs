@@ -126,6 +126,7 @@ impl<'info> JoinClan<'info> {
         share_bp: u16,
         rest: &'c [AccountInfo<'info>],
     ) -> Result<()> {
+        require!(!self.root.paused, Error::Paused);
         let member_tor = get_token_owner_record_data_for_realm_and_governing_mint(
             &self.root.governance_program,
             &self.member_tor.to_account_info(),

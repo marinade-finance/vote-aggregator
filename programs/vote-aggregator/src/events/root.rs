@@ -31,3 +31,20 @@ pub struct VoterWeightResetChanged {
     pub old_voter_weight_reset: Option<VoterWeightReset>,
     pub new_voter_weight_reset: Option<VoterWeightReset>,
 }
+
+#[event]
+pub struct Paused {
+    pub root: Pubkey,
+}
+
+#[event]
+pub struct Resumed {
+    pub root: Pubkey,
+}
+
+#[event]
+pub struct VoterWeightPluginChanged {
+    pub root: Pubkey,
+    pub old_voting_weight_plugin: Pubkey,
+    pub new_voting_weight_plugin: Pubkey,
+}

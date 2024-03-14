@@ -70,5 +70,8 @@ pub enum Error {
     MemberHasOutstandingProposals,
     CanNotChangeNextResetTime,
     InvalidResetStep,
-    InvalidNextResetTime
+    InvalidNextResetTime,
+    Paused,
+    MemberVwrRequired,
+    ResetAllVoterWeightsFirst,
 }

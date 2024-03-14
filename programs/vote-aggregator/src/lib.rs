@@ -53,6 +53,21 @@ pub mod vote_aggregator {
             .set_voter_weight_reset(new_step, new_next_reset_time)
     }
 
+    pub fn pause(ctx: Context<ConfigureRoot>) -> Result<()> {
+        ctx.accounts.pause()
+    }
+
+    pub fn resume(ctx: Context<ConfigureRoot>) -> Result<()> {
+        ctx.accounts.resume()
+    }
+
+    pub fn set_voter_weight_plugin(
+        ctx: Context<SetVotingWeightPlugin>,
+        new_voting_weight_plugin: Pubkey,
+    ) -> Result<()> {
+        ctx.accounts.process(new_voting_weight_plugin)
+    }
+
     pub fn create_clan(ctx: Context<CreateClan>, owner: Pubkey) -> Result<()> {
         ctx.accounts.process(owner, ctx.bumps)
     }

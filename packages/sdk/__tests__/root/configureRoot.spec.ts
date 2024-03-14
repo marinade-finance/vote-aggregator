@@ -77,4 +77,63 @@ describe('Configure root', () => {
     }
   );
   */
+  it.each(
+    configureRootTestData.filter(
+      ({error, paused}) => !error && paused !== undefined
+    )
+  )(
+    'Runs pause/resume instruction',
+    async ({realm, root, paused}: ConfigureRootTestData) => {
+      const realmTester = new RealmTester(realm);
+      if (!(realmTester.authority instanceof Keypair)) {
+        throw new Error('Realm authority keypair is required');
+      }
+      const rootTester = new RootTester({
+        ...root,
+        realm: realmTester,
+      });
+      const sdk = new VoteAggregatorSdk();
+      expect(
+        paused
+          ? sdk.root.pauseInstruction({
+              realm: realmTester.realmAddress,
+              root: rootTester.rootAddress[0],
+              realmAuthority: realmTester.authorityAddress!,
+            })
+          : sdk.root.resumeInstruction({
+              realm: realmTester.realmAddress,
+              root: rootTester.rootAddress[0],
+              realmAuthority: realmTester.authorityAddress!,
+            })
+      ).resolves.toMatchSnapshot();
+    }
+  );
+
+  it.each(
+    configureRootTestData.filter(
+      ({error, votingWeightPlugin}) =>
+        !error && votingWeightPlugin !== undefined
+    )
+  )(
+    'Runs set_voting_weight instruction',
+    async ({realm, root, votingWeightPlugin}: ConfigureRootTestData) => {
+      const realmTester = new RealmTester(realm);
+      if (!(realmTester.authority instanceof Keypair)) {
+        throw new Error('Realm authority keypair is required');
+      }
+      const rootTester = new RootTester({
+        ...root,
+        realm: realmTester,
+      });
+      const sdk = new VoteAggregatorSdk();
+      expect(
+        sdk.root.setVotingWeightPluginInstruction({
+          realm: realmTester.realmAddress,
+          root: rootTester.rootAddress[0],
+          realmAuthority: realmTester.authorityAddress!,
+          votingWeightPlugin: votingWeightPlugin!,
+        })
+      ).resolves.toMatchSnapshot();
+    }
+  );
 });

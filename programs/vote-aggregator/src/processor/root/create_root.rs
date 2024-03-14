@@ -125,6 +125,7 @@ impl<'info> CreateRoot<'info> {
             voting_weight_plugin: voting_weight_plugin.unwrap_or_default(),
             max_proposal_lifetime,
             voter_weight_reset: None,
+            paused: false,
             clan_count: 0,
             member_count: 0,
             bumps: RootBumps {

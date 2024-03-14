@@ -170,7 +170,12 @@ const ClanListComponent = () => {
         />
       </Paper>
       <Box>
-        <Button component={Link} to="/$rootId/createClan" params={{rootId}}>
+        <Button
+          component={Link}
+          to="/$rootId/createClan"
+          params={{rootId}}
+          disabled={!publicKey}
+        >
           Create
         </Button>
       </Box>

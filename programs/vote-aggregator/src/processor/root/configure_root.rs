@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use spl_governance::state::realm;
 
 use crate::error::Error;
-use crate::events::root::{MaxProposalLifetimeChanged, VoterWeightResetChanged};
+use crate::events::root::{MaxProposalLifetimeChanged, Paused, Resumed, VoterWeightResetChanged};
 use crate::state::{Root, VoterWeightReset};
 use anchor_lang::error::Error as AnchorError;
 
@@ -12,17 +12,17 @@ pub struct ConfigureRoot<'info> {
         mut,
         has_one = realm,
     )]
-    root: Account<'info, Root>,
+    pub(crate) root: Account<'info, Root>,
     /// CHECK: dynamic owner ID
     #[account(
         owner = root.governance_program,
     )]
-    realm: UncheckedAccount<'info>,
-    realm_authority: Signer<'info>,
+    pub(crate) realm: UncheckedAccount<'info>,
+    pub(crate) realm_authority: Signer<'info>,
 }
 
 impl<'info> ConfigureRoot<'info> {
-    fn check_authority(&self) -> Result<()> {
+    pub(crate) fn check_authority(&self) -> Result<()> {
         let realm = realm::get_realm_data_for_governing_token_mint(
             &self.root.governance_program,
             &self.realm.to_account_info(),
@@ -47,11 +47,13 @@ impl<'info> ConfigureRoot<'info> {
 
         let old_max_proposal_lifetime = self.root.max_proposal_lifetime;
         self.root.max_proposal_lifetime = new_max_proposal_lifetime;
-        emit!(MaxProposalLifetimeChanged {
-            root: self.root.key(),
-            old_max_proposal_lifetime,
-            new_max_proposal_lifetime
-        });
+        if new_max_proposal_lifetime != old_max_proposal_lifetime {
+            emit!(MaxProposalLifetimeChanged {
+                root: self.root.key(),
+                old_max_proposal_lifetime,
+                new_max_proposal_lifetime
+            });
+        }
         Ok(())
     }
 
@@ -92,6 +94,30 @@ impl<'info> ConfigureRoot<'info> {
             old_voter_weight_reset,
             new_voter_weight_reset: self.root.voter_weight_reset.clone()
         });
+        Ok(())
+    }
+
+    pub fn pause(&mut self) -> Result<()> {
+        self.check_authority()?;
+        let old_paused = self.root.paused;
+        self.root.paused = true;
+        if !old_paused {
+            emit!(Paused {
+                root: self.root.key(),
+            })
+        }
+        Ok(())
+    }
+
+    pub fn resume(&mut self) -> Result<()> {
+        self.check_authority()?;
+        let old_paused = self.root.paused;
+        self.root.paused = false;
+        if old_paused {
+            emit!(Resumed {
+                root: self.root.key(),
+            })
+        }
         Ok(())
     }
 }
