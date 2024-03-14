@@ -44,6 +44,7 @@ const fetchClan = async ({
     updatedTemporaryMembers: clanData.updatedTemporaryMembers,
     leavingMembers: clanData.leavingMembers,
     nextVoterWeightResetTime: clanData.nextVoterWeightResetTime,
+    acceptTemporaryMembers: clanData.acceptTemporaryMembers,
     name: clanData.name,
     description: clanData.description,
     voterWeight: vwr.voterWeight,

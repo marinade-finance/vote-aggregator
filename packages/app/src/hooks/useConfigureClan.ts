@@ -3,6 +3,7 @@ import {Cluster, PublicKey, Transaction} from '@solana/web3.js';
 import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {VoteAggregatorSdk} from 'vote-aggregator-sdk';
 import {clanListQueryOptions, clanQueryOptions} from '../queryOptions';
+import BN from 'bn.js';
 
 const useConfigureClan = () => {
   const {connection} = useConnection();
@@ -12,14 +13,28 @@ const useConfigureClan = () => {
   return useMutation({
     mutationFn: async ({
       clan,
+      clanData,
       name,
       description,
+      delegate,
+      minVotingWeightToJoin,
+      acceptTemporaryMembers,
     }: {
       network: Cluster;
       root: PublicKey;
       clan: PublicKey;
+      clanData: {
+        name: string;
+        description: string;
+        delegate: PublicKey;
+        minVotingWeightToJoin: BN;
+        acceptTemporaryMembers: boolean;
+      };
       name: string;
       description: string;
+      delegate: PublicKey;
+      minVotingWeightToJoin: BN;
+      acceptTemporaryMembers: boolean;
     }) => {
       const sdk = new VoteAggregatorSdk(connection);
       const {blockhash, lastValidBlockHeight} =
@@ -29,7 +44,7 @@ const useConfigureClan = () => {
         blockhash,
         lastValidBlockHeight,
       });
-      if (name !== undefined || description !== undefined) {
+      if (name !== clanData.name || description !== clanData.description) {
         tx.add(
           await sdk.clan.resizeClanInstruction({
             clanAddress: clan,
@@ -38,7 +53,7 @@ const useConfigureClan = () => {
             size: 288 + name.length + description.length,
           })
         );
-        if (name !== undefined) {
+        if (name !== clanData.name) {
           tx.add(
             await sdk.clan.setClanNameInstruction({
               clanAddress: clan,
@@ -47,7 +62,7 @@ const useConfigureClan = () => {
             })
           );
         }
-        if (description !== undefined) {
+        if (description !== clanData.description) {
           tx.add(
             await sdk.clan.setClanDescriptionInstruction({
               clanAddress: clan,
@@ -56,6 +71,36 @@ const useConfigureClan = () => {
             })
           );
         }
+      }
+
+      if (!delegate.equals(clanData.delegate)) {
+        tx.add(
+          await sdk.clan.setClanDelegateInstruction({
+            clanAddress: clan,
+            clanAuthority: publicKey!,
+            delegate,
+          })
+        );
+      }
+
+      if (!minVotingWeightToJoin.eq(clanData.minVotingWeightToJoin)) {
+        tx.add(
+          await sdk.clan.setClanMinVotingWeightToJoinInstruction({
+            clanAddress: clan,
+            clanAuthority: publicKey!,
+            minVotingWeightToJoin,
+          })
+        );
+      }
+
+      if (acceptTemporaryMembers !== clanData.acceptTemporaryMembers) {
+        tx.add(
+          await sdk.clan.setClanAcceptTemporaryMembersInstruction({
+            clanAddress: clan,
+            clanAuthority: publicKey!,
+            acceptTemporaryMembers,
+          })
+        );
       }
 
       const signature = await sendTransaction(tx, connection);

@@ -1,12 +1,16 @@
 import {Keypair, PublicKey} from '@solana/web3.js';
 import {ClanTestData} from '../../VoteAggregator';
 import {buildKeypair} from '../..';
+import BN from 'bn.js';
 
 export type ConfigureClanTestData = {
   clan: ClanTestData & {root: PublicKey};
   clanAuthority: Keypair | 'owner' | 'delegate';
+  newDelegate?: PublicKey;
   newName?: string;
   newDescription?: string;
+  newMinVotingWeightToJoin?: BN;
+  newAcceptTemporaryMembers?: boolean;
   error?: string;
 };
 
@@ -30,7 +34,10 @@ export const configureClanTestData: ConfigureClanTestData[] = [
       size: 1000,
     },
     clanAuthority: 'owner',
+    newDelegate: new PublicKey('Fz9TQxgjdERVNt7hP8DcQQwvM4oXL1oaGSbL1jX6HvJz'),
     newName: 'LIDO',
     newDescription: 'No more marinade',
+    newMinVotingWeightToJoin: new BN(100),
+    newAcceptTemporaryMembers: false,
   },
 ];

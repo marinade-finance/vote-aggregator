@@ -1,13 +1,12 @@
-import {createFileRoute} from '@tanstack/react-router';
-import {clanQueryOptions} from '../../../../queryOptions';
 import {LAMPORTS_PER_SOL, PublicKey} from '@solana/web3.js';
 import {useQueryClient, useSuspenseQuery} from '@tanstack/react-query';
 import {useWallet} from '@solana/wallet-adapter-react';
 import {Box} from '@mui/material';
-import ClanManagement from '../../../../components/clan/ClanManagement';
-// import ClanMembership from '../../../../components/clan/ClanMembership';
+import {Route} from '../../routes/$rootId/clan/$clanId/index';
+import {clanQueryOptions} from '../../queryOptions';
+import ClanManagement from './ClanManagement';
 
-const ClanComponent = () => {
+const ClanDisplay = () => {
   const {network} = Route.useSearch();
   const {rootId, clanId} = Route.useParams();
   const root = new PublicKey(rootId);
@@ -29,6 +28,14 @@ const ClanComponent = () => {
           ? 'You'
           : clanData.owner.toBase58()}
       </Box>
+      <Box>
+        Delegate:{' '}
+        {publicKey && clanData.delegate.equals(publicKey)
+          ? 'You'
+          : clanData.delegate.equals(PublicKey.default)
+          ? 'No'
+          : clanData.delegate.toBase58()}
+      </Box>
       {clanData.governanceDelegate && (
         <Box>
           Voter:{' '}
@@ -42,6 +49,15 @@ const ClanComponent = () => {
         Total power:{' '}
         {parseFloat(clanData.voterWeight.toString()) / LAMPORTS_PER_SOL}
       </Box>
+      <Box>
+        Minimum voting weight to join:{' '}
+        {parseFloat(clanData.minVotingWeightToJoin.toString()) /
+          LAMPORTS_PER_SOL}
+      </Box>
+      <Box>
+        Accept temporary members:{' '}
+        {clanData.acceptTemporaryMembers ? 'Yes' : 'No'}
+      </Box>
       {publicKey && clanData.owner.equals(publicKey) && (
         <ClanManagement root={root} clan={clan} />
       )}
@@ -49,21 +65,4 @@ const ClanComponent = () => {
   );
 };
 
-export const Route = createFileRoute('/$rootId/clan/$clanId/')({
-  component: ClanComponent,
-  loaderDeps: ({search: {network}}) => ({network}),
-  loader: ({
-    deps: {network},
-    params: {rootId, clanId},
-    context: {queryClient},
-  }) =>
-    queryClient.ensureQueryData(
-      clanQueryOptions({
-        network,
-        root: new PublicKey(rootId),
-        clan: new PublicKey(clanId),
-        queryClient,
-      })
-    ),
-  wrapInSuspense: true,
-});
+export default ClanDisplay;

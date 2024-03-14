@@ -1,11 +1,19 @@
 import {Button} from '@mui/material';
-import {PublicKey} from '@solana/web3.js';
+import {Cluster, PublicKey} from '@solana/web3.js';
 import useAirdrop from '../../hooks/useAirdrop';
 
-const Airdrop = ({mint}: {mint: PublicKey}) => {
+const Airdrop = ({
+  network,
+  mint,
+  root,
+}: {
+  network: Cluster;
+  mint: PublicKey;
+  root: PublicKey;
+}) => {
   const mutation = useAirdrop();
   const handleAirdrop = () => {
-    mutation.mutate({mint});
+    mutation.mutate({network, mint, root});
   };
   return <Button onClick={handleAirdrop}>Airdrop</Button>;
 };

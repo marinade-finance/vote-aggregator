@@ -13,6 +13,7 @@ import {
   getTokenOwnerRecord,
   getVoteRecordAddress,
 } from '@solana/spl-governance';
+import BN from 'bn.js';
 
 export type ClanAccount = IdlAccounts<VoteAggregator>['clan'];
 export type VoterWeightAccount =
@@ -283,6 +284,24 @@ export class ClanSdk {
       .instruction();
   }
 
+  async setClanDelegateInstruction({
+    clanAddress,
+    clanAuthority,
+    delegate,
+  }: {
+    clanAddress: PublicKey;
+    clanAuthority: PublicKey;
+    delegate: PublicKey;
+  }) {
+    return await this.sdk.program.methods
+      .setClanDelegate(delegate)
+      .accountsStrict({
+        clan: clanAddress,
+        clanAuthority,
+      })
+      .instruction();
+  }
+
   async setClanNameInstruction({
     clanAddress,
     clanAuthority,
@@ -312,6 +331,42 @@ export class ClanSdk {
   }) {
     return await this.sdk.program.methods
       .setClanDescription(description)
+      .accountsStrict({
+        clan: clanAddress,
+        clanAuthority,
+      })
+      .instruction();
+  }
+
+  async setClanMinVotingWeightToJoinInstruction({
+    clanAddress,
+    clanAuthority,
+    minVotingWeightToJoin,
+  }: {
+    clanAddress: PublicKey;
+    clanAuthority: PublicKey;
+    minVotingWeightToJoin: BN;
+  }) {
+    return await this.sdk.program.methods
+      .setClanMinVotingWeightToJoin(minVotingWeightToJoin)
+      .accountsStrict({
+        clan: clanAddress,
+        clanAuthority,
+      })
+      .instruction();
+  }
+
+  async setClanAcceptTemporaryMembersInstruction({
+    clanAddress,
+    clanAuthority,
+    acceptTemporaryMembers,
+  }: {
+    clanAddress: PublicKey;
+    clanAuthority: PublicKey;
+    acceptTemporaryMembers: boolean;
+  }) {
+    return await this.sdk.program.methods
+      .setClanAcceptTemporaryMembers(acceptTemporaryMembers)
       .accountsStrict({
         clan: clanAddress,
         clanAuthority,

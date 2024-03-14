@@ -1,31 +1,45 @@
 import {Box, Button, TextField} from '@mui/material';
-import {createFileRoute, useNavigate} from '@tanstack/react-router';
+import {useNavigate} from '@tanstack/react-router';
 import {useState} from 'react';
 import {PublicKey} from '@solana/web3.js';
 import {useQueryClient, useSuspenseQuery} from '@tanstack/react-query';
-import {clanQueryOptions} from '../../../../queryOptions';
-import useSetClanOwner from '../../../../hooks/useSetClanOwner';
+import {Route} from '../../routes/$rootId/clan/$clanId/setVotingDelegate';
+import { clanQueryOptions, voteAggregatorQueryOptions } from '../../queryOptions';
+import useSetVotingDelegate from '../../hooks/useSetVotingDelegate';
 
-const TransferClanComponent = () => {
+const SetVotingDelegate = () => {
   const {network} = Route.useSearch();
   const {rootId, clanId} = Route.useParams();
   const root = new PublicKey(rootId);
   const clan = new PublicKey(clanId);
   const queryClient = useQueryClient();
+  const {data: rootData} = useSuspenseQuery(
+    voteAggregatorQueryOptions({network, root})
+  );
   const {data: clanData} = useSuspenseQuery(
     clanQueryOptions({network, root, clan, queryClient})
   );
 
-  const [newOwner, setNewOwner] = useState(clanData.owner.toBase58());
+  const [newVotingDelegate, setNewVotingDelegate] = useState(
+    clanData.governanceDelegate?.toBase58() || ''
+  );
 
   const navigate = useNavigate();
 
-  const mutation = useSetClanOwner();
+  const mutation = useSetVotingDelegate();
 
   const handleSubmit: React.FormEventHandler<HTMLFormElement> = event => {
     event.preventDefault();
     mutation.mutate(
-      {network, root, clan, newOwner: new PublicKey(newOwner)},
+      {
+        network,
+        rootAddress: root,
+        rootData,
+        clan,
+        newVotingDelegate: newVotingDelegate
+          ? new PublicKey(newVotingDelegate)
+          : null,
+      },
       {
         onSuccess: () => {
           navigate({
@@ -45,19 +59,12 @@ const TransferClanComponent = () => {
       <TextField
         name="name"
         label="Name"
-        value={newOwner}
-        onChange={event => setNewOwner(event.target.value)}
+        value={newVotingDelegate}
+        onChange={event => setNewVotingDelegate(event.target.value)}
       />
-      <Button type="submit">Transfer</Button>
+      <Button type="submit">Delegate</Button>
     </Box>
   );
 };
 
-export const Route = createFileRoute('/$rootId/clan/$clanId/transfer')({
-  component: TransferClanComponent,
-  beforeLoad: () => {
-    return {
-      title: 'transfer',
-    };
-  },
-});
+export default SetVotingDelegate;

@@ -89,7 +89,9 @@ const VsrTokenStatus = ({
           <Button onClick={handleDeposit}>Deposit</Button>
         </Box>
       )}
-      {network === 'devnet' && <Airdrop mint={mint}/>}
+      {network === 'devnet' && (
+        <Airdrop network={network} mint={mint} root={rootAddress} />
+      )}
     </Card>
   );
 };

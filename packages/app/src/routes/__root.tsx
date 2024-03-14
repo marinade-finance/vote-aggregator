@@ -40,7 +40,7 @@ const RootComponent = () => {
     <>
       <CssBaseline />
       <Header network={network} setNetwork={handleSetNetwork} />
-      <Container sx={{width: '100%', ml: 10}}>
+      <Container sx={{width: '100%', ml: 1, mt: 2}}>
         <Suspense>
           <Outlet />
         </Suspense>

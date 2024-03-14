@@ -10,7 +10,7 @@ import {
   TablePagination,
   TableRow,
 } from '@mui/material';
-import {Link, createFileRoute, useNavigate} from '@tanstack/react-router';
+import {Link, useNavigate} from '@tanstack/react-router';
 import {useMemo, useState} from 'react';
 import {clanListQueryOptions} from '../../queryOptions';
 import {PublicKey} from '@solana/web3.js';
@@ -18,6 +18,7 @@ import {ClanInfo} from '../../fetchers/fetchClanList';
 import {useSuspenseQuery} from '@tanstack/react-query';
 import {useWallet} from '@solana/wallet-adapter-react';
 import ClanRightsInfo from '../../components/clan/ClanRightsInfo';
+import {Route} from '../../routes/$rootId/index';
 
 type Order = 'asc' | 'desc';
 
@@ -45,7 +46,7 @@ const getComparator =
     }
   };
 
-const ClanListComponent = () => {
+const ClanList = () => {
   const navigate = useNavigate();
   const {network} = Route.useSearch();
   const {rootId} = Route.useParams();
@@ -183,11 +184,4 @@ const ClanListComponent = () => {
   );
 };
 
-export const Route = createFileRoute('/$rootId/')({
-  component: ClanListComponent,
-  loaderDeps: ({search: {network}}) => ({network}),
-  loader: ({deps: {network}, params: {rootId}, context: {queryClient}}) =>
-    queryClient.ensureQueryData(
-      clanListQueryOptions({network, root: new PublicKey(rootId)})
-    ),
-});
+export default ClanList;

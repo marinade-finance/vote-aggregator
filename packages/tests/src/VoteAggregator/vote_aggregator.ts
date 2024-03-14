@@ -352,6 +352,27 @@ export type VoteAggregator = {
       ]
     },
     {
+      "name": "setClanDelegate",
+      "accounts": [
+        {
+          "name": "clan",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "clanAuthority",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "newDelegate",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
       "name": "setClanName",
       "accounts": [
         {
@@ -390,6 +411,48 @@ export type VoteAggregator = {
         {
           "name": "description",
           "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "setClanMinVotingWeightToJoin",
+      "accounts": [
+        {
+          "name": "clan",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "clanAuthority",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "minVotingWeightToJoin",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "setClanAcceptTemporaryMembers",
+      "accounts": [
+        {
+          "name": "clan",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "clanAuthority",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "acceptTemporaryMembers",
+          "type": "bool"
         }
       ]
     },
@@ -1394,6 +1457,26 @@ export type VoteAggregator = {
       ]
     },
     {
+      "name": "ClanDelegateChanged",
+      "fields": [
+        {
+          "name": "clan",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "oldDelegate",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "newDelegate",
+          "type": "publicKey",
+          "index": false
+        }
+      ]
+    },
+    {
       "name": "ClanNameChanged",
       "fields": [
         {
@@ -1429,6 +1512,46 @@ export type VoteAggregator = {
         {
           "name": "newDescription",
           "type": "string",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "ClanMinVotingWeightToJoinChanged",
+      "fields": [
+        {
+          "name": "clan",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "oldMinVotingWeightToJoin",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "newMinVotingWeightToJoin",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "ClanAcceptTemporaryMembersChanged",
+      "fields": [
+        {
+          "name": "clan",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "oldAcceptTemporaryMembers",
+          "type": "bool",
+          "index": false
+        },
+        {
+          "name": "newAcceptTemporaryMembers",
+          "type": "bool",
           "index": false
         }
       ]
@@ -2392,6 +2515,27 @@ export const IDL: VoteAggregator = {
       ]
     },
     {
+      "name": "setClanDelegate",
+      "accounts": [
+        {
+          "name": "clan",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "clanAuthority",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "newDelegate",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
       "name": "setClanName",
       "accounts": [
         {
@@ -2430,6 +2574,48 @@ export const IDL: VoteAggregator = {
         {
           "name": "description",
           "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "setClanMinVotingWeightToJoin",
+      "accounts": [
+        {
+          "name": "clan",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "clanAuthority",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "minVotingWeightToJoin",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "setClanAcceptTemporaryMembers",
+      "accounts": [
+        {
+          "name": "clan",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "clanAuthority",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "acceptTemporaryMembers",
+          "type": "bool"
         }
       ]
     },
@@ -3434,6 +3620,26 @@ export const IDL: VoteAggregator = {
       ]
     },
     {
+      "name": "ClanDelegateChanged",
+      "fields": [
+        {
+          "name": "clan",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "oldDelegate",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "newDelegate",
+          "type": "publicKey",
+          "index": false
+        }
+      ]
+    },
+    {
       "name": "ClanNameChanged",
       "fields": [
         {
@@ -3469,6 +3675,46 @@ export const IDL: VoteAggregator = {
         {
           "name": "newDescription",
           "type": "string",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "ClanMinVotingWeightToJoinChanged",
+      "fields": [
+        {
+          "name": "clan",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "oldMinVotingWeightToJoin",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "newMinVotingWeightToJoin",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "ClanAcceptTemporaryMembersChanged",
+      "fields": [
+        {
+          "name": "clan",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "oldAcceptTemporaryMembers",
+          "type": "bool",
+          "index": false
+        },
+        {
+          "name": "newAcceptTemporaryMembers",
+          "type": "bool",
           "index": false
         }
       ]

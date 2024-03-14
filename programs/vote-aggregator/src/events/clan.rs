@@ -22,6 +22,13 @@ pub struct ClanResized {
 }
 
 #[event]
+pub struct ClanDelegateChanged {
+    pub clan: Pubkey,
+    pub old_delegate: Pubkey,
+    pub new_delegate: Pubkey,
+}
+
+#[event]
 pub struct ClanNameChanged {
     pub clan: Pubkey,
     pub old_name: String,
@@ -33,6 +40,20 @@ pub struct ClanDescriptionChanged {
     pub clan: Pubkey,
     pub old_description: String,
     pub new_description: String,
+}
+
+#[event]
+pub struct ClanMinVotingWeightToJoinChanged {
+    pub clan: Pubkey,
+    pub old_min_voting_weight_to_join: u64,
+    pub new_min_voting_weight_to_join: u64,
+}
+
+#[event]
+pub struct ClanAcceptTemporaryMembersChanged {
+    pub clan: Pubkey,
+    pub old_accept_temporary_members: bool,
+    pub new_accept_temporary_members: bool,
 }
 
 #[event]

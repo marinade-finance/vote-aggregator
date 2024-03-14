@@ -84,6 +84,10 @@ pub mod vote_aggregator {
         ctx.accounts.process(size)
     }
 
+    pub fn set_clan_delegate(ctx: Context<ConfigureClan>, new_delegate: Pubkey) -> Result<()> {
+        ctx.accounts.set_delegate(new_delegate)
+    }
+
     pub fn set_clan_name(ctx: Context<ConfigureClan>, name: String) -> Result<()> {
         ctx.accounts.set_name(name)
     }
@@ -92,12 +96,35 @@ pub mod vote_aggregator {
         ctx.accounts.set_description(description)
     }
 
+    pub fn set_clan_min_voting_weight_to_join(
+        ctx: Context<ConfigureClan>,
+        min_voting_weight_to_join: u64,
+    ) -> Result<()> {
+        ctx.accounts
+            .set_min_voting_weight_to_join(min_voting_weight_to_join)
+    }
+
+    pub fn set_clan_accept_temporary_members(
+        ctx: Context<ConfigureClan>,
+        accept_temporary_members: bool,
+    ) -> Result<()> {
+        ctx.accounts
+            .set_accept_temporary_members(accept_temporary_members)
+    }
+
     pub fn update_proposal_vote(ctx: Context<UpdateProposalVote>) -> Result<()> {
         ctx.accounts.process()
     }
 
     pub fn forced_cancel_proposal(ctx: Context<ForcedCancelProposal>) -> Result<()> {
         ctx.accounts.process()
+    }
+
+    pub fn set_voting_delegate(
+        ctx: Context<SetVotingDelegate>,
+        new_voting_delegate: Pubkey,
+    ) -> Result<()> {
+        ctx.accounts.process(new_voting_delegate)
     }
 
     pub fn create_member(ctx: Context<CreateMember>) -> Result<()> {
@@ -117,13 +144,6 @@ pub mod vote_aggregator {
 
     pub fn exit_clan(ctx: Context<ExitClan>) -> Result<()> {
         ctx.accounts.process()
-    }
-
-    pub fn set_voting_delegate(
-        ctx: Context<SetVotingDelegate>,
-        new_voting_delegate: Pubkey,
-    ) -> Result<()> {
-        ctx.accounts.process(new_voting_delegate)
     }
 
     pub fn update_voter_weight<'a, 'b, 'c: 'info, 'info>(

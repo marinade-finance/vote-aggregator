@@ -1,34 +1,33 @@
 import {Box, Button, TextField} from '@mui/material';
-import {createFileRoute, useNavigate} from '@tanstack/react-router';
+import {useNavigate} from '@tanstack/react-router';
 import {useState} from 'react';
+import useCreateClan from '../../hooks/useCreateClan';
 import {PublicKey} from '@solana/web3.js';
-import {useQueryClient, useSuspenseQuery} from '@tanstack/react-query';
-import {clanQueryOptions} from '../../../../queryOptions';
-import useConfigureClan from '../../../../hooks/useConfigureClan';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { voteAggregatorQueryOptions } from '../../queryOptions';
+import {Route} from '../../routes/$rootId/createClan';
 
-const EditClanComponent = () => {
+const CreateClan = () => {
   const {network} = Route.useSearch();
-  const {rootId, clanId} = Route.useParams();
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const {rootId} = Route.useParams();
   const root = new PublicKey(rootId);
-  const clan = new PublicKey(clanId);
-  const queryClient = useQueryClient();
-  const {data: clanData} = useSuspenseQuery(
-    clanQueryOptions({network, root, clan, queryClient})
-  );
-
-  const [name, setName] = useState(clanData!.name);
-  const [description, setDescription] = useState(clanData!.description);
+  const {data: rootData} = useSuspenseQuery(voteAggregatorQueryOptions({
+    network,
+    root,
+  }));
 
   const navigate = useNavigate();
 
-  const mutation = useConfigureClan();
+  const mutation = useCreateClan();
 
   const handleSubmit: React.FormEventHandler<HTMLFormElement> = event => {
     event.preventDefault();
     mutation.mutate(
-      {network, root, clan, name, description},
+      {network, rootAddress: root, rootData, name, description},
       {
-        onSuccess: () => {
+        onSuccess: ({clan}) => {
           navigate({
             to: '/$rootId/clan/$clanId',
             params: {
@@ -57,16 +56,9 @@ const EditClanComponent = () => {
         value={description}
         onChange={event => setDescription(event.target.value)}
       />
-      <Button type="submit">Edit</Button>
+      <Button type="submit">Create</Button>
     </Box>
   );
 };
 
-export const Route = createFileRoute('/$rootId/clan/$clanId/edit')({
-  component: EditClanComponent,
-  beforeLoad: () => {
-    return {
-      title: 'edit',
-    };
-  },
-});
+export default CreateClan;

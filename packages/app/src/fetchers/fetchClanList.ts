@@ -16,6 +16,7 @@ export type ClanInfo = {
   updatedTemporaryMembers: BN;
   leavingMembers: BN;
   nextVoterWeightResetTime: BN | null;
+  acceptTemporaryMembers: boolean;
   name: string;
   description: string;
 };
@@ -45,6 +46,7 @@ const fetchClanList = async ({
     updatedTemporaryMembers: clan.account.updatedTemporaryMembers,
     leavingMembers: clan.account.leavingMembers,
     nextVoterWeightResetTime: clan.account.nextVoterWeightResetTime,
+    acceptTemporaryMembers: clan.account.acceptTemporaryMembers,
     name: clan.account.name,
     description: clan.account.description,
   }));
