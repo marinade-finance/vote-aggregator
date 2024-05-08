@@ -5,8 +5,10 @@ import {MembershipEntry, VoteAggregatorSdk} from 'vote-aggregator-sdk';
 import {clanQueryOptions, memberQueryOptions} from '../queryOptions';
 import vsrSdk from '../fetchers/vsrSdk';
 import {
+  PROGRAM_VERSION_V3,
   SYSTEM_PROGRAM_ID,
   getTokenOwnerRecordAddress,
+  withCreateTokenOwnerRecord,
 } from '@solana/spl-governance';
 import {splGovernanceProgram} from '@coral-xyz/spl-governance';
 import {AnchorProvider} from '@coral-xyz/anchor';
@@ -72,18 +74,14 @@ const useJoinClans = () => {
       });
 
       if (!torInfo) {
-        tx.add(
-          await splGovernance.methods
-            .createTokenOwnerRecord()
-            .accountsStrict({
-              realm: rootData.realm,
-              payer: publicKey!,
-              systemProgram: SYSTEM_PROGRAM_ID,
-              governingTokenMint: rootData.governingTokenMint,
-              governingTokenOwner: publicKey!,
-              tokenOwnerRecordAddress: tor,
-            })
-            .instruction()
+        withCreateTokenOwnerRecord(
+          tx.instructions,
+          splGovernance.programId,
+          PROGRAM_VERSION_V3,
+          rootData.realm,
+          publicKey!,
+          rootData.governingTokenMint,
+          publicKey!
         );
       }
 
