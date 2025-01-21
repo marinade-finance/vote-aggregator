@@ -34,7 +34,7 @@
     "@tanstack/config": "^0.6.0",
     "@types/node": "^20.11.25",
     "bn.js": "^5.2.1",
-    "vite": "^5.0.8",
+    "vite": "^5.4.12",
     "vite-plugin-node-polyfills": "^0.21.0"
   },
   "scripts": {
