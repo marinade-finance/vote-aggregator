@@ -30,18 +30,18 @@
     "@native-to-anchor/buffer-layout": "=0.1.0"
   },
   "devDependencies": {
-    "@solana/web3.js": "1.90.0",
+    "@solana/web3.js": "1.90.2",
     "@tanstack/config": "^0.6.0",
     "@types/node": "^20.11.25",
     "bn.js": "^5.2.1",
-    "vite": "^5.0.8",
+    "vite": "^5.4.12",
     "vite-plugin-node-polyfills": "^0.21.0"
   },
   "scripts": {
     "build": "vite build"
   },
   "peerDependencies": {
-    "@solana/web3.js": "1.90.0",
+    "@solana/web3.js": "1.90.2",
     "bn.js": "^5.2.1",
     "vite-plugin-node-polyfills": "^0.21.0"
   }
