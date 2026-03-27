@@ -44,7 +44,7 @@
     "expand-tilde": "^2.0.2",
     "mz": "^2.7.0",
     "vote-aggregator-sdk": "workspace:*",
-    "yaml": "^2.3.4"
+    "yaml": "^2.8.3"
   },
   "scripts": {
     "cli": "node ./dist/cjs/index.cjs",
