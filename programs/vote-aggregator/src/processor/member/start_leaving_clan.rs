@@ -53,7 +53,7 @@ impl<'info> StartLeavingClan<'info> {
 
         self.root.update_next_voter_weight_reset_time(&clock);
         self.clan
-            .reset_voter_weight_if_needed(&mut self.root, &mut self.clan_vwr);
+            .reset_voter_weight_if_needed(&self.root, &mut self.clan_vwr);
         let share_bp = entry.share_bp;
         Clan::update_member(
             &mut self.clan,

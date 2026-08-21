@@ -226,7 +226,7 @@ impl<'info> JoinClan<'info> {
             chunk.exit(&crate::ID)?;
         }
         self.clan
-            .reset_voter_weight_if_needed(&mut self.root, &mut self.clan_vwr);
+            .reset_voter_weight_if_needed(&self.root, &mut self.clan_vwr);
         Clan::update_member(
             &mut self.clan,
             &self.member,
