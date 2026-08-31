@@ -23,15 +23,5 @@
     "@tanstack/router-vite-plugin": "^1.166.37",
     "buffer": "^6.0.3",
     "zod": "^3.25.76"
-  },
-  "pnpm": {
-    "peerDependencyRules": {
-      "ignoreMissing": [
-        "react-native"
-      ]
-    },
-    "overrides": {
-      "@solana/buffer-layout": "3.0.0"
-    }
   }
 }
