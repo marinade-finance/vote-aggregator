@@ -1,0 +1,24 @@
+diff --git a/src/build/index.js b/src/build/index.js
+index 21b1a9f..e83f621 100644
+--- a/src/build/index.js
++++ b/src/build/index.js
+@@ -24,8 +24,7 @@ export const tanstackBuildConfig = (options) => {
+         include: options.srcDir,
+         exclude: options.exclude,
+         compilerOptions: {
+-          // @ts-expect-error
+-          module: 'esnext',
++          module: 99,
+           declarationMap: false,
+         },
+         beforeWriteFile: (filePath, content) => {
+@@ -43,8 +42,7 @@ export const tanstackBuildConfig = (options) => {
+         include: options.srcDir,
+         exclude: options.exclude,
+         compilerOptions: {
+-          // @ts-expect-error
+-          module: 'commonjs',
++          module: 1,
+           declarationMap: false,
+         },
+         beforeWriteFile: (filePath, content) => {

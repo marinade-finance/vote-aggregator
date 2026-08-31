@@ -1,7 +1,7 @@
-import {Box, Button} from '@mui/material';
+import {Box} from '@mui/material';
 import {useWallet} from '@solana/wallet-adapter-react';
 import {PublicKey} from '@solana/web3.js';
-import {Link} from '@tanstack/react-router';
+import ButtonLink from '../ButtonLink';
 
 const ClanManagement = ({root, clan}: {root: PublicKey; clan: PublicKey}) => {
   const {publicKey} = useWallet();
@@ -11,8 +11,7 @@ const ClanManagement = ({root, clan}: {root: PublicKey; clan: PublicKey}) => {
 
   return (
     <Box>
-      <Button
-        component={Link}
+      <ButtonLink
         to="/$rootId/clan/$clanId/edit"
         params={{
           rootId: root.toBase58(),
@@ -20,10 +19,9 @@ const ClanManagement = ({root, clan}: {root: PublicKey; clan: PublicKey}) => {
         }}
       >
         Edit
-      </Button>
+      </ButtonLink>
       &nbsp;
-      <Button
-        component={Link}
+      <ButtonLink
         to="/$rootId/clan/$clanId/transfer"
         params={{
           rootId: root.toBase58(),
@@ -31,9 +29,8 @@ const ClanManagement = ({root, clan}: {root: PublicKey; clan: PublicKey}) => {
         }}
       >
         Transfer
-      </Button>
-      <Button
-        component={Link}
+      </ButtonLink>
+      <ButtonLink
         to="/$rootId/clan/$clanId/setVotingDelegate"
         params={{
           rootId: root.toBase58(),
@@ -41,7 +38,7 @@ const ClanManagement = ({root, clan}: {root: PublicKey; clan: PublicKey}) => {
         }}
       >
         Delegate voting
-      </Button>
+      </ButtonLink>
     </Box>
   );
 };
