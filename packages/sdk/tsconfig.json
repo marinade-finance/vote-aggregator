@@ -17,7 +17,6 @@
     "src/**/*.ts",
     "dev/**/*.ts",
     "__tests__/**/*.ts",
-    "jest.config.ts",
-    "vite.config.ts"
+    "jest.config.ts"
   ]
 }

@@ -1,13 +1,3 @@
-import {defineConfig, mergeConfig} from 'vite';
-import {tanstackBuildConfig} from '@tanstack/config/build';
+import {libBuildConfig} from '../../vite.lib.config';
 
-const config = defineConfig({
-});
-
-export default mergeConfig(
-  config,
-  tanstackBuildConfig({
-    entry: './src/index.ts',
-    srcDir: './src',
-  })
-);
+export default libBuildConfig({entry: './src/index.ts', srcDir: './src'});
