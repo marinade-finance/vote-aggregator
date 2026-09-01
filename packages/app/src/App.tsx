@@ -3,7 +3,7 @@ import AppRouterProvider from './providers/AppRouterProvider';
 import AppQueryClientProvider from './providers/AppQueryClientProvider';
 import AppConnectionProvider from './providers/AppConnetionProvider';
 import AppWalletProvider from './providers/AppWalletProvider';
-import {NetworkProvider} from './contexts/NetworkContext';
+import {NetworkProvider} from './contexts/NetworkProvider';
 
 function App() {
   return (

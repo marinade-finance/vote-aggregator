@@ -5,7 +5,7 @@ import {useWallet} from '@solana/wallet-adapter-react';
 import MemberManagement from '../components/member/MemberManagement';
 import {PublicKey} from '@solana/web3.js';
 import {voteAggregatorQueryOptions} from '../queryOptions';
-import {JoinCandidatesProvider} from '../contexts/JoinCandidatesContext';
+import {JoinCandidatesProvider} from '../contexts/JoinCandidatesProvider';
 
 const RootComponent = () => {
   const {network} = Route.useSearch();

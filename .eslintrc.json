@@ -1,4 +1,6 @@
 {
   "extends": "./node_modules/gts/",
-  "sourceType": "module"
+  "parserOptions": {
+    "sourceType": "module"
+  }
 }
