@@ -26,7 +26,7 @@ const Header: FC<{
   const breadcrumbs = matches
     .map(({pathname, context, params}) => {
       return {
-        title: (context as {title: string | undefined}).title,
+        title: context.title,
         path: pathname,
         params,
       };

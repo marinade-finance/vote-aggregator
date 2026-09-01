@@ -3,7 +3,7 @@ import {externalizeDeps} from 'vite-plugin-externalize-deps';
 import dts from 'vite-plugin-dts';
 import ts from 'typescript';
 
-// Emitted .d.ts keep extensionless specifiers, which node16 consumers reject.
+// Emitted .d.ts keep extensionless sibling specifiers, which node16 consumers reject.
 const withSiblingExtensions = (extension: 'js' | 'cjs') => (content: string) =>
   content.replace(
     /^(im|ex)port\s[\w{}*\s,]+from\s['"]\.\/[^.'"]+(?=['"];?$)/gm,

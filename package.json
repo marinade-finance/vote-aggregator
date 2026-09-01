@@ -1,6 +1,7 @@
 {
   "scripts": {
     "lint": "gts lint",
+    "typecheck": "tsc --noEmit",
     "clean": "gts clean",
     "copy-idl": "copyfiles -u 2 target/types/vote_aggregator.ts packages/tests/src/VoteAggregator/ ; copyfiles -u 2 target/types/vote_aggregator.ts packages/sdk/src/",
     "build": "anchor build --arch sbf && pnpm copy-idl",
