@@ -2,6 +2,7 @@ import {createFileRoute} from '@tanstack/react-router';
 import {clanQueryOptions} from '../../../../queryOptions';
 import {PublicKey} from '@solana/web3.js';
 import ClanDisplay from '../../../../components/clan/ClanDisplay';
+import {noBreadcrumb} from '../../../../breadcrumb';
 
 
 export const Route = createFileRoute('/$rootId/clan/$clanId/')({
@@ -20,5 +21,6 @@ export const Route = createFileRoute('/$rootId/clan/$clanId/')({
         queryClient,
       })
     ),
+  beforeLoad: noBreadcrumb,
   wrapInSuspense: true,
 });

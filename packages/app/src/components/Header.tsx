@@ -24,9 +24,9 @@ const Header: FC<{
   };
   const matches = useMatches();
   const breadcrumbs = matches
-    .map(({pathname, routeContext, params}) => {
+    .map(({pathname, context, params}) => {
       return {
-        title: (routeContext as {title: string | undefined}).title,
+        title: context.title,
         path: pathname,
         params,
       };

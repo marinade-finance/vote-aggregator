@@ -1,2 +1,40 @@
 packages:
   - 'packages/*'
+
+peerDependencyRules:
+  ignoreMissing:
+    - react-native
+
+overrides:
+  '@solana/buffer-layout': 3.0.0
+  # A second typescript or utf-8-validate splits web3.js into two PublicKey classes.
+  typescript: ^5.9.3
+  utf-8-validate: ^6.0.6
+  protobufjs: ^7.6.1
+  seroval: ^1.5.3
+  shell-quote: ^1.9.0
+  ws@7: ^7.5.11
+  ws@8: ^8.21.0
+  nanoid@3: ^3.3.18
+  postcss: ^8.5.18
+  brace-expansion@1: ^1.1.18
+  form-data: ^4.0.6
+  axios: ^1.16.0
+  js-yaml@3: ^3.15.1
+  lodash: ^4.18.0
+  ip-address: ^10.3.1
+  socket.io-parser: ^4.2.7
+  ua-parser-js: ^2.0.10
+  uuid@11: ^11.1.1
+  '@babel/core': ^7.29.6
+
+allowBuilds:
+  '@stellar/stellar-sdk': false
+  bigint-buffer: false
+  blake-hash: false
+  bufferutil: false
+  esbuild: false
+  protobufjs: false
+  tiny-secp256k1: false
+  usb: false
+  utf-8-validate: false

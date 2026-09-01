@@ -3,8 +3,8 @@
 export RUST_LOG=
 
 echo "============= Contact tests:"
-pushd packages/tests && bun test && popd
+pushd packages/tests && pnpm test && popd
 echo "============= SDK tests:"
-pushd packages/sdk && bun test && popd
+pushd packages/sdk && pnpm test && popd
 echo "============= CLI tests:"
-pushd packages/cli && bun test && popd
+pushd packages/cli && pnpm test && popd

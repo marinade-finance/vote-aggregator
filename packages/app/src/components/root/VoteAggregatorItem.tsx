@@ -1,12 +1,6 @@
-import {
-  Button,
-  Card,
-  CardActions,
-  CardContent,
-  Typography,
-} from '@mui/material';
+import {Card, CardActions, CardContent, Typography} from '@mui/material';
 import {RootInfo} from '../../fetchers/fetchVoteAggregatorList';
-import {Link} from '@tanstack/react-router';
+import ButtonLink from '../ButtonLink';
 
 const VoteAggregatorItem = ({root}: {root: RootInfo}) => {
   return (
@@ -18,13 +12,9 @@ const VoteAggregatorItem = ({root}: {root: RootInfo}) => {
         <Typography>{root.address.toBase58()}</Typography>
       </CardContent>
       <CardActions>
-        <Button
-          component={Link}
-          to={'/$rootId'}
-          params={{rootId: root.address.toBase58()}}
-        >
+        <ButtonLink to={'/$rootId'} params={{rootId: root.address.toBase58()}}>
           Open
-        </Button>
+        </ButtonLink>
       </CardActions>
     </Card>
   );

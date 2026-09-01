@@ -1,6 +1,5 @@
 import {
   Box,
-  Button,
   Paper,
   Table,
   TableBody,
@@ -10,7 +9,8 @@ import {
   TablePagination,
   TableRow,
 } from '@mui/material';
-import {Link, useNavigate} from '@tanstack/react-router';
+import {useNavigate} from '@tanstack/react-router';
+import ButtonLink from '../ButtonLink';
 import {useMemo, useState} from 'react';
 import {clanListQueryOptions} from '../../queryOptions';
 import {PublicKey} from '@solana/web3.js';
@@ -171,14 +171,13 @@ const ClanList = () => {
         />
       </Paper>
       <Box>
-        <Button
-          component={Link}
+        <ButtonLink
           to="/$rootId/createClan"
           params={{rootId}}
           disabled={!publicKey}
         >
           Create
-        </Button>
+        </ButtonLink>
       </Box>
     </Box>
   );
