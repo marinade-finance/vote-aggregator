@@ -10,7 +10,7 @@ overrides:
   utf-8-validate: ^6.0.6
   protobufjs: ^7.6.1
   seroval: ^1.5.3
-  shell-quote: ^1.9.0
+  shell-quote: ^1.11.0
   ws@7: ^7.5.11
   ws@8: ^8.21.0
   nanoid@3: ^3.3.18
