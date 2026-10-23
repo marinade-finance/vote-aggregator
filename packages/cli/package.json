@@ -28,7 +28,7 @@
     "solana-bankrun": "^0.2.0",
     "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
-    "vite": "^6.4.3",
+    "vite": "^6.4.4",
     "vote-aggregator-tests": "workspace:*"
   },
   "dependencies": {
