@@ -33,7 +33,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "vote-aggregator-sdk": "workspace:*",
-    "zod": "^3.25.76"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@tanstack/router-cli": "^1.166.33",
