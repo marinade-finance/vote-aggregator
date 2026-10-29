@@ -26,6 +26,6 @@
     "@tanstack/react-router": "^1.168.21",
     "@tanstack/router-vite-plugin": "^1.166.37",
     "buffer": "^6.0.3",
-    "zod": "^3.25.76"
+    "zod": "^4.6.6"
   }
 }
